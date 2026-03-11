@@ -1,11 +1,27 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, useForm } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { computed, ref, watch } from 'vue';
+import { INDUSTRY_ACTIVITIES } from '@/constants/industryActivities';
 
 const props = defineProps({
     businessProfile: Object
 });
+
+const parseActivities = (value) => {
+    if (!value) return [];
+    if (Array.isArray(value)) return value;
+
+    try {
+        const parsed = JSON.parse(value);
+        return Array.isArray(parsed) ? parsed : [];
+    } catch {
+        return String(value)
+            .split(',')
+            .map((item) => item.trim())
+            .filter(Boolean);
+    }
+};
 
 const logoPreview = ref(props.businessProfile.logo_url || null);
 
@@ -14,6 +30,10 @@ const form = useForm({
     industry_sector: props.businessProfile.industry_sector || '',
     member_type: props.businessProfile.member_type,
     member_category: props.businessProfile.member_category,
+    selectedActivities: parseActivities(props.businessProfile.business_activities),
+    business_activities: typeof props.businessProfile.business_activities === 'string'
+        ? props.businessProfile.business_activities
+        : JSON.stringify(parseActivities(props.businessProfile.business_activities)),
     tpin: props.businessProfile.tpin,
     pacra_reg_no: props.businessProfile.pacra_reg_no || '',
     short_description: props.businessProfile.short_description,
@@ -37,15 +57,7 @@ const handleLogoUpload = (event) => {
 };
 
 // Industry Sectors
-const industrySectors = [
-    'Tourism & Hospitality',
-    'Trade & Commerce',
-    'Financial Services',
-    'Construction & Engineering',
-    'Agriculture & Manufacturing',
-    'Cooperatives & Social Enterprise',
-    'IT & Creative Media'
-];
+const industrySectors = Object.keys(INDUSTRY_ACTIVITIES);
 
 // Membership Types
 const membershipTypes = [
@@ -55,58 +67,50 @@ const membershipTypes = [
     'Cooperative'
 ];
 
-// Membership Categories
-const membershipCategories = [
-    'Advertising',
-    'Agriculture',
-    'Apparel',
-    'Appliances',
-    'Art Galleries & Studios',
-    'Automotive',
-    'Banks',
-    'Bars & Lounges',
-    'Beauty Parlours & Saloons',
-    'Business Services',
-    'Cleaning Services',
-    'Communication & Media',
-    'Construction',
-    'Education/Schools',
-    'Engineering',
-    'Entertainment',
-    'Equipment',
-    'Event Planners',
-    'Exercise/Gym',
-    'Financial Services',
-    'Food',
-    'Funeral Services',
-    'Furniture',
-    'Graphic Design',
-    'Grocery',
-    'Hardware/ Home & Garden',
-    'Healthcare & Wellness',
-    'Insurance',
-    'Land Surveyors',
-    'Landscaping',
-    'Legal',
-    'Lodging',
-    'Manufacturing',
-    'Medical Hospitals',
-    'Mining & Exploration',
-    'Music & Recording Studios',
-    'Pest Control',
-    'Pet care',
-    'Photography & Video',
-    'Printers',
-    'Real Estate',
-    'Restaurants & Catering',
-    'Safety & Security Systems',
-    'Sanitation/Garbage',
-    'Sport/Recreation',
-    'Staffing Service',
-    'Tourism',
-    'Transporting & Trucking',
-    'Utilities'
-];
+// Membership Categories by selected sector
+const membershipCategories = computed(() => INDUSTRY_ACTIVITIES[form.industry_sector] || []);
+const filteredActivities = computed(() => INDUSTRY_ACTIVITIES[form.industry_sector] || []);
+const activitiesWarning = ref('');
+
+const toggleActivity = (activity, event) => {
+    const checked = event.target.checked;
+    const current = [...form.selectedActivities];
+
+    if (checked) {
+        if (current.length >= 4) {
+            event.target.checked = false;
+            activitiesWarning.value = 'You can select up to 4 activities only.';
+            return;
+        }
+
+        current.push(activity);
+        activitiesWarning.value = '';
+    } else {
+        const index = current.indexOf(activity);
+        if (index > -1) {
+            current.splice(index, 1);
+        }
+        activitiesWarning.value = '';
+    }
+
+    form.selectedActivities = current;
+};
+
+watch(
+    () => form.industry_sector,
+    () => {
+        form.selectedActivities = [];
+        activitiesWarning.value = '';
+    }
+);
+
+watch(
+    () => form.selectedActivities,
+    (activities) => {
+        form.business_activities = JSON.stringify(activities || []);
+    },
+    { deep: true, immediate: true }
+);
 
 const getError = (field) => {
     if (!form.errors[field]) return null;
@@ -202,6 +206,26 @@ const submit = () => {
                                 <option v-for="category in membershipCategories" :key="category" :value="category">{{ category }}</option>
                             </select>
                             <p v-if="getError('member_category')" class="text-red-600 text-xs mt-1">{{ getError('member_category') }}</p>
+                        </div>
+
+                        <!-- Business Activities -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Business Activities (Select up to 4)</label>
+                            <div v-if="!form.industry_sector" class="text-xs text-gray-500">Select an industry sector first.</div>
+                            <div v-else class="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+                                <label v-for="activity in filteredActivities" :key="activity" class="flex items-center gap-2 rounded border border-gray-200 px-3 py-2">
+                                    <input
+                                        type="checkbox"
+                                        :checked="form.selectedActivities.includes(activity)"
+                                        @change="toggleActivity(activity, $event)"
+                                        class="h-4 w-4 text-indigo-600 border-gray-300 rounded"
+                                    >
+                                    <span class="text-sm text-gray-700">{{ activity }}</span>
+                                </label>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-2">{{ form.selectedActivities.length }}/4 selected</p>
+                            <p v-if="activitiesWarning" class="text-orange-600 text-xs mt-1">{{ activitiesWarning }}</p>
+                            <p v-if="getError('business_activities')" class="text-red-600 text-xs mt-1">{{ getError('business_activities') }}</p>
                         </div>
 
                         <!-- TPIN -->

@@ -12,13 +12,14 @@ class BusinessProfile extends Model
 
     protected $fillable = [
         'user_id', 'company_name', 'industry_sector', 'member_type', 'member_category', 'tpin', 'pacra_reg_no', 
-        'short_description', 'contact_email', 'phone', 'address', 'website_url', 'logo_url', 'status',
+        'business_activities', 'short_description', 'contact_email', 'phone', 'address', 'website_url', 'logo_url', 'status',
         'membership_type', 'last_payment_date', 'subscription_expiry', 'membership_id'
     ];
 
     protected function casts(): array
     {
         return [
+            'business_activities' => 'array',
             'last_payment_date' => 'date',
             'subscription_expiry' => 'date',
         ];
