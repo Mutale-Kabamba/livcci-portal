@@ -37,6 +37,9 @@ Route::middleware([IsAdminMiddleware::class])->group(function () {
     // Invoices Management
     Route::post('/admin/invoices/{profile}/generate', [AdminController::class, 'generateInvoice'])->name('admin.invoices.generate');
     Route::patch('/admin/invoices/{invoice}/paid', [AdminController::class, 'markAsPaid'])->name('admin.invoices.paid');
+
+    // Strategic Plan Tracker
+    Route::post('/admin/strategic-plan', [AdminController::class, 'saveStrategicPlan'])->name('admin.strategic-plan.save');
     
     // Events Management
     Route::post('/admin/events', [AdminController::class, 'storeEvent'])->name('admin.events.store');

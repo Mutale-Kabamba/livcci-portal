@@ -11,6 +11,7 @@ use Inertia\Inertia;
 use App\Models\BusinessProfile;
 use App\Models\ChamberEvent;
 use App\Models\Invoice;
+use App\Models\Setting;
 use App\Models\SiteContent;
 use App\Models\User;
 
@@ -76,16 +77,38 @@ class AdminController extends Controller
         $events = ChamberEvent::latest()->get();
         $invoices = Invoice::with('profile:id,company_name,membership_id,membership_type')->latest()->get();
         $siteContents = SiteContent::orderBy('page')->orderBy('section')->get();
+        $strategicPlan = $this->getStrategicPlanProgress();
 
         return Inertia::render('Admin/Dashboard', [
             'profiles' => $profiles,
             'events' => $events,
             'invoices' => $invoices,
             'siteContents' => $siteContents,
+            'strategicPlan' => $strategicPlan,
             'flash' => [
                 'message' => session('message')
             ]
         ]);
+    }
+
+    public function saveStrategicPlan(Request $request)
+    {
+        $validated = $request->validate([
+            'goal_1' => 'required|integer|min:0|max:100',
+            'goal_2' => 'required|integer|min:0|max:100',
+            'goal_3' => 'required|integer|min:0|max:100',
+            'goal_4' => 'required|integer|min:0|max:100',
+            'goal_5' => 'required|integer|min:0|max:100',
+        ]);
+
+        foreach ($validated as $key => $value) {
+            Setting::updateOrCreate(
+                ['key' => 'strategic_plan_' . $key],
+                ['value' => (string) $value]
+            );
+        }
+
+        return back()->with('message', 'Strategic plan progress saved successfully.');
     }
 
     public function upsertSiteContent(Request $request)
@@ -381,5 +404,35 @@ class AdminController extends Controller
                 return [$item->section => $item->content];
             })
             ->toArray();
+    }
+
+    private function getStrategicPlanProgress(): array
+    {
+        $defaults = [
+            'goal_1' => 0,
+            'goal_2' => 0,
+            'goal_3' => 0,
+            'goal_4' => 0,
+            'goal_5' => 0,
+        ];
+
+        $stored = Setting::query()
+            ->whereIn('key', [
+                'strategic_plan_goal_1',
+                'strategic_plan_goal_2',
+                'strategic_plan_goal_3',
+                'strategic_plan_goal_4',
+                'strategic_plan_goal_5',
+            ])
+            ->pluck('value', 'key');
+
+        foreach (array_keys($defaults) as $goalKey) {
+            $storedKey = 'strategic_plan_' . $goalKey;
+            if ($stored->has($storedKey)) {
+                $defaults[$goalKey] = max(0, min(100, (int) $stored->get($storedKey)));
+            }
+        }
+
+        return $defaults;
     }
 }

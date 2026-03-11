@@ -6,7 +6,8 @@ import { ref } from 'vue';
 const props = defineProps({
     profiles: Array,
     events: Array,
-    invoices: Array
+    invoices: Array,
+    strategicPlan: Object
 });
 
 const activeTab = ref('member-management');
@@ -31,6 +32,40 @@ const confirmPayment = (invoiceId) => {
         preserveScroll: true,
         onSuccess: () => alert('Payment confirmed and subscription updated.'),
         onError: () => alert('Failed to confirm payment.'),
+    });
+};
+
+const strategicGoals = [
+    { key: 'goal_1', label: 'Strategic Goal 1: Membership Growth' },
+    { key: 'goal_2', label: 'Strategic Goal 2: SME Support and Advocacy' },
+    { key: 'goal_3', label: 'Strategic Goal 3: Tourism and Trade Expansion' },
+    { key: 'goal_4', label: 'Strategic Goal 4: Skills and Innovation' },
+    { key: 'goal_5', label: 'Strategic Goal 5: Institutional Strengthening' }
+];
+
+const strategicPlanForm = useForm({
+    goal_1: props.strategicPlan?.goal_1 ?? 0,
+    goal_2: props.strategicPlan?.goal_2 ?? 0,
+    goal_3: props.strategicPlan?.goal_3 ?? 0,
+    goal_4: props.strategicPlan?.goal_4 ?? 0,
+    goal_5: props.strategicPlan?.goal_5 ?? 0,
+});
+
+const clampPercentage = (value) => {
+    const numericValue = Number.parseInt(value, 10);
+    if (Number.isNaN(numericValue)) return 0;
+    return Math.max(0, Math.min(100, numericValue));
+};
+
+const setGoalValue = (key, value) => {
+    strategicPlanForm[key] = clampPercentage(value);
+};
+
+const saveStrategicPlan = () => {
+    strategicPlanForm.post(route('admin.strategic-plan.save'), {
+        preserveScroll: true,
+        onSuccess: () => alert('Strategic plan tracker updated.'),
+        onError: () => alert('Failed to save strategic plan tracker.'),
     });
 };
 
@@ -394,6 +429,55 @@ const deleteEvent = (eventId) => {
                 </template>
 
                 <template v-if="activeTab === 'settings'">
+                    <div class="bg-white shadow sm:rounded-lg overflow-hidden">
+                        <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
+                            <h3 class="text-lg font-bold text-[#1D2A68]">Strategic Plan Tracker</h3>
+                            <p class="text-sm text-gray-500 mt-1">Drag the slider or enter percentages for each LiVCCI strategic goal.</p>
+                        </div>
+                        <div class="p-6 space-y-5">
+                            <div v-for="goal in strategicGoals" :key="goal.key" class="rounded-lg border border-gray-200 p-4">
+                                <div class="flex items-center justify-between gap-4 mb-3">
+                                    <div class="text-sm font-bold text-[#1D2A68]">{{ goal.label }}</div>
+                                    <div class="flex items-center gap-2">
+                                        <input
+                                            :value="strategicPlanForm[goal.key]"
+                                            @input="setGoalValue(goal.key, $event.target.value)"
+                                            type="number"
+                                            min="0"
+                                            max="100"
+                                            class="w-20 border-gray-200 rounded-lg p-2 text-sm text-right"
+                                        >
+                                        <span class="text-sm font-semibold text-gray-500">%</span>
+                                    </div>
+                                </div>
+
+                                <div class="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+                                    <div class="h-full bg-[#1876C3] transition-all duration-200" :style="{ width: strategicPlanForm[goal.key] + '%' }"></div>
+                                </div>
+
+                                <input
+                                    :value="strategicPlanForm[goal.key]"
+                                    @input="setGoalValue(goal.key, $event.target.value)"
+                                    type="range"
+                                    min="0"
+                                    max="100"
+                                    class="w-full mt-3 accent-[#1D2A68]"
+                                >
+                            </div>
+
+                            <div class="flex justify-end">
+                                <button
+                                    @click="saveStrategicPlan"
+                                    :disabled="strategicPlanForm.processing"
+                                    class="bg-[#1D2A68] text-white text-sm font-bold px-6 py-2.5 rounded-lg hover:bg-[#1876C3] transition disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    <span v-if="strategicPlanForm.processing">Saving...</span>
+                                    <span v-else>Save Strategic Progress</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="bg-white shadow sm:rounded-lg overflow-hidden">
                         <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
                             <h3 class="text-lg font-bold text-[#1D2A68]">Published Events</h3>
