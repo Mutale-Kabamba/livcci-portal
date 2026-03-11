@@ -2,6 +2,13 @@
 import { Head, Link } from '@inertiajs/vue3';
 import { ref, onMounted, onUnmounted } from 'vue';
 
+const props = defineProps({
+    content: {
+        type: Object,
+        default: () => ({})
+    }
+});
+
 const scrollY = ref(0);
 const dropdownOpen = ref(false);
 
@@ -39,7 +46,7 @@ onUnmounted(() => {
     window.removeEventListener('scroll', handleScroll);
 });
 
-const strategicGoals = [
+const defaultStrategicGoals = [
     {
         number: 1,
         title: 'Strengthened Governance and Institutional Capacity',
@@ -76,6 +83,13 @@ const strategicGoals = [
         bgColor: 'from-red-600 to-red-700'
     },
 ];
+
+const strategicGoals = props.content.goals || defaultStrategicGoals;
+const goalsHero = props.content.hero || {
+    badge: '2026 - 2030',
+    title: 'Strategic Goals',
+    description: 'Our ambitious roadmap for transforming LiVCCI and advancing business growth in Livingstone.'
+};
 </script>
 
 <template>
@@ -138,13 +152,13 @@ const strategicGoals = [
             
             <div class="relative max-w-7xl mx-auto py-16 px-4 sm:py-24 sm:px-6 lg:px-8 flex flex-col justify-center h-full opacity-0 translate-y-10 transition-all duration-700 animate-in">
                 <span class="px-3 py-1 rounded-full bg-[#1876C3]/40 text-[#F6EED8] text-sm font-semibold tracking-wide border border-[#1876C3] mb-4 inline-block w-fit">
-                    2026 – 2030
+                    {{ goalsHero.badge }}
                 </span>
                 <h1 class="text-4xl font-extrabold tracking-tight text-white sm:text-5xl lg:text-6xl max-w-3xl leading-tight">
-                    Strategic Goals
+                    {{ goalsHero.title }}
                 </h1>
                 <p class="mt-6 text-xl text-blue-100 max-w-2xl">
-                    Our ambitious roadmap for transforming LiVCCI and advancing business growth in Livingstone.
+                    {{ goalsHero.description }}
                 </p>
             </div>
         </div>

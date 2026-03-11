@@ -2,7 +2,7 @@
 import { Head, Link } from '@inertiajs/vue3';
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 
-defineProps({
+const props = defineProps({
     canLogin: {
         type: Boolean,
     },
@@ -11,6 +11,10 @@ defineProps({
     },
     events: Array,
     approvedMembers: Array,
+    content: {
+        type: Object,
+        default: () => ({})
+    }
 });
 
 // Scroll animation state
@@ -27,6 +31,47 @@ const heroImages = [
     'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?ixlib=rb-1.2.1&auto=format&fit=crop&w=1920&q=80',
     'https://images.unsplash.com/photo-1552664730-d307ca884978?ixlib=rb-1.2.1&auto=format&fit=crop&w=1920&q=80',
 ];
+
+const defaultHeroContent = {
+    badge: 'Together we make a difference for better business',
+    title: "Driving Economic Growth in Zambia's Tourist Capital",
+    description: "We are dedicated to fostering a thriving business environment. Partner with us for invaluable resources, cross-border networking, and powerful advocacy in Livingstone."
+};
+
+const defaultChairperson = {
+    title: 'Welcome! from the Chairperson',
+    greeting: 'Dear Members and Partners,',
+    paragraph_one: 'It is with great pleasure that I welcome you to the Livingstone Chamber of Commerce and Industry. As the economic heartbeat of southern Zambia, our organization serves as a vital bridge between government, business, and communities.',
+    paragraph_two: "Together, we champion policy reforms, facilitate trade missions, and empower entrepreneurs to achieve their dreams. Whether you're a startup, SME, or established corporation, we're here to support your growth journey.",
+    signature: '- Chairperson, LiVCCI'
+};
+
+const defaultCoreValues = [
+    {
+        title: 'Policy Advocacy',
+        description: 'We monitor the regulatory environment and lobby stakeholders to ensure a favorable climate for Livingstone businesses.'
+    },
+    {
+        title: 'B2B Networking',
+        description: 'Gain access to exclusive business breakfasts, annual awards, and high-level trade missions across the region.'
+    },
+    {
+        title: 'Capacity Building',
+        description: 'We partner with local and international experts to deliver mentorship and digital skills training for growing MSMEs.'
+    }
+];
+
+const defaultHomeSectors = [
+    { title: 'Tourism & Hospitality' },
+    { title: 'Transport & Logistics' },
+    { title: 'Agriculture & Export' },
+    { title: 'Tech & Digital Media' },
+];
+
+const heroContent = computed(() => props.content.hero || defaultHeroContent);
+const chairperson = computed(() => props.content.chairperson || defaultChairperson);
+const coreValues = computed(() => props.content.core_values || defaultCoreValues);
+const homeSectors = computed(() => props.content.home_sectors || defaultHomeSectors);
 
 // Auto-advance hero carousel
 setInterval(() => {
@@ -172,13 +217,13 @@ const formatDate = (date) => {
             <!-- Hero Content -->
             <div class="relative max-w-7xl mx-auto py-24 px-4 sm:py-32 sm:px-6 lg:px-8 flex flex-col items-start justify-center h-full opacity-0 translate-y-10 transition-all duration-700 animate-in">
                 <span class="px-3 py-1 rounded-full bg-[#1876C3]/40 text-[#F6EED8] text-sm font-semibold tracking-wide border border-[#1876C3] mb-5">
-                    Together we make a difference for better business
+                    {{ heroContent.badge }}
                 </span>
                 <h1 class="text-4xl font-extrabold tracking-tight text-white sm:text-5xl lg:text-6xl max-w-2xl leading-tight">
-                    Driving Economic Growth in Zambia's Tourist Capital
+                    {{ heroContent.title }}
                 </h1>
                 <p class="mt-6 text-xl text-blue-100 max-w-3xl">
-                    We are dedicated to fostering a thriving business environment. Partner with us for invaluable resources, cross-border networking, and powerful advocacy in Livingstone.
+                    {{ heroContent.description }}
                 </p>
                 <div class="mt-10 flex space-x-4">
                     <Link :href="route('register')" class="bg-[#F4B223] text-[#1D2A68] font-black py-3 px-8 rounded-md hover:bg-[#E0A11B] shadow-lg text-lg transition-all">
@@ -209,18 +254,18 @@ const formatDate = (date) => {
                         <img src="images/leader/man2.png" alt="Chairperson" >
                     </div>
                     <div class="opacity-0 translate-x-10 transition-all duration-700 animate-in">
-                        <h2 class="text-3xl font-extrabold text-[#1D2A68] mb-4">Welcome! from the Chairperson</h2>
+                        <h2 class="text-3xl font-extrabold text-[#1D2A68] mb-4">{{ chairperson.title }}</h2>
                         <p class="text-lg text-gray-700 mb-4">
-                            Dear Members and Partners,
+                            {{ chairperson.greeting }}
                         </p>
                         <p class="text-gray-600 mb-4 leading-relaxed">
-                            It is with great pleasure that I welcome you to the Livingstone Chamber of Commerce and Industry. As the economic heartbeat of southern Zambia, our organization serves as a vital bridge between government, business, and communities.
+                            {{ chairperson.paragraph_one }}
                         </p>
                         <p class="text-gray-600 mb-6 leading-relaxed">
-                            Together, we champion policy reforms, facilitate trade missions, and empower entrepreneurs to achieve their dreams. Whether you're a startup, SME, or established corporation, we're here to support your growth journey.
+                            {{ chairperson.paragraph_two }}
                         </p>
                         <p class="text-lg font-semibold text-[#1D2A68]">
-                            - Chairperson, LiVCCI
+                            {{ chairperson.signature }}
                         </p>
                     </div>
                 </div>
@@ -294,16 +339,12 @@ const formatDate = (date) => {
                 </div>
                 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-10">
-                    <div v-for="(value, index) in 3" :key="index" class="p-8 border border-gray-100 rounded-xl shadow-sm hover:shadow-md hover:border-[#F4B223] transition-all bg-gray-50 group opacity-0 scale-95 transition-all duration-700 animate-in" :style="{ transitionDelay: `${index * 150}ms` }">
+                    <div v-for="(value, index) in coreValues" :key="index" class="p-8 border border-gray-100 rounded-xl shadow-sm hover:shadow-md hover:border-[#F4B223] transition-all bg-gray-50 group opacity-0 scale-95 transition-all duration-700 animate-in" :style="{ transitionDelay: `${index * 150}ms` }">
                         <div class="w-12 h-12 bg-[#E8F1F8] text-[#1876C3] rounded-lg flex items-center justify-center mb-6 group-hover:bg-[#1876C3] group-hover:text-white transition-colors">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"></path></svg>
                         </div>
-                        <h3 class="text-xl font-bold text-[#1D2A68] mb-3" v-if="index === 0">Policy Advocacy</h3>
-                        <h3 class="text-xl font-bold text-[#1D2A68] mb-3" v-else-if="index === 1">B2B Networking</h3>
-                        <h3 class="text-xl font-bold text-[#1D2A68] mb-3" v-else>Capacity Building</h3>
-                        <p class="text-gray-600" v-if="index === 0">We monitor the regulatory environment and lobby stakeholders to ensure a favorable climate for Livingstone businesses.</p>
-                        <p class="text-gray-600" v-else-if="index === 1">Gain access to exclusive business breakfasts, annual awards, and high-level trade missions across the region.</p>
-                        <p class="text-gray-600" v-else>We partner with local and international experts to deliver mentorship and digital skills training for growing MSMEs.</p>
+                        <h3 class="text-xl font-bold text-[#1D2A68] mb-3">{{ value.title }}</h3>
+                        <p class="text-gray-600">{{ value.description }}</p>
                     </div>
                 </div>
             </div>
@@ -321,11 +362,8 @@ const formatDate = (date) => {
                 </div>
 
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <Link v-for="(sector, index) in 4" :key="index" :href="route('sectors')" class="bg-white p-6 rounded-lg shadow-sm border border-gray-100 text-center hover:border-[#F4B223] transition-all opacity-0 translate-y-10 animate-in" :style="{ transitionDelay: `${index * 100}ms` }">
-                        <h4 class="font-bold text-[#1D2A68] hover:text-[#1876C3] transition-colors" v-if="index === 0">Tourism & Hospitality</h4>
-                        <h4 class="font-bold text-[#1D2A68] hover:text-[#1876C3] transition-colors" v-else-if="index === 1">Transport & Logistics</h4>
-                        <h4 class="font-bold text-[#1D2A68] hover:text-[#1876C3] transition-colors" v-else-if="index === 2">Agriculture & Export</h4>
-                        <h4 class="font-bold text-[#1D2A68] hover:text-[#1876C3] transition-colors" v-else>Tech & Digital Media</h4>
+                    <Link v-for="(sector, index) in homeSectors" :key="index" :href="route('sectors')" class="bg-white p-6 rounded-lg shadow-sm border border-gray-100 text-center hover:border-[#F4B223] transition-all opacity-0 translate-y-10 animate-in" :style="{ transitionDelay: `${index * 100}ms` }">
+                        <h4 class="font-bold text-[#1D2A68] hover:text-[#1876C3] transition-colors">{{ sector.title }}</h4>
                     </Link>
                 </div>
             </div>

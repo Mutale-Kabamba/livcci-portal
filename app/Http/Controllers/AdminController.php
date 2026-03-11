@@ -9,22 +9,107 @@ use Illuminate\Foundation\Application;
 use Inertia\Inertia;
 use App\Models\BusinessProfile;
 use App\Models\ChamberEvent;
+use App\Models\SiteContent;
 use App\Models\User;
 
 class AdminController extends Controller
 {
+    public function accounts()
+    {
+        $users = User::query()
+            ->select(['id', 'name', 'email', 'is_admin', 'email_verified_at', 'created_at'])
+            ->latest()
+            ->get();
+
+        return Inertia::render('Admin/Accounts', [
+            'users' => $users,
+        ]);
+    }
+
+    public function updateAccountRole(Request $request, User $user)
+    {
+        $validated = $request->validate([
+            'is_admin' => 'required|boolean',
+        ]);
+
+        if ((int) $user->id === (int) auth()->id() && !$validated['is_admin']) {
+            return back()->with('error', 'You cannot remove your own admin access.');
+        }
+
+        if ($user->is_admin && !$validated['is_admin']) {
+            $adminCount = User::where('is_admin', true)->count();
+            if ($adminCount <= 1) {
+                return back()->with('error', 'At least one admin account must remain.');
+            }
+        }
+
+        User::whereKey($user->id)->update([
+            'is_admin' => $validated['is_admin'],
+        ]);
+
+        return back()->with('message', 'Account role updated successfully.');
+    }
+
+    public function deleteAccount(User $user)
+    {
+        if ((int) $user->id === (int) auth()->id()) {
+            return back()->with('error', 'You cannot delete your own account from this page.');
+        }
+
+        if ($user->is_admin) {
+            $adminCount = User::where('is_admin', true)->count();
+            if ($adminCount <= 1) {
+                return back()->with('error', 'At least one admin account must remain.');
+            }
+        }
+
+        $user->delete();
+
+        return back()->with('message', 'Account deleted successfully.');
+    }
+
     public function dashboard()
     {
         $profiles = BusinessProfile::with('user')->latest()->get();
         $events = ChamberEvent::latest()->get();
+        $siteContents = SiteContent::orderBy('page')->orderBy('section')->get();
 
         return Inertia::render('Admin/Dashboard', [
             'profiles' => $profiles,
             'events' => $events,
+            'siteContents' => $siteContents,
             'flash' => [
                 'message' => session('message')
             ]
         ]);
+    }
+
+    public function upsertSiteContent(Request $request)
+    {
+        $validated = $request->validate([
+            'page' => 'required|string|max:100',
+            'section' => 'required|string|max:100',
+            'content' => 'required|array',
+        ]);
+
+        SiteContent::updateOrCreate(
+            [
+                'page' => $validated['page'],
+                'section' => $validated['section'],
+            ],
+            [
+                'content' => $validated['content'],
+            ]
+        );
+
+        return back()->with('message', 'Frontend content saved successfully.');
+    }
+
+    public function deleteSiteContent(SiteContent $content)
+    {
+        $content->delete();
+
+        return back()->with('message', 'Frontend content deleted successfully.');
     }
 
     // 1. Logic to Update Status (Approve, Deactivate, Suspend)
@@ -172,12 +257,59 @@ class AdminController extends Controller
     {
         $events = ChamberEvent::latest()->limit(2)->get();
         $approvedMembers = BusinessProfile::where('status', 'approved')->get();
+        $content = $this->getPageContent('home');
         
         return Inertia::render('Welcome', [
             'canLogin' => Route::has('login'),
             'canRegister' => Route::has('register'),
             'events' => $events,
             'approvedMembers' => $approvedMembers,
+            'content' => $content,
         ]);
+    }
+
+    public function showAbout()
+    {
+        return Inertia::render('About', [
+            'content' => $this->getPageContent('about'),
+        ]);
+    }
+
+    public function showSectors()
+    {
+        return Inertia::render('Sectors', [
+            'content' => $this->getPageContent('sectors'),
+        ]);
+    }
+
+    public function showLeadership()
+    {
+        return Inertia::render('Leadership', [
+            'content' => $this->getPageContent('leadership'),
+        ]);
+    }
+
+    public function showMembership()
+    {
+        return Inertia::render('Membership', [
+            'content' => $this->getPageContent('membership'),
+        ]);
+    }
+
+    public function showStrategicGoals()
+    {
+        return Inertia::render('StrategicGoals', [
+            'content' => $this->getPageContent('strategic-goals'),
+        ]);
+    }
+
+    private function getPageContent(string $page): array
+    {
+        return SiteContent::where('page', $page)
+            ->get()
+            ->mapWithKeys(function (SiteContent $item) {
+                return [$item->section => $item->content];
+            })
+            ->toArray();
     }
 }

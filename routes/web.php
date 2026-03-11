@@ -16,15 +16,18 @@ Route::get('/dashboard', function () {
     ]);
 })->middleware(['auth', 'verified'])->name('dashboard');
 
-Route::get('/about', function () { return \Inertia\Inertia::render('About'); })->name('about');
-Route::get('/sectors', function () { return \Inertia\Inertia::render('Sectors'); })->name('sectors');
-Route::get('/leadership', function () { return \Inertia\Inertia::render('Leadership'); })->name('leadership');
-Route::get('/membership', function () { return \Inertia\Inertia::render('Membership'); })->name('membership');
-Route::get('/strategic-goals', function () { return \Inertia\Inertia::render('StrategicGoals'); })->name('strategic-goals');
+Route::get('/about', [AdminController::class, 'showAbout'])->name('about');
+Route::get('/sectors', [AdminController::class, 'showSectors'])->name('sectors');
+Route::get('/leadership', [AdminController::class, 'showLeadership'])->name('leadership');
+Route::get('/membership', [AdminController::class, 'showMembership'])->name('membership');
+Route::get('/strategic-goals', [AdminController::class, 'showStrategicGoals'])->name('strategic-goals');
 Route::get('/news', [AdminController::class, 'showNews'])->name('news');
 Route::get('/directory', [BusinessProfileController::class, 'index'])->name('directory.index');
 Route::middleware([IsAdminMiddleware::class])->group(function () {
     Route::get('/admin', [AdminController::class, 'dashboard'])->name('admin.dashboard');
+    Route::get('/admin/accounts', [AdminController::class, 'accounts'])->name('admin.accounts.index');
+    Route::patch('/admin/accounts/{user}/role', [AdminController::class, 'updateAccountRole'])->name('admin.accounts.role');
+    Route::delete('/admin/accounts/{user}', [AdminController::class, 'deleteAccount'])->name('admin.accounts.delete');
     
     // Member Management
     Route::patch('/admin/members/{profile}/status', [AdminController::class, 'updateMemberStatus'])->name('admin.members.status');
@@ -34,6 +37,10 @@ Route::middleware([IsAdminMiddleware::class])->group(function () {
     Route::post('/admin/events', [AdminController::class, 'storeEvent'])->name('admin.events.store');
     Route::match(['post', 'patch'], '/admin/events/{event}', [AdminController::class, 'updateEvent'])->name('admin.events.update');
     Route::delete('/admin/events/{event}', [AdminController::class, 'deleteEvent'])->name('admin.events.destroy');
+
+    // Frontend Content Management
+    Route::put('/admin/content', [AdminController::class, 'upsertSiteContent'])->name('admin.content.upsert');
+    Route::delete('/admin/content/{content}', [AdminController::class, 'deleteSiteContent'])->name('admin.content.delete');
 });
 Route::middleware('auth')->group(function () { 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

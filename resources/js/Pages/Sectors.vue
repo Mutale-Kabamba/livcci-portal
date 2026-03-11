@@ -1,6 +1,19 @@
 <script setup>
 import { Head, Link } from '@inertiajs/vue3';
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
+
+const props = defineProps({
+    content: {
+        type: Object,
+        default: () => ({})
+    }
+});
+
+const sectorsHero = computed(() => props.content.hero || {
+    badge: 'Economic Hub of the South',
+    title: 'Key Economic Sectors',
+    description: "Livingstone is strategically positioned as Zambia's premier tourist destination and a vital cross-border trade corridor. Explore the industries driving our regional growth."
+});
 
 const scrollY = ref(0);
 const dropdownOpen = ref(false);
@@ -101,13 +114,13 @@ onUnmounted(() => {
             
             <div class="relative max-w-7xl mx-auto py-16 px-4 sm:py-24 sm:px-6 lg:px-8 flex flex-col justify-center h-full opacity-0 translate-y-10 transition-all duration-700 animate-in">
                 <span class="px-3 py-1 rounded-full bg-[#1876C3]/40 text-[#F6EED8] text-sm font-semibold tracking-wide border border-[#1876C3] mb-4 inline-block w-fit">
-                    Economic Hub of the South
+                    {{ sectorsHero.badge }}
                 </span>
                 <h1 class="text-4xl font-extrabold tracking-tight text-white sm:text-5xl lg:text-6xl max-w-3xl leading-tight">
-                    Key Economic Sectors
+                    {{ sectorsHero.title }}
                 </h1>
                 <p class="mt-6 text-xl text-blue-100 max-w-2xl">
-                    Livingstone is strategically positioned as Zambia's premier tourist destination and a vital cross-border trade corridor. Explore the industries driving our regional growth.
+                    {{ sectorsHero.description }}
                 </p>
             </div>
         </div>
