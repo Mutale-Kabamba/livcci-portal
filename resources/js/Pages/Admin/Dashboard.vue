@@ -5,8 +5,11 @@ import { ref } from 'vue';
 
 const props = defineProps({
     profiles: Array,
-    events: Array
+    events: Array,
+    invoices: Array
 });
+
+const activeTab = ref('member-management');
 
 // Member Status Form
 const statusForm = useForm({
@@ -18,6 +21,16 @@ const updateStatus = (profileId, newStatus) => {
     statusForm.patch(route('admin.members.status', profileId), {
         preserveScroll: true,
         onSuccess: () => alert('Status successfully updated to ' + newStatus)
+    });
+};
+
+const paymentForm = useForm({});
+
+const confirmPayment = (invoiceId) => {
+    paymentForm.patch(route('admin.invoices.paid', invoiceId), {
+        preserveScroll: true,
+        onSuccess: () => alert('Payment confirmed and subscription updated.'),
+        onError: () => alert('Failed to confirm payment.'),
     });
 };
 
@@ -225,123 +238,204 @@ const deleteEvent = (eventId) => {
 
         <div class="py-12">
             <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-8">
-                
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div class="bg-white shadow sm:rounded-lg p-6 border-l-4 border-[#1876C3]">
-                        <div class="text-xs font-bold text-gray-400 uppercase">Total Applications</div>
-                        <div class="mt-1 text-3xl font-bold text-[#1D2A68]">{{ profiles.length }}</div>
-                    </div>
-                    <div class="bg-white shadow sm:rounded-lg p-6 border-l-4 border-green-500">
-                        <div class="text-xs font-bold text-gray-400 uppercase">Active Members</div>
-                        <div class="mt-1 text-3xl font-bold text-green-600">{{ profiles.filter(p => p.status === 'approved').length }}</div>
-                    </div>
-                    <div class="bg-white shadow sm:rounded-lg p-6 border-l-4 border-yellow-500">
-                        <div class="text-xs font-bold text-gray-400 uppercase">Pending Review</div>
-                        <div class="mt-1 text-3xl font-bold text-yellow-600">{{ profiles.filter(p => p.status === 'pending').length }}</div>
+                <div class="bg-white shadow sm:rounded-lg p-2">
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                        <button
+                            @click="activeTab = 'member-management'"
+                            class="px-4 py-3 rounded-lg text-sm font-bold transition"
+                            :class="activeTab === 'member-management' ? 'bg-[#1D2A68] text-white shadow' : 'bg-white text-[#1D2A68] border border-[#1876C3] hover:bg-[#1876C3]/10'"
+                        >
+                            Member Management
+                        </button>
+                        <button
+                            @click="activeTab = 'financials'"
+                            class="px-4 py-3 rounded-lg text-sm font-bold transition"
+                            :class="activeTab === 'financials' ? 'bg-[#1D2A68] text-white shadow' : 'bg-white text-[#1D2A68] border border-[#1876C3] hover:bg-[#1876C3]/10'"
+                        >
+                            Financials
+                        </button>
+                        <button
+                            @click="activeTab = 'settings'"
+                            class="px-4 py-3 rounded-lg text-sm font-bold transition"
+                            :class="activeTab === 'settings' ? 'bg-[#1D2A68] text-white shadow' : 'bg-white text-[#1D2A68] border border-[#1876C3] hover:bg-[#1876C3]/10'"
+                        >
+                            News & Events
+                        </button>
                     </div>
                 </div>
 
-                <div class="bg-white shadow sm:rounded-lg overflow-hidden">
-                    <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
-                        <h3 class="text-lg font-bold text-[#1D2A68]">Published Events</h3>
+                <template v-if="activeTab === 'member-management'">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="bg-white shadow sm:rounded-lg p-6 border-l-4 border-[#1876C3]">
+                            <div class="text-xs font-bold text-gray-400 uppercase">Total Applications</div>
+                            <div class="mt-1 text-3xl font-bold text-[#1D2A68]">{{ profiles.length }}</div>
+                        </div>
+                        <div class="bg-white shadow sm:rounded-lg p-6 border-l-4 border-green-500">
+                            <div class="text-xs font-bold text-gray-400 uppercase">Active Members</div>
+                            <div class="mt-1 text-3xl font-bold text-green-600">{{ profiles.filter(p => p.status === 'approved').length }}</div>
+                        </div>
+                        <div class="bg-white shadow sm:rounded-lg p-6 border-l-4 border-yellow-500">
+                            <div class="text-xs font-bold text-gray-400 uppercase">Pending Review</div>
+                            <div class="mt-1 text-3xl font-bold text-yellow-600">{{ profiles.filter(p => p.status === 'pending').length }}</div>
+                        </div>
                     </div>
-                    <div v-if="events && events.length > 0" class="divide-y divide-gray-200">
-                        <div v-for="event in events" :key="event.id" class="p-6 hover:bg-gray-50 transition">
-                            <div class="flex items-start justify-between mb-3">
-                                <div class="flex-1">
-                                    <h4 class="text-lg font-bold text-[#1D2A68]">{{ event.title }}</h4>
-                                    <p class="text-sm text-gray-600 mt-1">{{ event.description }}</p>
-                                    <div v-if="event.external_link" class="mt-2">
-                                        <a :href="event.external_link" target="_blank" rel="noopener noreferrer" class="text-[#1876C3] hover:underline text-sm font-medium inline-flex items-center gap-1">
-                                            External Link →
-                                        </a>
+
+                    <div class="bg-white shadow sm:rounded-lg overflow-hidden">
+                        <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
+                            <h3 class="text-lg font-bold text-[#1D2A68]">Manage Member Directory</h3>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Company</th>
+                                        <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Type/Category</th>
+                                        <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Contact</th>
+                                        <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">TPIN/PACRA</th>
+                                        <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Status</th>
+                                        <th class="px-6 py-3 text-right text-xs font-bold text-gray-500 uppercase">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-100">
+                                    <tr v-for="profile in profiles" :key="profile.id" class="hover:bg-gray-50">
+                                        <td class="px-6 py-4">
+                                            <div class="text-sm font-bold text-gray-900">{{ profile.company_name }}</div>
+                                            <div class="text-xs text-gray-500 max-w-xs truncate">{{ profile.short_description }}</div>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <div class="text-sm text-gray-900">
+                                                <span class="font-medium">{{ profile.member_type }}</span>
+                                            </div>
+                                            <div class="text-xs text-gray-500">{{ profile.member_category }}</div>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <div class="text-sm text-gray-900">{{ profile.contact_email }}</div>
+                                            <div class="text-xs text-gray-500">{{ profile.phone }}</div>
+                                            <div v-if="profile.address" class="text-xs text-gray-500 max-w-xs truncate">{{ profile.address }}</div>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <div class="text-sm text-gray-900">{{ profile.tpin }}</div>
+                                            <div v-if="profile.pacra_reg_no" class="text-xs text-gray-500">{{ profile.pacra_reg_no }}</div>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <span class="px-2 py-1 text-[10px] font-bold rounded-full uppercase"
+                                                  :class="profile.status === 'approved' ? 'bg-green-100 text-green-700' : profile.status === 'pending' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'">
+                                                {{ profile.status }}
+                                            </span>
+                                        </td>
+                                        <td class="px-6 py-4 text-right space-x-2">
+                                            <a
+                                                v-if="profile.status === 'approved'"
+                                                :href="route('admin.members.certificate', profile.id)"
+                                                class="text-[#1876C3] font-bold text-sm hover:underline"
+                                            >
+                                                Download Certificate
+                                            </a>
+                                            <button @click="updateStatus(profile.id, 'approved')" class="text-green-600 font-bold text-sm hover:underline">Approve</button>
+                                            <button @click="updateStatus(profile.id, 'suspended')" class="text-orange-600 font-bold text-sm hover:underline">Suspend</button>
+                                            <button @click="updateStatus(profile.id, 'deactivated')" class="text-red-500 font-bold text-sm hover:underline">Deactivate</button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </template>
+
+                <template v-if="activeTab === 'financials'">
+                    <div class="bg-white shadow sm:rounded-lg overflow-hidden">
+                        <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
+                            <h3 class="text-lg font-bold text-[#1D2A68]">Invoices</h3>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Invoice #</th>
+                                        <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Company</th>
+                                        <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Membership</th>
+                                        <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Amount</th>
+                                        <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Due Date</th>
+                                        <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Status</th>
+                                        <th class="px-6 py-3 text-right text-xs font-bold text-gray-500 uppercase">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-100">
+                                    <tr v-for="invoice in invoices" :key="invoice.id" class="hover:bg-gray-50">
+                                        <td class="px-6 py-4 text-sm font-semibold text-gray-900">{{ invoice.invoice_number }}</td>
+                                        <td class="px-6 py-4 text-sm text-gray-900">{{ invoice.profile?.company_name || 'N/A' }}</td>
+                                        <td class="px-6 py-4 text-sm text-gray-600">{{ invoice.profile?.membership_type || 'N/A' }}</td>
+                                        <td class="px-6 py-4 text-sm font-medium text-[#1D2A68]">ZMW {{ Number(invoice.amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</td>
+                                        <td class="px-6 py-4 text-sm text-gray-600">{{ new Date(invoice.due_date).toLocaleDateString() }}</td>
+                                        <td class="px-6 py-4">
+                                            <span class="px-2 py-1 text-[10px] font-bold rounded-full uppercase" :class="invoice.status === 'Paid' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'">
+                                                {{ invoice.status }}
+                                            </span>
+                                        </td>
+                                        <td class="px-6 py-4 text-right">
+                                            <button
+                                                v-if="invoice.status === 'Unpaid'"
+                                                @click="confirmPayment(invoice.id)"
+                                                :disabled="paymentForm.processing"
+                                                class="bg-[#1876C3] text-white text-xs px-3 py-1.5 rounded hover:bg-[#1460A0] transition font-bold disabled:opacity-50 disabled:cursor-not-allowed"
+                                            >
+                                                Confirm Payment
+                                            </button>
+                                            <span v-else class="text-xs font-semibold text-green-600">Completed</span>
+                                        </td>
+                                    </tr>
+                                    <tr v-if="!invoices || invoices.length === 0">
+                                        <td colspan="7" class="px-6 py-8 text-center text-sm text-gray-500">No invoices found.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </template>
+
+                <template v-if="activeTab === 'settings'">
+                    <div class="bg-white shadow sm:rounded-lg overflow-hidden">
+                        <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
+                            <h3 class="text-lg font-bold text-[#1D2A68]">Published Events</h3>
+                        </div>
+                        <div v-if="events && events.length > 0" class="divide-y divide-gray-200">
+                            <div v-for="event in events" :key="event.id" class="p-6 hover:bg-gray-50 transition">
+                                <div class="flex items-start justify-between mb-3">
+                                    <div class="flex-1">
+                                        <h4 class="text-lg font-bold text-[#1D2A68]">{{ event.title }}</h4>
+                                        <p class="text-sm text-gray-600 mt-1">{{ event.description }}</p>
+                                        <div v-if="event.external_link" class="mt-2">
+                                            <a :href="event.external_link" target="_blank" rel="noopener noreferrer" class="text-[#1876C3] hover:underline text-sm font-medium inline-flex items-center gap-1">
+                                                External Link →
+                                            </a>
+                                        </div>
                                     </div>
+                                    <span class="px-3 py-1 rounded-full text-xs font-bold ml-4"
+                                          :class="event.type === 'Meeting' ? 'bg-blue-100 text-blue-700' : event.type === 'Workshop' ? 'bg-purple-100 text-purple-700' : event.type === 'Expo' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'">
+                                        {{ event.type }}
+                                    </span>
                                 </div>
-                                <span class="px-3 py-1 rounded-full text-xs font-bold ml-4"
-                                      :class="event.type === 'Meeting' ? 'bg-blue-100 text-blue-700' : 
-                                               event.type === 'Workshop' ? 'bg-purple-100 text-purple-700' :
-                                               event.type === 'Expo' ? 'bg-green-100 text-green-700' :
-                                               'bg-orange-100 text-orange-700'">
-                                    {{ event.type }}
-                                </span>
-                            </div>
-                            <div class="flex items-center justify-between mt-3 pt-3 border-t border-gray-200">
-                                <div class="text-sm text-gray-500">
-                                    <span v-if="event.event_date">📅 {{ new Date(event.event_date).toLocaleDateString() }}</span>
-                                    <span v-else>No date set</span>
-                                </div>
-                                <div class="flex gap-2">
-                                    <button @click="editEvent(event)" class="bg-[#1876C3] text-white text-xs px-3 py-1.5 rounded hover:bg-[#1460A0] transition font-medium">
-                                        Edit
-                                    </button>
-                                    <button @click="deleteEvent(event.id)" class="bg-red-500 text-white text-xs px-3 py-1.5 rounded hover:bg-red-600 transition font-medium">
-                                        Delete
-                                    </button>
+                                <div class="flex items-center justify-between mt-3 pt-3 border-t border-gray-200">
+                                    <div class="text-sm text-gray-500">
+                                        <span v-if="event.event_date">📅 {{ new Date(event.event_date).toLocaleDateString() }}</span>
+                                        <span v-else>No date set</span>
+                                    </div>
+                                    <div class="flex gap-2">
+                                        <button @click="editEvent(event)" class="bg-[#1876C3] text-white text-xs px-3 py-1.5 rounded hover:bg-[#1460A0] transition font-medium">
+                                            Edit
+                                        </button>
+                                        <button @click="deleteEvent(event.id)" class="bg-red-500 text-white text-xs px-3 py-1.5 rounded hover:bg-red-600 transition font-medium">
+                                            Delete
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
+                        <div v-else class="p-6 text-center text-gray-500">
+                            No events published yet.
+                        </div>
                     </div>
-                    <div v-else class="p-6 text-center text-gray-500">
-                        No events published yet.
-                    </div>
-                </div>
-
-                <div class="bg-white shadow sm:rounded-lg overflow-hidden">
-                    <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
-                        <h3 class="text-lg font-bold text-[#1D2A68]">Manage Member Directory</h3>
-                    </div>
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50">
-                                <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Company</th>
-                                    <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Type/Category</th>
-                                    <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Contact</th>
-                                    <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">TPIN/PACRA</th>
-                                    <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Status</th>
-                                    <th class="px-6 py-3 text-right text-xs font-bold text-gray-500 uppercase">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white divide-y divide-gray-100">
-                                <tr v-for="profile in profiles" :key="profile.id" class="hover:bg-gray-50">
-                                    <td class="px-6 py-4">
-                                        <div class="text-sm font-bold text-gray-900">{{ profile.company_name }}</div>
-                                        <div class="text-xs text-gray-500 max-w-xs truncate">{{ profile.short_description }}</div>
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        <div class="text-sm text-gray-900">
-                                            <span class="font-medium">{{ profile.member_type }}</span>
-                                        </div>
-                                        <div class="text-xs text-gray-500">{{ profile.member_category }}</div>
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        <div class="text-sm text-gray-900">{{ profile.contact_email }}</div>
-                                        <div class="text-xs text-gray-500">{{ profile.phone }}</div>
-                                        <div v-if="profile.address" class="text-xs text-gray-500 max-w-xs truncate">{{ profile.address }}</div>
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        <div class="text-sm text-gray-900">{{ profile.tpin }}</div>
-                                        <div v-if="profile.pacra_reg_no" class="text-xs text-gray-500">{{ profile.pacra_reg_no }}</div>
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        <span class="px-2 py-1 text-[10px] font-bold rounded-full uppercase"
-                                              :class="profile.status === 'approved' ? 'bg-green-100 text-green-700' : 
-                                                       profile.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
-                                                       'bg-red-100 text-red-700'">
-                                            {{ profile.status }}
-                                        </span>
-                                    </td>
-                                    <td class="px-6 py-4 text-right space-x-2">
-                                        <button @click="updateStatus(profile.id, 'approved')" class="text-green-600 font-bold text-sm hover:underline">Approve</button>
-                                        <button @click="updateStatus(profile.id, 'suspended')" class="text-orange-600 font-bold text-sm hover:underline">Suspend</button>
-                                        <button @click="updateStatus(profile.id, 'deactivated')" class="text-red-500 font-bold text-sm hover:underline">Deactivate</button>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
+                </template>
             </div>
         </div>
 

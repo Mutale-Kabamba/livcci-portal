@@ -32,6 +32,7 @@ Route::middleware([IsAdminMiddleware::class])->group(function () {
     // Member Management
     Route::patch('/admin/members/{profile}/status', [AdminController::class, 'updateMemberStatus'])->name('admin.members.status');
     Route::delete('/admin/members/{profile}', [AdminController::class, 'deleteMember'])->name('admin.members.delete');
+    Route::get('/admin/members/{profile}/certificate', [AdminController::class, 'downloadCertificate'])->name('admin.members.certificate');
 
     // Invoices Management
     Route::post('/admin/invoices/{profile}/generate', [AdminController::class, 'generateInvoice'])->name('admin.invoices.generate');

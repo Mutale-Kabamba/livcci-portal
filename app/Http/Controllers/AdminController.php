@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
@@ -73,11 +74,13 @@ class AdminController extends Controller
     {
         $profiles = BusinessProfile::with('user')->latest()->get();
         $events = ChamberEvent::latest()->get();
+        $invoices = Invoice::with('profile:id,company_name,membership_id,membership_type')->latest()->get();
         $siteContents = SiteContent::orderBy('page')->orderBy('section')->get();
 
         return Inertia::render('Admin/Dashboard', [
             'profiles' => $profiles,
             'events' => $events,
+            'invoices' => $invoices,
             'siteContents' => $siteContents,
             'flash' => [
                 'message' => session('message')
@@ -168,6 +171,23 @@ class AdminController extends Controller
             \Log::error('Error deleting member profile: ' . $e->getMessage());
             return back()->with('error', 'Failed to delete member profile. Please try again.');
         }
+    }
+
+    public function downloadCertificate(BusinessProfile $profile)
+    {
+        if ($profile->status !== 'approved') {
+            return back()->with('error', 'Certificates can only be downloaded for approved members.');
+        }
+
+        $validUntil = $profile->subscription_expiry ?? now()->addYear();
+
+        $pdf = Pdf::loadView('emails.certificate', [
+            'profile' => $profile,
+            'validUntil' => $validUntil,
+            'issueDate' => now(),
+        ])->setPaper('a4', 'portrait');
+
+        return $pdf->download('membership-certificate-' . $profile->id . '.pdf');
     }
 
     public function generateInvoice(BusinessProfile $profile)
