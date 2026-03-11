@@ -1,6 +1,6 @@
 <script setup>
 import { Head, Link } from '@inertiajs/vue3';
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 
 defineProps({
     canLogin: {
@@ -12,6 +12,11 @@ defineProps({
     events: Array,
     approvedMembers: Array,
 });
+
+// Scroll animation state
+const scrollY = ref(0);
+const visibleElements = ref(new Set());
+const dropdownOpen = ref(false);
 
 // Hero Carousel
 const currentHeroIndex = ref(0);
@@ -27,6 +32,44 @@ const heroImages = [
 setInterval(() => {
     currentHeroIndex.value = (currentHeroIndex.value + 1) % heroImages.length;
 }, 5000);
+
+// Handle scroll events
+const handleScroll = () => {
+    scrollY.value = window.scrollY;
+};
+
+// Intersection Observer for fade-in animations
+onMounted(() => {
+    window.addEventListener('scroll', handleScroll);
+    
+    const observerOptions = {
+        threshold: 0.1,
+        rootMargin: '0px 0px -50px 0px'
+    };
+    
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('animate-in');
+                visibleElements.value.add(entry.target);
+            }
+        });
+    }, observerOptions);
+    
+    // Observe all elements with data-scroll attribute
+    document.querySelectorAll('[data-scroll]').forEach(el => {
+        observer.observe(el);
+    });
+    
+    return () => {
+        window.removeEventListener('scroll', handleScroll);
+        observer.disconnect();
+    };
+});
+
+onUnmounted(() => {
+    window.removeEventListener('scroll', handleScroll);
+});
 
 // Members Carousel
 const membersScrollPosition = ref(0);
@@ -69,7 +112,8 @@ const formatDate = (date) => {
 
     <div class="min-h-screen bg-gray-50 font-sans text-gray-900">
         
-        <nav class="bg-white border-b border-gray-100 shadow-sm sticky top-0 z-50">
+        <!-- Navigation with scroll effect -->
+        <nav :class="['bg-white border-b border-gray-100 sticky top-0 z-50 transition-all duration-300', scrollY > 10 ? 'shadow-lg' : 'shadow-sm']">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex justify-between h-20 items-center">
                     <div class="flex-shrink-0 flex items-center gap-3">
@@ -81,6 +125,21 @@ const formatDate = (date) => {
                         <Link :href="route('sectors')" class="text-sm font-semibold text-[#1D2A68] hover:text-[#1876C3] transition-colors">Sectors</Link>
                         <Link :href="route('news')" class="text-sm font-semibold text-[#1D2A68] hover:text-[#1876C3] transition-colors">News & Events</Link>
                         <Link :href="route('directory.index')" class="text-sm font-semibold text-[#1D2A68] hover:text-[#1876C3] transition-colors">Member Directory</Link>
+                        
+                        <!-- More Dropdown -->
+                        <div class="relative group">
+                            <button class="text-sm font-semibold text-[#1D2A68] hover:text-[#1876C3] transition-colors flex items-center gap-1">
+                                More
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"/>
+                                </svg>
+                            </button>
+                            <div class="absolute left-0 mt-0 w-48 bg-white shadow-lg rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 border border-gray-100">
+                                <Link :href="route('leadership')" class="block px-4 py-3 text-sm text-gray-700 hover:bg-blue-50 hover:text-[#1876C3] transition-colors">Leadership</Link>
+                                <Link :href="route('membership')" class="block px-4 py-3 text-sm text-gray-700 hover:bg-blue-50 hover:text-[#1876C3] transition-colors border-t border-gray-100">Membership</Link>
+                                <Link :href="route('strategic-goals')" class="block px-4 py-3 text-sm text-gray-700 hover:bg-blue-50 hover:text-[#1876C3] transition-colors border-t border-gray-100">Strategic Goals</Link>
+                            </div>
+                        </div>
                     </div>
 
                     <div v-if="canLogin" class="flex items-center space-x-4">
@@ -99,7 +158,7 @@ const formatDate = (date) => {
         </nav>
 
         <!-- HERO SECTION WITH CAROUSEL -->
-        <div class="relative bg-[#1D2A68] overflow-hidden h-screen">
+        <div class="relative bg-[#1D2A68] overflow-hidden h-screen" data-scroll>
             <!-- Carousel Background -->
             <div class="absolute inset-0 transition-opacity duration-1000">
                 <img 
@@ -111,7 +170,7 @@ const formatDate = (date) => {
             </div>
             
             <!-- Hero Content -->
-            <div class="relative max-w-7xl mx-auto py-24 px-4 sm:py-32 sm:px-6 lg:px-8 flex flex-col items-start justify-center h-full">
+            <div class="relative max-w-7xl mx-auto py-24 px-4 sm:py-32 sm:px-6 lg:px-8 flex flex-col items-start justify-center h-full opacity-0 translate-y-10 transition-all duration-700 animate-in">
                 <span class="px-3 py-1 rounded-full bg-[#1876C3]/40 text-[#F6EED8] text-sm font-semibold tracking-wide border border-[#1876C3] mb-5">
                     Together we make a difference for better business
                 </span>
@@ -143,14 +202,14 @@ const formatDate = (date) => {
         </div>
 
         <!-- CHAIRPERSON MESSAGE -->
-        <div class="py-16 bg-white">
+        <div class="py-16 bg-white" data-scroll>
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
-                    <div>
-                        <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&q=60" alt="Chairperson" class="w-full rounded-lg shadow-lg">
+                    <div class="opacity-0 -translate-x-10 transition-all duration-700 animate-in">
+                        <img src="images/leader/man2.png" alt="Chairperson" >
                     </div>
-                    <div>
-                        <h2 class="text-3xl font-extrabold text-[#1D2A68] mb-4">Welcome from the Chairperson</h2>
+                    <div class="opacity-0 translate-x-10 transition-all duration-700 animate-in">
+                        <h2 class="text-3xl font-extrabold text-[#1D2A68] mb-4">Welcome! from the Chairperson</h2>
                         <p class="text-lg text-gray-700 mb-4">
                             Dear Members and Partners,
                         </p>
@@ -169,31 +228,53 @@ const formatDate = (date) => {
         </div>
 
         <!-- FEATURED NEWS & EVENTS -->
-        <div class="py-16 bg-gray-50">
+        <div class="py-16 bg-gray-50" data-scroll>
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex justify-between items-end mb-12">
-                    <div>
+                    <div class="opacity-0 translate-y-10 transition-all duration-700 animate-in">
                         <h2 class="text-3xl font-extrabold text-[#1D2A68]">Latest News & Upcoming Events</h2>
                         <p class="mt-2 text-gray-600">Stay informed about what's happening in the chamber</p>
                     </div>
                     <Link :href="route('news')" class="text-[#1876C3] font-semibold hover:underline">View All →</Link>
                 </div>
 
-                <div v-if="events && events.length > 0" class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div v-for="event in events" :key="event.id" class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow border-l-4 border-[#1876C3]">
+                <div v-if="events && events.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <div v-for="(event, index) in events" :key="event.id" class="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300 group opacity-0 translate-y-10 animate-in" :style="{ transitionDelay: `${index * 100}ms` }">
+                        <!-- Image Container -->
+                        <div class="relative h-64 bg-gray-200 overflow-hidden">
+                            <img 
+                                v-if="event.image_url"
+                                :src="`/storage/${event.image_url}`"
+                                :alt="event.title"
+                                class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                            >
+                            <div v-else class="w-full h-full bg-gradient-to-br from-[#1876C3] to-[#1460A0] flex items-center justify-center">
+                                <svg class="w-20 h-20 text-white opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                            </div>
+                            <!-- Date Bar Overlay -->
+                            <div class="absolute bottom-0 left-0 right-0 bg-[#F4B223] text-[#1D2A68] py-2 px-4 text-center font-bold text-sm">
+                                {{ formatDate(event.event_date) }}
+                            </div>
+                        </div>
+
+                        <!-- Content -->
                         <div class="p-6">
-                            <div class="flex justify-between items-start gap-4 mb-3">
-                                <h3 class="text-xl font-bold text-[#1D2A68] flex-1">{{ event.title }}</h3>
-                                <span :class="['px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap', getTypeColor(event.type)]">
+                            <h3 class="text-lg font-bold text-[#1D2A68] mb-2 line-clamp-2 group-hover:text-[#1876C3] transition-colors">{{ event.title }}</h3>
+                            <p class="text-gray-600 text-sm mb-4 line-clamp-2">{{ event.description }}</p>
+                            <div class="flex items-center justify-between">
+                                <span :class="['px-3 py-1 rounded text-xs font-bold', getTypeColor(event.type)]">
                                     {{ event.type }}
                                 </span>
-                            </div>
-                            <p class="text-gray-600 mb-4">{{ event.description.substring(0, 120) }}...</p>
-                            <div class="flex items-center justify-between">
-                                <p class="text-sm text-gray-500">
-                                    <span v-if="event.event_date">📅 {{ formatDate(event.event_date) }}</span>
-                                </p>
-                                <Link :href="route('news')" class="text-[#1876C3] hover:text-[#1460A0] font-semibold text-sm">Read More →</Link>
+                                <a 
+                                    v-if="event.external_link"
+                                    :href="event.external_link"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    class="text-[#1876C3] font-semibold text-sm hover:underline cursor-pointer"
+                                >
+                                    Read More →
+                                </a>
+                                <span v-else class="text-gray-400 font-semibold text-sm">Read More →</span>
                             </div>
                         </div>
                     </div>
@@ -205,46 +286,34 @@ const formatDate = (date) => {
         </div>
 
         <!-- CORE VALUES -->
-        <div class="py-16 bg-white">
+        <div class="py-16 bg-white" data-scroll>
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="text-center mb-16">
+                <div class="text-center mb-16 opacity-0 translate-y-10 transition-all duration-700 animate-in">
                     <h2 class="text-3xl font-extrabold text-[#1D2A68]">Our Core Values</h2>
                     <p class="mt-4 text-lg text-gray-500">The principles that guide everything we do</p>
                 </div>
                 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-10">
-                    <div class="p-8 border border-gray-100 rounded-xl shadow-sm hover:shadow-md hover:border-[#F4B223] transition-all bg-gray-50 group">
+                    <div v-for="(value, index) in 3" :key="index" class="p-8 border border-gray-100 rounded-xl shadow-sm hover:shadow-md hover:border-[#F4B223] transition-all bg-gray-50 group opacity-0 scale-95 transition-all duration-700 animate-in" :style="{ transitionDelay: `${index * 150}ms` }">
                         <div class="w-12 h-12 bg-[#E8F1F8] text-[#1876C3] rounded-lg flex items-center justify-center mb-6 group-hover:bg-[#1876C3] group-hover:text-white transition-colors">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"></path></svg>
                         </div>
-                        <h3 class="text-xl font-bold text-[#1D2A68] mb-3">Policy Advocacy</h3>
-                        <p class="text-gray-600">We monitor the regulatory environment and lobby stakeholders to ensure a favorable climate for Livingstone businesses.</p>
-                    </div>
-
-                    <div class="p-8 border border-gray-100 rounded-xl shadow-sm hover:shadow-md hover:border-[#F4B223] transition-all bg-gray-50 group">
-                        <div class="w-12 h-12 bg-[#E8F1F8] text-[#1876C3] rounded-lg flex items-center justify-center mb-6 group-hover:bg-[#1876C3] group-hover:text-white transition-colors">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
-                        </div>
-                        <h3 class="text-xl font-bold text-[#1D2A68] mb-3">B2B Networking</h3>
-                        <p class="text-gray-600">Gain access to exclusive business breakfasts, annual awards, and high-level trade missions across the region.</p>
-                    </div>
-
-                    <div class="p-8 border border-gray-100 rounded-xl shadow-sm hover:shadow-md hover:border-[#F4B223] transition-all bg-gray-50 group">
-                        <div class="w-12 h-12 bg-[#E8F1F8] text-[#1876C3] rounded-lg flex items-center justify-center mb-6 group-hover:bg-[#1876C3] group-hover:text-white transition-colors">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
-                        </div>
-                        <h3 class="text-xl font-bold text-[#1D2A68] mb-3">Capacity Building</h3>
-                        <p class="text-gray-600">We partner with local and international experts to deliver mentorship and digital skills training for growing MSMEs.</p>
+                        <h3 class="text-xl font-bold text-[#1D2A68] mb-3" v-if="index === 0">Policy Advocacy</h3>
+                        <h3 class="text-xl font-bold text-[#1D2A68] mb-3" v-else-if="index === 1">B2B Networking</h3>
+                        <h3 class="text-xl font-bold text-[#1D2A68] mb-3" v-else>Capacity Building</h3>
+                        <p class="text-gray-600" v-if="index === 0">We monitor the regulatory environment and lobby stakeholders to ensure a favorable climate for Livingstone businesses.</p>
+                        <p class="text-gray-600" v-else-if="index === 1">Gain access to exclusive business breakfasts, annual awards, and high-level trade missions across the region.</p>
+                        <p class="text-gray-600" v-else>We partner with local and international experts to deliver mentorship and digital skills training for growing MSMEs.</p>
                     </div>
                 </div>
             </div>
         </div>
 
         <!-- KEY SECTORS -->
-        <div class="py-16 bg-gray-50 border-t border-gray-200">
+        <div class="py-16 bg-gray-50 border-t border-gray-200" data-scroll>
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex justify-between items-end mb-10">
-                    <div>
+                    <div class="opacity-0 translate-y-10 transition-all duration-700 animate-in">
                         <h2 class="text-3xl font-extrabold text-[#1D2A68]">Key Economic Sectors</h2>
                         <p class="mt-2 text-gray-600">Connecting industries for sustainable regional development</p>
                     </div>
@@ -252,27 +321,21 @@ const formatDate = (date) => {
                 </div>
 
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <Link :href="route('sectors')" class="bg-white p-6 rounded-lg shadow-sm border border-gray-100 text-center hover:border-[#F4B223] transition-colors cursor-pointer group">
-                        <h4 class="font-bold text-[#1D2A68] group-hover:text-[#1876C3] transition-colors">Tourism & Hospitality</h4>
-                    </Link>
-                    <Link :href="route('sectors')" class="bg-white p-6 rounded-lg shadow-sm border border-gray-100 text-center hover:border-[#F4B223] transition-colors cursor-pointer group">
-                        <h4 class="font-bold text-[#1D2A68] group-hover:text-[#1876C3] transition-colors">Transport & Logistics</h4>
-                    </Link>
-                    <Link :href="route('sectors')" class="bg-white p-6 rounded-lg shadow-sm border border-gray-100 text-center hover:border-[#F4B223] transition-colors cursor-pointer group">
-                        <h4 class="font-bold text-[#1D2A68] group-hover:text-[#1876C3] transition-colors">Agriculture & Export</h4>
-                    </Link>
-                    <Link :href="route('sectors')" class="bg-white p-6 rounded-lg shadow-sm border border-gray-100 text-center hover:border-[#F4B223] transition-colors cursor-pointer group">
-                        <h4 class="font-bold text-[#1D2A68] group-hover:text-[#1876C3] transition-colors">Tech & Digital Media</h4>
+                    <Link v-for="(sector, index) in 4" :key="index" :href="route('sectors')" class="bg-white p-6 rounded-lg shadow-sm border border-gray-100 text-center hover:border-[#F4B223] transition-all opacity-0 translate-y-10 animate-in" :style="{ transitionDelay: `${index * 100}ms` }">
+                        <h4 class="font-bold text-[#1D2A68] hover:text-[#1876C3] transition-colors" v-if="index === 0">Tourism & Hospitality</h4>
+                        <h4 class="font-bold text-[#1D2A68] hover:text-[#1876C3] transition-colors" v-else-if="index === 1">Transport & Logistics</h4>
+                        <h4 class="font-bold text-[#1D2A68] hover:text-[#1876C3] transition-colors" v-else-if="index === 2">Agriculture & Export</h4>
+                        <h4 class="font-bold text-[#1D2A68] hover:text-[#1876C3] transition-colors" v-else>Tech & Digital Media</h4>
                     </Link>
                 </div>
             </div>
         </div>
 
         <!-- OUR MEMBERS CAROUSEL -->
-        <div class="py-16 bg-white">
+        <div class="py-16 bg-white" data-scroll>
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex justify-between items-end mb-10">
-                    <div>
+                    <div class="opacity-0 translate-y-10 transition-all duration-700 animate-in">
                         <h2 class="text-3xl font-extrabold text-[#1D2A68]">Our Members</h2>
                         <p class="mt-2 text-gray-600">Proud to represent Livingstone's leading businesses</p>
                     </div>
@@ -282,24 +345,24 @@ const formatDate = (date) => {
                 <div v-if="approvedMembers && approvedMembers.length > 0" class="relative">
                     <!-- Carousel Container -->
                     <div id="members-carousel" class="flex overflow-x-auto scroll-smooth gap-6 pb-4">
-                        <div v-for="member in approvedMembers" :key="member.id" class="flex-shrink-0 w-48 h-40 bg-gray-100 rounded-lg shadow-md border-2 border-gray-200 hover:border-[#1876C3] transition-colors flex items-center justify-center overflow-hidden">
-                            <img 
-                                v-if="member.logo_url" 
-                                :src="member.logo_url" 
+                        <div
+                            v-for="member in approvedMembers"
+                            :key="member.id"
+                            class="flex-shrink-0 w-48 h-40 bg-white rounded-lg transition-all hover:scale-105 flex items-center justify-center overflow-hidden"
+                        >
+                            <img
+                                :src="member.logo_url || '/images/member.png'"
                                 :alt="member.company_name"
-                                class="w-full h-full object-contain p-4"
+                                class="w-full h-full object-contain p-4 transition-transform duration-300"
                             >
-                            <div v-else class="text-center p-4">
-                                <p class="font-bold text-[#1D2A68] text-sm">{{ member.company_name }}</p>
-                            </div>
                         </div>
                     </div>
 
                     <!-- Carousel Controls -->
-                    <button @click="scrollMembersLeft" class="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 bg-[#1876C3] text-white p-2 rounded-full hover:bg-[#1460A0] shadow-lg">
+                    <button @click="scrollMembersLeft" class="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 bg-[#1876C3] text-white p-2 rounded-full hover:bg-[#1460A0] shadow-lg transition-all hover:scale-110">
                         ← 
                     </button>
-                    <button @click="scrollMembersRight" class="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 bg-[#1876C3] text-white p-2 rounded-full hover:bg-[#1460A0] shadow-lg">
+                    <button @click="scrollMembersRight" class="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 bg-[#1876C3] text-white p-2 rounded-full hover:bg-[#1460A0] shadow-lg transition-all hover:scale-110">
                         →
                     </button>
                 </div>
@@ -310,32 +373,16 @@ const formatDate = (date) => {
         </div>
 
         <!-- LEADERSHIP SECTION -->
-        <div class="py-16 bg-gray-50">
+        <div class="py-16 bg-gray-50" data-scroll>
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <h2 class="text-3xl font-extrabold text-[#1D2A68] mb-12 text-center">Our Leadership</h2>
+                <h2 class="text-3xl font-extrabold text-[#1D2A68] mb-12 text-center opacity-0 translate-y-10 transition-all duration-700 animate-in">Our Leadership</h2>
                 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-                    <div class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
-                        <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&q=60" alt="Chairperson" class="w-full h-64 object-cover">
+                    <div v-for="(leader, index) in 3" :key="index" class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-all opacity-0 -translate-y-10 animate-in" :style="{ transitionDelay: `${index * 150}ms` }">
+                        <img :src="['https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&q=60', 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&q=60', 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&q=60'][index]" :alt="['Chairperson', 'Vice Chairperson', 'Executive Director'][index]" class="w-full h-64 object-cover">
                         <div class="p-6 text-center">
-                            <h3 class="text-xl font-bold text-[#1D2A68]">Chairperson</h3>
-                            <p class="text-gray-600 text-sm mt-2">Leading our organization with vision and integrity</p>
-                        </div>
-                    </div>
-                    
-                    <div class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
-                        <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&q=60" alt="Vice Chairperson" class="w-full h-64 object-cover">
-                        <div class="p-6 text-center">
-                            <h3 class="text-xl font-bold text-[#1D2A68]">Vice Chairperson</h3>
-                            <p class="text-gray-600 text-sm mt-2">Supporting strategic initiatives and member advocacy</p>
-                        </div>
-                    </div>
-                    
-                    <div class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
-                        <img src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&q=60" alt="Executive Director" class="w-full h-64 object-cover">
-                        <div class="p-6 text-center">
-                            <h3 class="text-xl font-bold text-[#1D2A68]">Executive Director</h3>
-                            <p class="text-gray-600 text-sm mt-2">Managing operations and member services</p>
+                            <h3 class="text-xl font-bold text-[#1D2A68]">{{ ['Chairperson', 'Vice Chairperson', 'Executive Director'][index] }}</h3>
+                            <p class="text-gray-600 text-sm mt-2">{{ ['Leading our organization with vision and integrity', 'Supporting strategic initiatives and member advocacy', 'Managing operations and member services'][index] }}</p>
                         </div>
                     </div>
                 </div>
@@ -343,34 +390,34 @@ const formatDate = (date) => {
         </div>
 
         <!-- CTA & CONTACT SECTION -->
-        <div class="py-16 bg-[#1D2A68] text-white">
+        <div class="py-16 bg-[#1D2A68] text-white" data-scroll>
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-12">
                     <!-- CTA -->
-                    <div>
+                    <div class="opacity-0 -translate-x-10 transition-all duration-700 animate-in">
                         <h2 class="text-3xl font-extrabold mb-6">Ready to Join?</h2>
                         <p class="text-blue-200 mb-8 text-lg">
                             Become part of Livingstone's most dynamic business community. Access exclusive resources, networking opportunities, and business growth support.
                         </p>
-                        <Link :href="route('register')" class="inline-block bg-[#F4B223] hover:bg-[#E0A11B] text-[#1D2A68] font-bold py-3 px-8 rounded-md shadow-lg transition-colors">
+                        <Link :href="route('register')" class="inline-block bg-[#F4B223] hover:bg-[#E0A11B] text-[#1D2A68] font-bold py-3 px-8 rounded-md shadow-lg transition-all hover:scale-105">
                             Start Your Membership
                         </Link>
                     </div>
 
                     <!-- Contact Form -->
-                    <div class="bg-white/10 backdrop-blur-sm rounded-xl p-8">
+                    <div class="bg-white/10 backdrop-blur-sm rounded-xl p-8 opacity-0 translate-x-10 transition-all duration-700 animate-in">
                         <h3 class="text-2xl font-bold mb-6">Get in Touch</h3>
                         <form class="space-y-4">
                             <div>
-                                <input type="text" placeholder="Your Name" class="w-full px-4 py-2 rounded-lg text-gray-900 focus:ring-2 focus:ring-[#F4B223]">
+                                <input type="text" placeholder="Your Name" class="w-full px-4 py-2 rounded-lg text-gray-900 focus:ring-2 focus:ring-[#F4B223] transition-all">
                             </div>
                             <div>
-                                <input type="email" placeholder="Your Email" class="w-full px-4 py-2 rounded-lg text-gray-900 focus:ring-2 focus:ring-[#F4B223]">
+                                <input type="email" placeholder="Your Email" class="w-full px-4 py-2 rounded-lg text-gray-900 focus:ring-2 focus:ring-[#F4B223] transition-all">
                             </div>
                             <div>
-                                <textarea placeholder="Your Message" rows="3" class="w-full px-4 py-2 rounded-lg text-gray-900 focus:ring-2 focus:ring-[#F4B223]"></textarea>
+                                <textarea placeholder="Your Message" rows="3" class="w-full px-4 py-2 rounded-lg text-gray-900 focus:ring-2 focus:ring-[#F4B223] transition-all"></textarea>
                             </div>
-                            <button type="submit" class="w-full bg-[#F4B223] hover:bg-[#E0A11B] text-[#1D2A68] font-bold py-2 rounded-lg transition-colors">
+                            <button type="submit" class="w-full bg-[#F4B223] hover:bg-[#E0A11B] text-[#1D2A68] font-bold py-2 rounded-lg transition-all hover:shadow-lg">
                                 Send Message
                             </button>
                         </form>
@@ -382,7 +429,7 @@ const formatDate = (date) => {
         <!-- FOOTER -->
         <footer class="bg-[#121A42] pt-16 pb-8">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-12 border-b border-[#1D2A68] pb-12">
+                <div class="grid grid-cols-1 md:grid-cols-5 gap-8 md:gap-12 border-b border-[#1D2A68] pb-12">
                     <div class="col-span-1 md:col-span-2">
                         <div class="flex items-center gap-3 mb-6 text-white">
                             <img src="/images/logo-white.png" alt="LiVCCI Logo" class="h-12 w-auto">
@@ -404,12 +451,37 @@ const formatDate = (date) => {
                     </div>
 
                     <div>
+                        <h4 class="text-[#F4B223] font-bold mb-4">Important Links</h4>
+                        <ul class="space-y-2 text-blue-200 text-sm">
+                            <li><a href="https://www.pacra.org.zm/" target="_blank" rel="noopener noreferrer" class="hover:text-white transition-colors">PACRA</a></li>
+                            <li><a href="https://www.zra.org.zm/" target="_blank" rel="noopener noreferrer" class="hover:text-white transition-colors">ZRA</a></li>
+                            <li><a href="https://www.ceec.org.zm/" target="_blank" rel="noopener noreferrer" class="hover:text-white transition-colors">CEEC</a></li>
+                            <li><a href="https://zambiachamber.org/" target="_blank" rel="noopener noreferrer" class="hover:text-white transition-colors">ZACCI</a></li>
+                            <li><a href="https://www.boz.zm/" target="_blank" rel="noopener noreferrer" class="hover:text-white transition-colors">BOZ</a></li>
+                        </ul>
+                    </div>
+
+                    <div>
                         <h4 class="text-[#F4B223] font-bold mb-4">Contact</h4>
                         <ul class="space-y-2 text-blue-200 text-sm">
-                            <li>Livingstone, Zambia</li>
-                            <li>info@livcci.org</li>
-                            <li>+260 977 885 959</li>
+                            <li>PO Box 4037, Livingstone</li>
+                            <li>livcci@yahoo.com</li>
+                            <li>+260 977 105068</li>
+                            <li>+260 977 885959</li>
                         </ul>
+                        <!-- Social Media Icons -->
+                        <div class="flex gap-4 mt-6">
+                            <a href="https://www.facebook.com/livcci" target="_blank" rel="noopener noreferrer" class="text-blue-200 hover:text-[#F4B223] transition-colors" title="Follow us on Facebook">
+                                <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                                </svg>
+                            </a>
+                            <a href="https://www.linkedin.com/company/livcci" target="_blank" rel="noopener noreferrer" class="text-blue-200 hover:text-[#F4B223] transition-colors" title="Follow us on LinkedIn">
+                                <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.475-2.236-1.986-2.236-1.081 0-1.722.722-2.004 1.418-.103.249-.129.597-.129.946v5.441h-3.554s.047-8.733 0-9.652h3.554v1.366c.43-.664 1.199-1.61 2.920-1.61 2.135 0 3.733 1.39 3.733 4.38v5.516zM5.337 8.855c-1.144 0-1.915-.762-1.915-1.715 0-.953.77-1.715 1.958-1.715 1.188 0 1.915.762 1.915 1.715 0 .953-.726 1.715-1.958 1.715zm1.608 11.597H3.73V9.097h3.215v11.355zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.225 0z"/>
+                                </svg>
+                            </a>
+                        </div>
                     </div>
                 </div>
                 
@@ -422,3 +494,57 @@ const formatDate = (date) => {
 
     </div>
 </template>
+
+<style scoped>
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(40px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideInLeft {
+    from {
+        opacity: 0;
+        transform: translateX(-40px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(40px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes scaleIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.animate-in {
+    animation: slideInUp 0.6s ease-out forwards;
+}
+
+.animate-in {
+    animation: slideInUp 0.6s ease-out forwards;
+}
+</style>

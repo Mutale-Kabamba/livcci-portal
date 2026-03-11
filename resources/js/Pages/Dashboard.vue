@@ -2,9 +2,9 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link } from '@inertiajs/vue3';
 
-// 1. Tell Vue to expect the businessProfile data we passed from the route
+// Expect the businessProfile data we passed from the route
 defineProps({
-    businessProfile: Object
+    businessProfile: Object,
 });
 </script>
 

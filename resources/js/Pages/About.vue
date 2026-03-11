@@ -1,13 +1,51 @@
 <script setup>
 import { Head, Link } from '@inertiajs/vue3';
+import { ref, onMounted, onUnmounted } from 'vue';
+
+const scrollY = ref(0);
+const dropdownOpen = ref(false);
+
+const handleScroll = () => {
+    scrollY.value = window.scrollY;
+};
+
+onMounted(() => {
+    window.addEventListener('scroll', handleScroll);
+    
+    const observerOptions = {
+        threshold: 0.1,
+        rootMargin: '0px 0px -50px 0px'
+    };
+    
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('animate-in');
+            }
+        });
+    }, observerOptions);
+    
+    document.querySelectorAll('[data-scroll]').forEach(el => {
+        observer.observe(el);
+    });
+    
+    return () => {
+        window.removeEventListener('scroll', handleScroll);
+        observer.disconnect();
+    };
+});
+
+onUnmounted(() => {
+    window.removeEventListener('scroll', handleScroll);
+});
 </script>
 
 <template>
     <Head title="About Us - LiVCCI" />
 
-    <div class="min-h-screen bg-gray-50 font-sans text-gray-900 flex flex-col">
-        
-        <nav class="bg-white border-b border-gray-100 shadow-sm sticky top-0 z-50">
+    <div class="min-h-screen bg-gray-50 font-sans text-gray-900">
+        <!-- Navigation -->
+        <nav :class="['bg-white border-b border-gray-100 sticky top-0 z-50 transition-all duration-300', scrollY > 10 ? 'shadow-lg' : 'shadow-sm']">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex justify-between h-20 items-center">
                     <div class="flex-shrink-0 flex items-center gap-3">
@@ -22,6 +60,21 @@ import { Head, Link } from '@inertiajs/vue3';
                         <Link :href="route('sectors')" class="text-sm font-semibold text-[#1D2A68] hover:text-[#1876C3] transition-colors">Sectors</Link>
                         <Link :href="route('news')" class="text-sm font-semibold text-[#1D2A68] hover:text-[#1876C3] transition-colors">News & Events</Link>
                         <Link :href="route('directory.index')" class="text-sm font-semibold text-[#1D2A68] hover:text-[#1876C3] transition-colors">Member Directory</Link>
+                        
+                        <!-- More Dropdown -->
+                        <div class="relative group">
+                            <button class="text-sm font-semibold text-[#1D2A68] hover:text-[#1876C3] transition-colors flex items-center gap-1">
+                                More
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"/>
+                                </svg>
+                            </button>
+                            <div class="absolute left-0 mt-0 w-48 bg-white shadow-lg rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 border border-gray-100">
+                                <Link :href="route('leadership')" class="block px-4 py-3 text-sm text-gray-700 hover:bg-blue-50 hover:text-[#1876C3] transition-colors">Leadership</Link>
+                                <Link :href="route('membership')" class="block px-4 py-3 text-sm text-gray-700 hover:bg-blue-50 hover:text-[#1876C3] transition-colors border-t border-gray-100">Membership</Link>
+                                <Link :href="route('strategic-goals')" class="block px-4 py-3 text-sm text-gray-700 hover:bg-blue-50 hover:text-[#1876C3] transition-colors border-t border-gray-100">Strategic Goals</Link>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="flex items-center space-x-4">
@@ -34,276 +87,249 @@ import { Head, Link } from '@inertiajs/vue3';
             </div>
         </nav>
 
-        <div class="bg-[#1D2A68] py-16 sm:py-24 border-b-4 border-[#F4B223]">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-                <h1 class="text-4xl font-extrabold text-white sm:text-5xl tracking-tight mb-4">About LiVCCI</h1>
-                <p class="max-w-2xl mx-auto text-xl text-blue-200">
-                    The Livingstone Chamber of Commerce and Industry is an independent, membership-driven organization advocating for an enabling multi-sectoral business environment.
+        <!-- HERO SECTION -->
+        <div class="relative bg-[#1D2A68] overflow-hidden h-96 sm:h-[500px]" data-scroll>
+            <div class="absolute inset-0">
+                <img 
+                    src="https://images.unsplash.com/photo-1552994406-5a2893f3b152?ixlib=rb-1.2.1&auto=format&fit=crop&w=1920&q=80" 
+                    class="w-full h-full object-cover opacity-25 mix-blend-overlay" 
+                    alt="About Us"
+                >
+                <div class="absolute inset-0 bg-gradient-to-r from-[#1D2A68] to-[#1D2A68]/70 mix-blend-multiply"></div>
+            </div>
+            
+            <div class="relative max-w-7xl mx-auto py-16 px-4 sm:py-24 sm:px-6 lg:px-8 flex flex-col justify-center h-full opacity-0 translate-y-10 transition-all duration-700 animate-in">
+                <span class="px-3 py-1 rounded-full bg-[#1876C3]/40 text-[#F6EED8] text-sm font-semibold tracking-wide border border-[#1876C3] mb-4 inline-block w-fit">
+                    Our Story
+                </span>
+                <h1 class="text-4xl font-extrabold tracking-tight text-white sm:text-5xl lg:text-6xl max-w-3xl leading-tight">
+                    About the Chamber
+                </h1>
+                <p class="mt-6 text-xl text-blue-100 max-w-2xl">
+                    Building a thriving business ecosystem for Livingstone and the Southern Region of Zambia.
                 </p>
             </div>
         </div>
 
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 -mt-10">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div class="bg-white rounded-xl shadow-lg p-10 border-t-4 border-[#1876C3] relative overflow-hidden group hover:shadow-xl transition-shadow">
-                    <div class="absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 bg-[#E8F1F8] rounded-full z-0 group-hover:scale-150 transition-transform duration-500"></div>
-                    <div class="relative z-10">
-                        <h2 class="text-2xl font-black text-[#1D2A68] mb-4 flex items-center gap-2">
-                            <svg class="w-6 h-6 text-[#F4B223]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-                            Our Mission
-                        </h2>
-                        <p class="text-lg text-gray-700 font-medium leading-relaxed">
-                            To facilitate business through lobby, advocacy, and networking.
+        <!-- Content -->
+        <div class="bg-white py-16 sm:py-20" data-scroll>
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <!-- Mission & Vision Section -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-12 mb-20">
+                    <div class="opacity-0 translate-y-10 transition-all duration-700 animate-in">
+                        <h2 class="text-3xl font-bold text-[#1D2A68] mb-6">Our Mission</h2>
+                        <p class="text-gray-600 leading-relaxed text-lg">
+                            To provide exceptional value to our members through proactive advocacy, strategic partnerships, and innovative business support services that promote economic growth and sustainable development in Livingstone.
+                        </p>
+                    </div>
+
+                    <div class="opacity-0 translate-y-10 transition-all duration-700 animate-in" style="transition-delay: 100ms;">
+                        <h2 class="text-3xl font-bold text-[#1D2A68] mb-6">Our Vision</h2>
+                        <p class="text-gray-600 leading-relaxed text-lg">
+                            To be the most influential, sustainable, and member-driven Chamber of Commerce in Zambia, fostering a thriving and globally competitive business environment in Livingstone.
                         </p>
                     </div>
                 </div>
 
-                <div class="bg-white rounded-xl shadow-lg p-10 border-t-4 border-[#1876C3] relative overflow-hidden group hover:shadow-xl transition-shadow">
-                    <div class="absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 bg-[#E8F1F8] rounded-full z-0 group-hover:scale-150 transition-transform duration-500"></div>
-                    <div class="relative z-10">
-                        <h2 class="text-2xl font-black text-[#1D2A68] mb-4 flex items-center gap-2">
-                            <svg class="w-6 h-6 text-[#F4B223]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
-                            Our Vision
-                        </h2>
-                        <p class="text-lg text-gray-700 font-medium leading-relaxed">
-                            A thriving business community based on demand and client needs.
-                        </p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="py-16 bg-white flex-grow">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <h2 class="text-3xl font-extrabold text-[#1D2A68] mb-12">Strategic Objectives</h2>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-start">
-                    <!-- Left Column: Image -->
-                    <div>
-                        <div class="bg-gradient-to-br from-[#1876C3] to-[#1460A0] rounded-xl overflow-hidden shadow-lg h-96 flex items-center justify-center">
-                            <svg class="w-32 h-32 text-white opacity-30" fill="currentColor" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-                        </div>
-                        <p class="text-gray-600 text-sm mt-4 text-center">Strategic initiatives driving business growth and regional development</p>
-                    </div>
-
-                    <!-- Right Column: Strategic Objectives -->
-                    <div>
-                        <div class="grid grid-cols-1 gap-4">
-                            <div class="flex gap-4">
-                                <div class="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-lg border border-blue-200 hover:border-[#1876C3] hover:shadow-md transition-all flex-1">
-                                    <div class="flex items-start gap-3">
-                                        <svg class="w-5 h-5 text-[#1876C3] flex-shrink-0 mt-1" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-                                        <h4 class="font-bold text-[#1D2A68] text-sm">Unlocking the potential for business growth</h4>
-                                    </div>
-                                </div>
-                                <div class="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-lg border border-blue-200 hover:border-[#1876C3] hover:shadow-md transition-all flex-1">
-                                    <div class="flex items-start gap-3">
-                                        <svg class="w-5 h-5 text-[#1876C3] flex-shrink-0 mt-1" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-                                        <h4 class="font-bold text-[#1D2A68] text-sm">Market linkage</h4>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="flex gap-4">
-                                <div class="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-lg border border-blue-200 hover:border-[#1876C3] hover:shadow-md transition-all flex-1">
-                                    <div class="flex items-start gap-3">
-                                        <svg class="w-5 h-5 text-[#1876C3] flex-shrink-0 mt-1" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-                                        <h4 class="font-bold text-[#1D2A68] text-sm">Capacity building for MSMEs</h4>
-                                    </div>
-                                </div>
-                                <div class="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-lg border border-blue-200 hover:border-[#1876C3] hover:shadow-md transition-all flex-1">
-                                    <div class="flex items-start gap-3">
-                                        <svg class="w-5 h-5 text-[#1876C3] flex-shrink-0 mt-1" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-                                        <h4 class="font-bold text-[#1D2A68] text-sm">Business Development Services (BDS)</h4>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="flex gap-4">
-                                <div class="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-lg border border-blue-200 hover:border-[#1876C3] hover:shadow-md transition-all flex-1">
-                                    <div class="flex items-start gap-3">
-                                        <svg class="w-5 h-5 text-[#1876C3] flex-shrink-0 mt-1" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-                                        <h4 class="font-bold text-[#1D2A68] text-sm">Lobby and Advocacy</h4>
-                                    </div>
-                                </div>
-                                <div class="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-lg border border-blue-200 hover:border-[#1876C3] hover:shadow-md transition-all flex-1">
-                                    <div class="flex items-start gap-3">
-                                        <svg class="w-5 h-5 text-[#1876C3] flex-shrink-0 mt-1" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-                                        <h4 class="font-bold text-[#1D2A68] text-sm">Agri-Entrepreneurship</h4>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="flex gap-4">
-                                <div class="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-lg border border-blue-200 hover:border-[#1876C3] hover:shadow-md transition-all flex-1">
-                                    <div class="flex items-start gap-3">
-                                        <svg class="w-5 h-5 text-[#1876C3] flex-shrink-0 mt-1" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-                                        <h4 class="font-bold text-[#1D2A68] text-sm">Entrepreneurship</h4>
-                                    </div>
-                                </div>
-                                <div class="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-lg border border-blue-200 hover:border-[#1876C3] hover:shadow-md transition-all flex-1">
-                                    <div class="flex items-start gap-3">
-                                        <svg class="w-5 h-5 text-[#1876C3] flex-shrink-0 mt-1" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-                                        <h4 class="font-bold text-[#1D2A68] text-sm">Information Technology Communication (ITC)</h4>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="flex gap-4">
-                                <div class="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-lg border border-blue-200 hover:border-[#1876C3] hover:shadow-md transition-all flex-1">
-                                    <div class="flex items-start gap-3">
-                                        <svg class="w-5 h-5 text-[#1876C3] flex-shrink-0 mt-1" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-                                        <h4 class="font-bold text-[#1D2A68] text-sm">Business Information</h4>
-                                    </div>
-                                </div>
-                                <div class="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-lg border border-blue-200 hover:border-[#1876C3] hover:shadow-md transition-all flex-1">
-                                    <div class="flex items-start gap-3">
-                                        <svg class="w-5 h-5 text-[#1876C3] flex-shrink-0 mt-1" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-                                        <h4 class="font-bold text-[#1D2A68] text-sm">Business Incubation</h4>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="flex gap-4">
-                                <div class="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-lg border border-blue-200 hover:border-[#1876C3] hover:shadow-md transition-all flex-1">
-                                    <div class="flex items-start gap-3">
-                                        <svg class="w-5 h-5 text-[#1876C3] flex-shrink-0 mt-1" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-                                        <h4 class="font-bold text-[#1D2A68] text-sm">Access to finance</h4>
-                                    </div>
-                                </div>
-                                <div class="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-lg border border-blue-200 hover:border-[#1876C3] hover:shadow-md transition-all flex-1">
-                                    <div class="flex items-start gap-3">
-                                        <svg class="w-5 h-5 text-[#1876C3] flex-shrink-0 mt-1" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-                                        <h4 class="font-bold text-[#1D2A68] text-sm">Enabling environment</h4>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="flex gap-4">
-                                <div class="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-lg border border-blue-200 hover:border-[#1876C3] hover:shadow-md transition-all flex-1">
-                                    <div class="flex items-start gap-3">
-                                        <svg class="w-5 h-5 text-[#1876C3] flex-shrink-0 mt-1" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-                                        <h4 class="font-bold text-[#1D2A68] text-sm">Networking</h4>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="py-16 bg-gray-50">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="text-center mb-12">
-                    <h2 class="text-3xl font-extrabold text-[#1D2A68]">Membership Types</h2>
-                    <p class="mt-4 text-gray-600 max-w-2xl mx-auto">Choose a membership type that best suits your business needs and budget.</p>
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                    <div class="bg-white rounded-lg shadow-md border border-gray-200 p-8 hover:shadow-lg transition-shadow">
-                        <h3 class="text-xl font-bold text-[#1D2A68] mb-3">Individual</h3>
-                        <p class="text-3xl font-extrabold text-[#1876C3] mb-6">ZMW 500</p>
-                        <p class="text-gray-600 text-sm">Perfect for solo entrepreneurs and business professionals.</p>
-                    </div>
-
-                    <div class="bg-white rounded-lg shadow-md border border-gray-200 p-8 hover:shadow-lg transition-shadow">
-                        <h3 class="text-xl font-bold text-[#1D2A68] mb-3">Co-operative</h3>
-                        <p class="text-3xl font-extrabold text-[#1876C3] mb-6">ZMW 500</p>
-                        <p class="text-gray-600 text-sm">Ideal for cooperative organizations and associations.</p>
-                    </div>
-
-                    <div class="bg-white rounded-lg shadow-md border border-gray-200 p-8 hover:shadow-lg transition-shadow">
-                        <h3 class="text-xl font-bold text-[#1D2A68] mb-3">Business</h3>
-                        <p class="text-3xl font-extrabold text-[#1876C3] mb-6">ZMW 1,000</p>
-                        <p class="text-gray-600 text-sm">Designed for small to medium-sized enterprises.</p>
-                    </div>
-
-                    <div class="bg-white rounded-lg shadow-md border border-gray-200 p-8 hover:shadow-lg transition-shadow">
-                        <h3 class="text-xl font-bold text-[#1D2A68] mb-3">Academia</h3>
-                        <p class="text-3xl font-extrabold text-[#1876C3] mb-6">ZMW 2,000</p>
-                        <p class="text-gray-600 text-sm">For colleges, universities, and educational institutions.</p>
-                    </div>
-
-                    <div class="bg-white rounded-lg shadow-md border border-gray-200 p-8 hover:shadow-lg transition-shadow">
-                        <h3 class="text-xl font-bold text-[#1D2A68] mb-3">Corporate</h3>
-                        <p class="text-3xl font-extrabold text-[#1876C3] mb-6">ZMW 2,000</p>
-                        <p class="text-gray-600 text-sm">Premium membership for large corporations and conglomerates.</p>
-                    </div>
-
-                    <div class="bg-white rounded-lg shadow-md border border-gray-200 p-8 hover:shadow-lg transition-shadow">
-                        <h3 class="text-xl font-bold text-[#1D2A68] mb-3">Affiliate</h3>
-                        <p class="text-3xl font-extrabold text-[#1876C3] mb-6">ZMW 1,000</p>
-                        <p class="text-gray-600 text-sm">For partner organizations and affiliated entities.</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="py-16 bg-white flex-grow">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="text-center mb-12">
-                    <h2 class="text-3xl font-extrabold text-[#1D2A68]">Why Join LiVCCI?</h2>
-                    <p class="mt-4 text-gray-600 max-w-2xl mx-auto">Membership offers exclusive benefits designed to help your business thrive.</p>
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
-                    <div class="flex gap-6">
-                        <div class="flex-shrink-0">
-                            <svg class="h-8 w-8 text-[#1876C3]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
-                        </div>
+                <!-- Who We Are Section -->
+                <div class="mb-20 opacity-0 translate-y-10 transition-all duration-700 animate-in" style="transition-delay: 200ms;">
+                    <h2 class="text-3xl font-bold text-[#1D2A68] mb-8">Who We Are</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
                         <div>
-                            <h3 class="text-lg font-bold text-[#1D2A68] mb-2">Business Networking</h3>
-                            <p class="text-gray-600">Connect with like-minded entrepreneurs, business leaders, and potential partners in a supportive community environment.</p>
+                            <p class="text-gray-600 leading-relaxed mb-4">
+                                The Livingstone Chamber of Commerce and Industry (LiVCCI) is a vibrant, member-led organization representing businesses and entrepreneurs across diverse sectors in Livingstone and the Southern Region of Zambia. Established as a beacon of economic collaboration, we unite businesses to harness opportunities, overcome challenges, and drive sustainable growth.
+                            </p>
+                            <p class="text-gray-600 leading-relaxed mb-4">
+                                With Livingstone's strategic position at the epicenter of tourism, cross-border trade, and agricultural commerce, the Chamber serves as a critical bridge between government, business, civil society, and international partners—amplifying the voice of business and building an enabling environment for enterprise success.
+                            </p>
                         </div>
+                        <img src="https://images.unsplash.com/photo-1552664730-d307ca884978?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80" alt="Chamber Office" class="rounded-lg shadow-lg">
                     </div>
+                </div>
 
-                    <div class="flex gap-6">
-                        <div class="flex-shrink-0">
-                            <svg class="h-8 w-8 text-[#1876C3]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                <!-- Core Values Section -->
+                <div class="mb-20 bg-gradient-to-r from-blue-50 to-blue-100 py-16 px-8 rounded-2xl opacity-0 translate-y-10 transition-all duration-700 animate-in" style="transition-delay: 300ms;">
+                    <h2 class="text-3xl font-bold text-[#1D2A68] mb-12 text-center">Our Core Values</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                        <!-- Integrity Card -->
+                        <div class="bg-white rounded-xl p-8 shadow-md hover:shadow-lg transition-all text-center group">
+                            <div class="flex justify-center mb-6">
+                                <svg class="w-16 h-16 text-[#1876C3] group-hover:text-[#F4B223] transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                            </div>
+                            <h3 class="text-xl font-bold text-[#1D2A68] mb-4">Integrity</h3>
+                            <p class="text-gray-600 leading-relaxed">
+                                We uphold the highest ethical standards in all our actions and decisions.
+                            </p>
                         </div>
-                        <div>
-                            <h3 class="text-lg font-bold text-[#1D2A68] mb-2">Advocacy & Representation</h3>
-                            <p class="text-gray-600">We represent your business interests to government, regulatory bodies, and other stakeholders to create favorable policy environments.</p>
-                        </div>
-                    </div>
 
-                    <div class="flex gap-6">
-                        <div class="flex-shrink-0">
-                            <svg class="h-8 w-8 text-[#1876C3]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C6.228 6.228 2 10.228 2 15s4.228 8.772 10 8.772c5.772 0 10-3.9 10-8.772 0-4.772-4.228-8.747-10-8.747z"></path></svg>
+                        <!-- Inclusivity Card -->
+                        <div class="bg-white rounded-xl p-8 shadow-md hover:shadow-lg transition-all text-center group">
+                            <div class="flex justify-center mb-6">
+                                <svg class="w-16 h-16 text-[#1876C3] group-hover:text-[#F4B223] transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4.354a4 4 0 110 8.646 4 4 0 010-8.646zM9 8a3 3 0 106 0 3 3 0 00-6 0z" clip-rule="evenodd"></path>
+                                </svg>
+                            </div>
+                            <h3 class="text-xl font-bold text-[#1D2A68] mb-4">Inclusivity</h3>
+                            <p class="text-gray-600 leading-relaxed">
+                                We represent and support businesses of all sizes and sectors, ensuring every member has a voice.
+                            </p>
                         </div>
-                        <div>
-                            <h3 class="text-lg font-bold text-[#1D2A68] mb-2">Training & Mentorship</h3>
-                            <p class="text-gray-600">Access specialized training programs, workshops, and mentorship from industry experts to develop your business skills.</p>
-                        </div>
-                    </div>
 
-                    <div class="flex gap-6">
-                        <div class="flex-shrink-0">
-                            <svg class="h-8 w-8 text-[#1876C3]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"></path></svg>
+                        <!-- Innovation Card -->
+                        <div class="bg-white rounded-xl p-8 shadow-md hover:shadow-lg transition-all text-center group">
+                            <div class="flex justify-center mb-6">
+                                <svg class="w-16 h-16 text-[#1876C3] group-hover:text-[#F4B223] transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5.657 5.657l-.707.707M9 12a3 3 0 106 0 3 3 0 00-6 0z"></path>
+                                </svg>
+                            </div>
+                            <h3 class="text-xl font-bold text-[#1D2A68] mb-4">Innovation</h3>
+                            <p class="text-gray-600 leading-relaxed">
+                                We embrace new ideas and technologies to better serve our members and the community.
+                            </p>
                         </div>
-                        <div>
-                            <h3 class="text-lg font-bold text-[#1D2A68] mb-2">Access to Development Programs</h3>
-                            <p class="text-gray-600">Leverage our suite of business development programs including BDS, business incubation, and capacity-building initiatives.</p>
-                        </div>
-                    </div>
 
-                    <div class="flex gap-6">
-                        <div class="flex-shrink-0">
-                            <svg class="h-8 w-8 text-[#1876C3]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.856-1.487M15 10a3 3 0 11-6 0 3 3 0 016 0zM15 20h-8a3 3 0 00-3 3v2h14v-2a3 3 0 00-3-3z"></path></svg>
+                        <!-- Excellence Card -->
+                        <div class="bg-white rounded-xl p-8 shadow-md hover:shadow-lg transition-all text-center group">
+                            <div class="flex justify-center mb-6">
+                                <svg class="w-16 h-16 text-[#1876C3] group-hover:text-[#F4B223] transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                                </svg>
+                            </div>
+                            <h3 class="text-xl font-bold text-[#1D2A68] mb-4">Excellence</h3>
+                            <p class="text-gray-600 leading-relaxed">
+                                We strive for quality in every service, program, and advocacy effort we undertake.
+                            </p>
                         </div>
-                        <div>
-                            <h3 class="text-lg font-bold text-[#1D2A68] mb-2">Market Linkage & Visibility</h3>
-                            <p class="text-gray-600">Gain exposure through our member directory, events, and business forums to expand your market reach and client base.</p>
+
+                        <!-- Collaboration Card -->
+                        <div class="bg-white rounded-xl p-8 shadow-md hover:shadow-lg transition-all text-center group">
+                            <div class="flex justify-center mb-6">
+                                <svg class="w-16 h-16 text-[#1876C3] group-hover:text-[#F4B223] transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.856-1.487M15 10a3 3 0 11-6 0 3 3 0 016 0zM4.318 20H2v-2a3 3 0 015.856-1.487M15 10a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                </svg>
+                            </div>
+                            <h3 class="text-xl font-bold text-[#1D2A68] mb-4">Collaboration</h3>
+                            <p class="text-gray-600 leading-relaxed">
+                                We believe in the power of partnerships to achieve collective success.
+                            </p>
                         </div>
                     </div>
                 </div>
 
-                <div class="mt-16 text-center">
-                    <Link :href="route('register')" class="bg-[#1876C3] text-white text-lg font-bold py-4 px-10 rounded-md hover:bg-[#1460A0] shadow-lg transition-colors inline-block">
+                <!-- What We Do Section -->
+                <div class="mb-20 opacity-0 translate-y-10 transition-all duration-700 animate-in" style="transition-delay: 400ms;">
+                    <h2 class="text-3xl font-bold text-[#1D2A68] mb-12 text-center">What We Do</h2>
+                    <div class="space-y-8">
+                        <div class="border-l-4 border-[#1876C3] pl-8">
+                            <h3 class="text-2xl font-bold text-[#1D2A68] mb-3">Policy Advocacy & Government Engagement</h3>
+                            <p class="text-gray-600 leading-relaxed">
+                                We monitor policy developments, engage with government at all levels, and advocate for a favorable business environment. Our advocacy efforts focus on trade facilitation, tax reform, labor standards, and sectoral support for tourism, agriculture, logistics, and technology.
+                            </p>
+                        </div>
+
+                        <div class="border-l-4 border-[#F4B223] pl-8">
+                            <h3 class="text-2xl font-bold text-[#1D2A68] mb-3">Business Networking & Market Linkage</h3>
+                            <p class="text-gray-600 leading-relaxed">
+                                We organize business breakfasts, annual awards ceremonies, trade missions, and B2B matchmaking events. These platforms connect entrepreneurs with suppliers, customers, and investors—opening doors to new markets and growth opportunities.
+                            </p>
+                        </div>
+
+                        <div class="border-l-4 border-[#4CAF50] pl-8">
+                            <h3 class="text-2xl font-bold text-[#1D2A68] mb-3">Capacity Building & Business Development</h3>
+                            <p class="text-gray-600 leading-relaxed">
+                                We partner with experts to deliver training in business management, digital marketing, export procedures, and specialized sector knowledge. Our Business Development Services (BDS) support entrepreneurs in improving operations, accessing finance, and scaling their enterprises.
+                            </p>
+                        </div>
+
+                        <div class="border-l-4 border-[#9C27B0] pl-8">
+                            <h3 class="text-2xl font-bold text-[#1D2A68] mb-3">Business Incubation & Startup Support</h3>
+                            <p class="text-gray-600 leading-relaxed">
+                                We are establishing a comprehensive Business Incubation Center to nurture startups and MSMEs through shared infrastructure, specialist mentorship, finance linkage, and networking—accelerating the growth of Livingstone's entrepreneurial ecosystem.
+                            </p>
+                        </div>
+
+                        <div class="border-l-4 border-[#FF6B6B] pl-8">
+                            <h3 class="text-2xl font-bold text-[#1D2A68] mb-3">Information & Intelligence Services</h3>
+                            <p class="text-gray-600 leading-relaxed">
+                                We provide timely business intelligence, market information, regulatory updates, and sector analysis to help our members make informed decisions and stay competitive.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Why Join Section -->
+                <div class="bg-gradient-to-r from-[#1D2A68] to-[#1460A0] text-white rounded-xl p-12 mb-20 opacity-0 translate-y-10 transition-all duration-700 animate-in" style="transition-delay: 500ms;">
+                    <h2 class="text-3xl font-bold mb-12 text-center">Why Join LiVCCI?</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div class="flex gap-4">
+                            <div class="flex-shrink-0 w-8 h-8 bg-[#F4B223] rounded-full flex items-center justify-center font-bold">✓</div>
+                            <div>
+                                <h3 class="font-bold mb-2">Advocacy & Political Voice</h3>
+                                <p class="text-blue-100">Your business interests represented at the highest levels of government and civil society</p>
+                            </div>
+                        </div>
+
+                        <div class="flex gap-4">
+                            <div class="flex-shrink-0 w-8 h-8 bg-[#F4B223] rounded-full flex items-center justify-center font-bold">✓</div>
+                            <div>
+                                <h3 class="font-bold mb-2">Networking Opportunities</h3>
+                                <p class="text-blue-100">Connect with peers, suppliers, customers, and investors through exclusive events</p>
+                            </div>
+                        </div>
+
+                        <div class="flex gap-4">
+                            <div class="flex-shrink-0 w-8 h-8 bg-[#F4B223] rounded-full flex items-center justify-center font-bold">✓</div>
+                            <div>
+                                <h3 class="font-bold mb-2">Business Support Services</h3>
+                                <p class="text-blue-100">Access training, mentorship, and consultancy to improve competitiveness</p>
+                            </div>
+                        </div>
+
+                        <div class="flex gap-4">
+                            <div class="flex-shrink-0 w-8 h-8 bg-[#F4B223] rounded-full flex items-center justify-center font-bold">✓</div>
+                            <div>
+                                <h3 class="font-bold mb-2">Market Information</h3>
+                                <p class="text-blue-100">Stay informed with business intelligence, market reports, and regulatory updates</p>
+                            </div>
+                        </div>
+
+                        <div class="flex gap-4">
+                            <div class="flex-shrink-0 w-8 h-8 bg-[#F4B223] rounded-full flex items-center justify-center font-bold">✓</div>
+                            <div>
+                                <h3 class="font-bold mb-2">Trade & Investment Missions</h3>
+                                <p class="text-blue-100">Participate in regional and international trade missions to expand your market reach</p>
+                            </div>
+                        </div>
+
+                        <div class="flex gap-4">
+                            <div class="flex-shrink-0 w-8 h-8 bg-[#F4B223] rounded-full flex items-center justify-center font-bold">✓</div>
+                            <div>
+                                <h3 class="font-bold mb-2">Visibility & Credibility</h3>
+                                <p class="text-blue-100">Build your brand reputation through chamber membership and participation</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Call to Action -->
+                <div class="text-center bg-gray-50 rounded-xl p-12 opacity-0 translate-y-10 transition-all duration-700 animate-in" style="transition-delay: 600ms;">
+                    <h2 class="text-3xl font-bold text-[#1D2A68] mb-6">Ready to Join the Chamber?</h2>
+                    <p class="text-lg text-gray-600 mb-8 max-w-2xl mx-auto">
+                        Become part of Livingstone's most dynamic business community and unlock opportunities for growth, networking, and success.
+                    </p>
+                    <Link :href="route('register')" class="inline-block bg-[#1876C3] text-white font-bold py-3 px-10 rounded-md hover:bg-[#1460A0] shadow-lg transition-colors text-lg">
                         Become a Member Today
                     </Link>
                 </div>
             </div>
         </div>
 
+        <!-- Footer -->
         <footer class="bg-[#121A42] pt-16 pb-8 mt-auto">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-12 border-b border-[#1D2A68] pb-12">
+                <div class="grid grid-cols-1 md:grid-cols-5 gap-8 md:gap-12 border-b border-[#1D2A68] pb-12">
                     <div class="col-span-1 md:col-span-2">
                         <div class="flex items-center gap-3 mb-6 text-white">
                             <img src="/images/logo-white.png" alt="LiVCCI Logo" class="h-12 w-auto">
@@ -316,21 +342,46 @@ import { Head, Link } from '@inertiajs/vue3';
                     <div>
                         <h4 class="text-[#F4B223] font-bold mb-4">Quick Links</h4>
                         <ul class="space-y-2 text-blue-200">
+                            <li><Link href="/" class="hover:text-white transition-colors">Home</Link></li>
                             <li><Link :href="route('about')" class="hover:text-white transition-colors">About Us</Link></li>
                             <li><Link :href="route('sectors')" class="hover:text-white transition-colors">Sectors</Link></li>
                             <li><Link :href="route('news')" class="hover:text-white transition-colors">News & Events</Link></li>
                             <li><Link :href="route('directory.index')" class="hover:text-white transition-colors">Member Directory</Link></li>
-                            <li><Link :href="route('register')" class="hover:text-white transition-colors">Join the Chamber</Link></li>
+                        </ul>
+                    </div>
+
+                    <div>
+                        <h4 class="text-[#F4B223] font-bold mb-4">Important Links</h4>
+                        <ul class="space-y-2 text-blue-200 text-sm">
+                            <li><a href="https://www.pacra.org.zm/" target="_blank" rel="noopener noreferrer" class="hover:text-white transition-colors">PACRA</a></li>
+                            <li><a href="https://www.zra.org.zm/" target="_blank" rel="noopener noreferrer" class="hover:text-white transition-colors">ZRA</a></li>
+                            <li><a href="https://www.ceec.org.zm/" target="_blank" rel="noopener noreferrer" class="hover:text-white transition-colors">CEEC</a></li>
+                            <li><a href="https://zambiachamber.org/" target="_blank" rel="noopener noreferrer" class="hover:text-white transition-colors">ZACCI</a></li>
+                            <li><a href="https://www.boz.zm/" target="_blank" rel="noopener noreferrer" class="hover:text-white transition-colors">BOZ</a></li>
                         </ul>
                     </div>
 
                     <div>
                         <h4 class="text-[#F4B223] font-bold mb-4">Contact</h4>
                         <ul class="space-y-2 text-blue-200 text-sm">
-                            <li>Livingstone, Zambia</li>
-                            <li>info@livcci.org</li>
-                            <li>+260 977 885 959</li>
+                            <li>PO Box 4037, Livingstone</li>
+                            <li>livcci@yahoo.com</li>
+                            <li>+260 977 105068</li>
+                            <li>+260 977 885959</li>
                         </ul>
+                        <!-- Social Media Icons -->
+                        <div class="flex gap-4 mt-6">
+                            <a href="https://www.facebook.com/livcci" target="_blank" rel="noopener noreferrer" class="text-blue-200 hover:text-[#F4B223] transition-colors" title="Follow us on Facebook">
+                                <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                                </svg>
+                            </a>
+                            <a href="https://www.linkedin.com/company/livcci" target="_blank" rel="noopener noreferrer" class="text-blue-200 hover:text-[#F4B223] transition-colors" title="Follow us on LinkedIn">
+                                <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.475-2.236-1.986-2.236-1.081 0-1.722.722-2.004 1.418-.103.249-.129.597-.129.946v5.441h-3.554s.047-8.733 0-9.652h3.554v1.366c.43-.664 1.199-1.61 2.920-1.61 2.135 0 3.733 1.39 3.733 4.38v5.516zM5.337 8.855c-1.144 0-1.915-.762-1.915-1.715 0-.953.77-1.715 1.958-1.715 1.188 0 1.915.762 1.915 1.715 0 .953-.726 1.715-1.958 1.715zm1.608 11.597H3.73V9.097h3.215v11.355zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.225 0z"/>
+                                </svg>
+                            </a>
+                        </div>
                     </div>
                 </div>
                 
@@ -340,6 +391,22 @@ import { Head, Link } from '@inertiajs/vue3';
                 </div>
             </div>
         </footer>
-
     </div>
 </template>
+
+<style scoped>
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(40px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.animate-in {
+    animation: slideInUp 0.6s ease-out forwards;
+}
+</style>

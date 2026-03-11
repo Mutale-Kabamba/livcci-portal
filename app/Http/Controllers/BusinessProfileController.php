@@ -2,105 +2,181 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use Inertia\Inertia;
+use App\Http\Requests\StoreBusinessProfileRequest;
+use App\Http\Requests\UpdateBusinessProfileRequest;
 use App\Models\BusinessProfile;
-use Illuminate\Support\Facades\Storage;
+use App\Services\BusinessProfileFileService;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\DB;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class BusinessProfileController extends Controller
-{   
-    public function index()
+{
+    private BusinessProfileFileService $fileService;
+
+    public function __construct(BusinessProfileFileService $fileService)
     {
-        // ONLY fetch profiles where status is 'approved'
+        $this->fileService = $fileService;
+    }
+
+    /**
+     * Display a listing of approved business profiles in the directory.
+     */
+    public function index(): Response
+    {
         $profiles = BusinessProfile::where('status', 'approved')
-                        ->orderBy('company_name', 'asc')
-                        ->get();
+            ->orderBy('company_name', 'asc')
+            ->get();
 
         return Inertia::render('BusinessProfile/Index', [
-            'profiles' => $profiles
+            'profiles' => $profiles,
         ]);
     }
-    // 1. Show the HTML Form
-    public function create()
+
+    /**
+     * Show the form for creating a new business profile.
+     */
+    public function create(): Response
     {
+        // Ensure user doesn't have an existing profile
+        $existingProfile = auth()->user()->businessProfile;
+        if ($existingProfile) {
+            return redirect()->route('profile.business.edit');
+        }
+
         return Inertia::render('BusinessProfile/Create');
     }
 
-    // 2. Save the Form Data to the Database
-    public function store(Request $request)
+    /**
+     * Store a newly created business profile in database.
+     */
+    public function store(StoreBusinessProfileRequest $request): RedirectResponse
     {
-        // Validate the incoming data
-        $validated = $request->validate([
-            'company_name' => 'required|string|max:255',
-            'member_type' => 'required|in:Individual,Co-operative,Business,Academia,Corporate,Affiliate',
-            'member_category' => 'required|string|max:255',
-            'tpin' => 'required|string|max:20',
-            'pacra_reg_no' => 'nullable|string|max:50',
-            'short_description' => 'required|string|max:500',
-            'contact_email' => 'required|email|max:255',
-            'phone' => 'required|string|max:20',
-            'address' => 'nullable|string|max:500',
-            'website_url' => 'nullable|url|max:255',
-            'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5120', // 5MB max
-        ]);
+        try {
+            $validated = $request->validated();
 
-        // Handle logo file upload
-        if ($request->hasFile('logo')) {
-            $logoPath = $request->file('logo')->store('logos', 'public');
-            $validated['logo_url'] = '/storage/' . $logoPath;
+            // Use transaction to ensure atomicity
+            DB::transaction(function () use ($request, &$validated) {
+                // Handle logo file upload
+                if ($request->hasFile('logo')) {
+                    $validated['logo_url'] = $this->fileService->storeLogo($request->file('logo'));
+                }
+
+                // Create the profile linked to the currently logged-in user
+                $request->user()->businessProfile()->create($validated);
+            });
+
+            return redirect()->route('dashboard')
+                ->with('success', 'Business profile created successfully! Your profile is now pending approval.');
+        } catch (\Exception $e) {
+            \Log::error('Error creating business profile: ' . $e->getMessage());
+
+            return back()
+                ->withInput()
+                ->with('error', 'Failed to create business profile. Please try again.');
+        }
+    }
+
+    /**
+     * Display the form for editing the authenticated user's business profile.
+     */
+    public function edit(): Response
+    {
+        $profile = auth()->user()->businessProfile;
+
+        if (!$profile) {
+            return redirect()->route('profile.business.create')
+                ->with('error', 'Business profile not found. Please create one first.');
         }
 
-        // Create the profile linked to the currently logged-in user
-        $request->user()->businessProfile()->create($validated);
-
-        // Redirect back to the dashboard
-        return redirect()->route('dashboard');
-    }
-    // 3. Show the Edit Form (Pre-filled with existing data)
-    public function edit(Request $request)
-    {
         return Inertia::render('BusinessProfile/Edit', [
-            // Pass the user's existing profile to the form
-            'businessProfile' => $request->user()->businessProfile 
+            'businessProfile' => $profile,
         ]);
     }
 
-    // 4. Save the Updated Data to the Database
-    public function update(Request $request)
+    /**
+     * Update the authenticated user's business profile in database.
+     */
+    public function update(UpdateBusinessProfileRequest $request): RedirectResponse
     {
-        $validated = $request->validate([
-            'company_name' => 'required|string|max:255',
-            'member_type' => 'required|in:Individual,Co-operative,Business,Academia,Corporate,Affiliate',
-            'member_category' => 'required|string|max:255',
-            'tpin' => 'required|string|max:20',
-            'pacra_reg_no' => 'nullable|string|max:50',
-            'short_description' => 'required|string|max:500',
-            'contact_email' => 'required|email|max:255',
-            'phone' => 'required|string|max:20',
-            'address' => 'nullable|string|max:500',
-            'website_url' => 'nullable|url|max:255',
-            'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5120', // 5MB max
-        ]);
+        try {
+            $profile = auth()->user()->businessProfile;
 
-        // Handle logo file upload
-        if ($request->hasFile('logo')) {
-            $profile = $request->user()->businessProfile;
-            
-            // Delete old logo if it exists
-            if ($profile && $profile->logo_url) {
-                // Extract path from URL and delete
-                $oldPath = str_replace('/storage/', '', $profile->logo_url);
-                Storage::disk('public')->delete($oldPath);
+            if (!$profile) {
+                return redirect()->route('profile.business.create')
+                    ->with('error', 'Business profile not found.');
             }
-            
-            $logoPath = $request->file('logo')->store('logos', 'public');
-            $validated['logo_url'] = '/storage/' . $logoPath;
+
+            // Authorize the user can update this profile
+            $this->authorize('update', $profile);
+
+            $validated = $request->validated();
+
+            // Use transaction to ensure atomicity
+            DB::transaction(function () use ($request, $profile, &$validated) {
+                // Handle logo file upload
+                if ($request->hasFile('logo')) {
+                    $validated['logo_url'] = $this->fileService->replaceLogo(
+                        $request->file('logo'),
+                        $profile->logo_url
+                    );
+                }
+
+                $profile->update($validated);
+            });
+
+            return redirect()->route('dashboard')
+                ->with('success', 'Business profile updated successfully!');
+        } catch (\Exception $e) {
+            \Log::error('Error updating business profile: ' . $e->getMessage());
+
+            return back()
+                ->withInput()
+                ->with('error', 'Failed to update business profile. Please try again.');
+        }
+    }
+
+    /**
+     * Display a single business profile (public view).
+     */
+    public function show(BusinessProfile $profile): Response
+    {
+        // Only allow viewing approved profiles publicly, or if user is admin/owner
+        if ($profile->status !== 'approved' && auth()->id() !== $profile->user_id && !auth()->user()?->is_admin) {
+            abort(403, 'This profile is not publicly available.');
         }
 
-        // Find the profile linked to the user and update it
-        $request->user()->businessProfile()->update($validated);
+        return Inertia::render('BusinessProfile/Show', [
+            'businessProfile' => $profile->load('user'),
+        ]);
+    }
 
-        // Send them back to the dashboard
-        return redirect()->route('dashboard');
+    /**
+     * Soft delete the authenticated user's business profile.
+     */
+    public function destroy(): RedirectResponse
+    {
+        try {
+            $profile = auth()->user()->businessProfile;
+
+            if (!$profile) {
+                return back()->with('error', 'Business profile not found.');
+            }
+
+            // Authorize the user can delete this profile
+            $this->authorize('delete', $profile);
+
+            // Soft delete the profile
+            $profile->delete();
+
+            return redirect()->route('dashboard')
+                ->with('success', 'Business profile has been deleted. You can recover it from your account settings.');
+        } catch (\Exception $e) {
+            \Log::error('Error deleting business profile: ' . $e->getMessage());
+
+            return back()
+                ->with('error', 'Failed to delete business profile. Please try again.');
+        }
     }
 }

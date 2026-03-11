@@ -7,6 +7,7 @@ const logoPreview = ref(null);
 
 const form = useForm({
     company_name: '',
+    industry_sector: '',
     member_type: '',
     member_category: '',
     tpin: '',
@@ -30,6 +31,32 @@ const handleLogoUpload = (event) => {
         reader.readAsDataURL(file);
     }
 };
+
+// Industry Sectors
+const industrySectors = [
+    'Agriculture',
+    'Banking & Finance',
+    'Construction',
+    'Education',
+    'Energy',
+    'Entertainment',
+    'Food & Beverage',
+    'Healthcare',
+    'Hospitality',
+    'Information Technology',
+    'Insurance',
+    'Logistics & Transportation',
+    'Manufacturing',
+    'Media & Publishing',
+    'Mining',
+    'Professional Services',
+    'Real Estate',
+    'Retail',
+    'Telecommunications',
+    'Tourism',
+    'Utilities',
+    'Other'
+];
 
 // Membership Types
 const membershipTypes = [
@@ -94,13 +121,18 @@ const membershipCategories = [
     'Utilities'
 ];
 
+const getError = (field) => {
+    if (!form.errors[field]) return null;
+    return Array.isArray(form.errors[field]) ? form.errors[field][0] : form.errors[field];
+};
+
 const submit = () => {
     form.post(route('profile.business.store'));
 };
 </script>
 
 <template>
-    <Head title="Join Chamber Directory" />
+    <Head title="Create Business Profile" />
 
     <AuthenticatedLayout>
         <template #header>
@@ -111,89 +143,199 @@ const submit = () => {
             <div class="max-w-3xl mx-auto sm:px-6 lg:px-8">
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-8">
                     
+                    <!-- VALIDATION ERRORS SUMMARY -->
+                    <div v-if="Object.keys(form.errors).length > 0" class="mb-6 p-4 bg-red-50 border border-red-200 rounded">
+                        <h3 class="text-red-800 font-bold mb-3">Please fix the following errors:</h3>
+                        <ul class="space-y-1">
+                            <li v-for="(error, field) in form.errors" :key="field" class="text-red-700 text-sm">
+                                <strong>{{ field }}:</strong> {{ Array.isArray(error) ? error[0] : error }}
+                            </li>
+                        </ul>
+                    </div>
+
                     <form @submit.prevent="submit" class="space-y-6">
-                        <!-- NAME -->
+                        <!-- Company Name -->
                         <div>
-                            <label class="block text-sm font-medium text-gray-700">NAME</label>
-                            <input v-model="form.company_name" type="text" placeholder="e.g. Ori Studio Limited" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" required>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Company Name *</label>
+                            <input 
+                                v-model="form.company_name" 
+                                type="text" 
+                                placeholder="e.g. Ori Studio Limited"
+                                :class="['w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500', 
+                                         getError('company_name') ? 'border-red-500 bg-red-50' : 'border-gray-300']"
+                                required
+                            >
+                            <p v-if="getError('company_name')" class="text-red-600 text-xs mt-1">{{ getError('company_name') }}</p>
                         </div>
 
-                        <!-- MEMBER TYPE -->
+                        <!-- Industry Sector -->
                         <div>
-                            <label class="block text-sm font-medium text-gray-700">MEMBER TYPE</label>
-                            <select v-model="form.member_type" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" required>
-                                <option disabled value="">Select membership type...</option>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Industry Sector *</label>
+                            <select 
+                                v-model="form.industry_sector"
+                                :class="['w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500',
+                                         getError('industry_sector') ? 'border-red-500 bg-red-50' : 'border-gray-300']"
+                                required
+                            >
+                                <option value="">-- Select Industry Sector --</option>
+                                <option v-for="sector in industrySectors" :key="sector" :value="sector">{{ sector }}</option>
+                            </select>
+                            <p v-if="getError('industry_sector')" class="text-red-600 text-xs mt-1">{{ getError('industry_sector') }}</p>
+                        </div>
+
+                        <!-- Member Type -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Membership Type *</label>
+                            <select 
+                                v-model="form.member_type"
+                                :class="['w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500',
+                                         getError('member_type') ? 'border-red-500 bg-red-50' : 'border-gray-300']"
+                                required
+                            >
+                                <option value="">-- Select Type --</option>
                                 <option v-for="type in membershipTypes" :key="type" :value="type">{{ type }}</option>
                             </select>
+                            <p v-if="getError('member_type')" class="text-red-600 text-xs mt-1">{{ getError('member_type') }}</p>
                         </div>
 
-                        <!-- MEMBER CATEGORY -->
+                        <!-- Member Category -->
                         <div>
-                            <label class="block text-sm font-medium text-gray-700">MEMBER CATEGORY</label>
-                            <select v-model="form.member_category" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" required>
-                                <option disabled value="">Select category...</option>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Membership Category *</label>
+                            <select 
+                                v-model="form.member_category"
+                                :class="['w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500',
+                                         getError('member_category') ? 'border-red-500 bg-red-50' : 'border-gray-300']"
+                                required
+                            >
+                                <option value="">-- Select Category --</option>
                                 <option v-for="category in membershipCategories" :key="category" :value="category">{{ category }}</option>
                             </select>
+                            <p v-if="getError('member_category')" class="text-red-600 text-xs mt-1">{{ getError('member_category') }}</p>
                         </div>
 
                         <!-- TPIN -->
                         <div>
-                            <label class="block text-sm font-medium text-gray-700">TPIN</label>
-                            <input v-model="form.tpin" type="text" placeholder="Tax Payer Identification Number" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" required>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">TPIN (Tax ID) *</label>
+                            <input 
+                                v-model="form.tpin" 
+                                type="text" 
+                                placeholder="Tax Payer Identification Number"
+                                :class="['w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500',
+                                         getError('tpin') ? 'border-red-500 bg-red-50' : 'border-gray-300']"
+                                required
+                            >
+                            <p v-if="getError('tpin')" class="text-red-600 text-xs mt-1">{{ getError('tpin') }}</p>
                         </div>
 
-                        <!-- PACRA REG NO (conditional) -->
-                        <div v-if="form.member_type !== 'Individual'">
-                            <label class="block text-sm font-medium text-gray-700">PACRA REG NO.</label>
-                            <input v-model="form.pacra_reg_no" type="text" placeholder="Patents and Companies Registration Agency Registration Number" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                        </div>
-
-                        <!-- SHORT DESCRIPTION -->
+                        <!-- PACRA Reg No -->
                         <div>
-                            <label class="block text-sm font-medium text-gray-700">SHORT DESCRIPTION (15 words max)</label>
-                            <textarea v-model="form.short_description" rows="3" placeholder="Brief description of your business/services..." class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" required></textarea>
-                            <p class="text-xs text-gray-500 mt-1">{{ form.short_description.split(' ').length }}/15 words</p>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">PACRA Reg No. (Optional)</label>
+                            <input 
+                                v-model="form.pacra_reg_no" 
+                                type="text" 
+                                placeholder="For corporate entities"
+                                :class="['w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500',
+                                         getError('pacra_reg_no') ? 'border-red-500 bg-red-50' : 'border-gray-300']"
+                            >
+                            <p v-if="getError('pacra_reg_no')" class="text-red-600 text-xs mt-1">{{ getError('pacra_reg_no') }}</p>
                         </div>
 
-                        <!-- CONTACTS -->
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700">EMAIL</label>
-                                <input v-model="form.contact_email" type="email" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" required>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700">PHONE</label>
-                                <input v-model="form.phone" type="text" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" required>
-                            </div>
-                        </div>
-
-                        <!-- ADDRESS -->
+                        <!-- Short Description -->
                         <div>
-                            <label class="block text-sm font-medium text-gray-700">ADDRESS</label>
-                            <textarea v-model="form.address" rows="2" placeholder="Business address..." class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"></textarea>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Business Description (Max 500) *</label>
+                            <textarea 
+                                v-model="form.short_description" 
+                                rows="3"
+                                placeholder="Brief description of your business"
+                                :class="['w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500',
+                                         getError('short_description') ? 'border-red-500 bg-red-50' : 'border-gray-300']"
+                                required
+                            ></textarea>
+                            <p class="text-xs text-gray-500 mt-1">{{ form.short_description.length }}/500</p>
+                            <p v-if="getError('short_description')" class="text-red-600 text-xs mt-1">{{ getError('short_description') }}</p>
                         </div>
 
-                        <!-- WEBSITE & LOGO -->
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700">WEBSITE URL (Optional)</label>
-                                <input v-model="form.website_url" type="url" placeholder="https://www.example.com" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700">LOGO (Optional)</label>
-                                <input @change="handleLogoUpload" type="file" accept="image/*" class="mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2">
-                                <p class="text-xs text-gray-500 mt-1">Supported formats: JPG, PNG, GIF (Max 5MB)</p>
-                                <div v-if="logoPreview" class="mt-4">
-                                    <p class="text-sm font-medium text-gray-700 mb-2">Logo Preview:</p>
-                                    <img :src="logoPreview" class="h-24 w-auto rounded border border-gray-300 p-2 bg-gray-50" alt="Logo Preview">
-                                </div>
-                            </div>
+                        <!-- Contact Email -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Contact Email *</label>
+                            <input 
+                                v-model="form.contact_email" 
+                                type="email"
+                                placeholder="contact@example.com"
+                                :class="['w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500',
+                                         getError('contact_email') ? 'border-red-500 bg-red-50' : 'border-gray-300']"
+                                required
+                            >
+                            <p v-if="getError('contact_email')" class="text-red-600 text-xs mt-1">{{ getError('contact_email') }}</p>
                         </div>
 
-                        <div class="pt-4">
-                            <button type="submit" :disabled="form.processing" class="w-full bg-indigo-600 text-white font-bold py-3 px-4 rounded hover:bg-indigo-700 disabled:opacity-50">
-                                Save Profile to Directory
+                        <!-- Phone -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Phone Number *</label>
+                            <input 
+                                v-model="form.phone" 
+                                type="tel"
+                                placeholder="+260 976 085 160"
+                                :class="['w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500',
+                                         getError('phone') ? 'border-red-500 bg-red-50' : 'border-gray-300']"
+                                required
+                            >
+                            <p v-if="getError('phone')" class="text-red-600 text-xs mt-1">{{ getError('phone') }}</p>
+                        </div>
+
+                        <!-- Address -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Business Address (Optional)</label>
+                            <textarea 
+                                v-model="form.address" 
+                                rows="2"
+                                placeholder="Street address, city, etc"
+                                :class="['w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500',
+                                         getError('address') ? 'border-red-500 bg-red-50' : 'border-gray-300']"
+                            ></textarea>
+                            <p v-if="getError('address')" class="text-red-600 text-xs mt-1">{{ getError('address') }}</p>
+                        </div>
+
+                        <!-- Website URL -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Website URL (Optional)</label>
+                            <input 
+                                v-model="form.website_url" 
+                                type="url"
+                                placeholder="https://www.example.com"
+                                :class="['w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500',
+                                         getError('website_url') ? 'border-red-500 bg-red-50' : 'border-gray-300']"
+                            >
+                            <p v-if="getError('website_url')" class="text-red-600 text-xs mt-1">{{ getError('website_url') }}</p>
+                        </div>
+
+                        <!-- Logo Upload -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Company Logo (Optional)</label>
+                            <input 
+                                @change="handleLogoUpload" 
+                                type="file" 
+                                accept="image/*"
+                                :class="['w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500',
+                                         getError('logo') ? 'border-red-500 bg-red-50' : 'border-gray-300']"
+                            >
+                            <p class="text-xs text-gray-500 mt-1">JPG, PNG, GIF (Max 5MB)</p>
+                            <p v-if="getError('logo')" class="text-red-600 text-xs mt-1">{{ getError('logo') }}</p>
+                            <img v-if="logoPreview" :src="logoPreview" class="h-20 w-auto rounded mt-2 border border-gray-300 p-1" alt="Preview">
+                        </div>
+
+                        <!-- Submit -->
+                        <div class="flex gap-4 pt-6">
+                            <button 
+                                type="submit" 
+                                :disabled="form.processing"
+                                class="flex-1 bg-indigo-600 text-white font-bold py-3 rounded hover:bg-indigo-700 disabled:opacity-50"
+                            >
+                                {{ form.processing ? 'Creating...' : 'Create Profile' }}
                             </button>
+                            <a href="/dashboard" class="flex-1 bg-gray-300 text-gray-800 font-bold py-3 rounded hover:bg-gray-400 text-center">
+                                Cancel
+                            </a>
                         </div>
                     </form>
 

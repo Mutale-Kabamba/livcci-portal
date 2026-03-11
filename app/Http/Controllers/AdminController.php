@@ -30,20 +30,58 @@ class AdminController extends Controller
     // 1. Logic to Update Status (Approve, Deactivate, Suspend)
     public function updateMemberStatus(Request $request, BusinessProfile $profile) 
     {
-    $validated = $request->validate([
-        'status' => 'required|in:pending,approved,suspended,deactivated'
-    ]);
+        try {
+            $validated = $request->validate([
+                'status' => 'required|in:pending,approved,suspended,deactivated'
+            ]);
 
-    $profile->update(['status' => $validated['status']]);
+            $oldStatus = $profile->status;
+            $newStatus = $validated['status'];
 
-    return back()->with('message', 'Status updated!');
+            $profile->update(['status' => $newStatus]);
+
+            // Log the status change for audit trail
+            \Log::info('Business profile status updated', [
+                'profile_id' => $profile->id,
+                'company_name' => $profile->company_name,
+                'old_status' => $oldStatus,
+                'new_status' => $newStatus,
+                'admin_id' => auth()->id(),
+                'timestamp' => now()
+            ]);
+
+            return back()->with('success', "Member status updated from '{$oldStatus}' to '{$newStatus}'.");
+        } catch (\Exception $e) {
+            \Log::error('Error updating member status: ' . $e->getMessage());
+            return back()->with('error', 'Failed to update member status. Please try again.');
+        }
     }
 
-    // 2. Logic to Delete a Member
+    // 2. Logic to Delete a Member (Hard delete - permanent removal)
     public function deleteMember(BusinessProfile $profile)
     {
-        $profile->delete();
-        return back()->with('message', 'Member profile removed successfully.');
+        try {
+            $companyName = $profile->company_name;
+            $profileId = $profile->id;
+            $userId = $profile->user_id;
+
+            // Hard delete the profile (permanent removal)
+            $profile->forceDelete();
+
+            // Log the deletion for audit trail
+            \Log::warning('Business profile permanently deleted', [
+                'profile_id' => $profileId,
+                'company_name' => $companyName,
+                'user_id' => $userId,
+                'admin_id' => auth()->id(),
+                'timestamp' => now()
+            ]);
+
+            return back()->with('success', "Member profile '{$companyName}' has been permanently deleted.");
+        } catch (\Exception $e) {
+            \Log::error('Error deleting member profile: ' . $e->getMessage());
+            return back()->with('error', 'Failed to delete member profile. Please try again.');
+        }
     }
 
     // 3. Logic to Add News/Events
@@ -54,6 +92,7 @@ class AdminController extends Controller
             'type' => 'required|in:Meeting,Workshop,Expo,News',
             'event_date' => 'nullable|date',
             'description' => 'required|string',
+            'external_link' => 'nullable|url',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5120',
         ]);
 
@@ -62,6 +101,7 @@ class AdminController extends Controller
             'type' => $validated['type'],
             'event_date' => $validated['event_date'],
             'description' => $validated['description'],
+            'external_link' => $validated['external_link'] ?? null,
         ];
 
         if ($request->hasFile('image')) {
@@ -73,6 +113,48 @@ class AdminController extends Controller
         ChamberEvent::create($data);
 
         return back()->with('message', 'Event posted successfully!');
+    }
+
+    // 3b. Logic to Update News/Events
+    public function updateEvent(Request $request, ChamberEvent $event)
+    {
+        $validated = $request->validate([
+            'title' => 'required|string|max:255',
+            'type' => 'required|in:Meeting,Workshop,Expo,News',
+            'event_date' => 'nullable|date',
+            'description' => 'required|string',
+            'external_link' => 'nullable|url',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5120',
+        ]);
+
+        $data = [
+            'title' => $validated['title'],
+            'type' => $validated['type'],
+            'event_date' => $validated['event_date'],
+            'description' => $validated['description'],
+            'external_link' => $validated['external_link'] ?? null,
+        ];
+
+        if ($request->hasFile('image')) {
+            $file = $request->file('image');
+            $path = $file->store('events', 'public');
+            $data['image_url'] = $path;
+        }
+
+        $event->update($data);
+
+        if ($request->expectsJson() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
+            return response()->json(['message' => 'Event updated successfully!'], 200);
+        }
+
+        return back()->with('message', 'Event updated successfully!');
+    }
+
+    // 3c. Logic to Delete News/Events
+    public function deleteEvent(ChamberEvent $event)
+    {
+        $event->delete();
+        return back()->with('message', 'Event deleted successfully!');
     }
 
     // 4. Display News/Events on the public page

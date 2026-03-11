@@ -12,5 +12,6 @@ class ChamberEvent extends Model
         'event_date',
         'description',
         'image_url',
+        'external_link',
     ];
 }

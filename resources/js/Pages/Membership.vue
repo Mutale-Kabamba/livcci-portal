@@ -2,37 +2,11 @@
 import { Head, Link } from '@inertiajs/vue3';
 import { ref, onMounted, onUnmounted } from 'vue';
 
-const props = defineProps({
-    events: Array
-});
-
-// Scroll animation state
 const scrollY = ref(0);
+const dropdownOpen = ref(false);
 
-// Handle scroll events
 const handleScroll = () => {
     scrollY.value = window.scrollY;
-};
-
-// Format date for display
-const formatDate = (date) => {
-    if (!date) return '';
-    return new Date(date).toLocaleDateString('en-US', { 
-        year: 'numeric', 
-        month: 'long', 
-        day: 'numeric' 
-    });
-};
-
-// Get event type color
-const getTypeColor = (type) => {
-    const colors = {
-        'Meeting': 'bg-blue-100 text-blue-700',
-        'Workshop': 'bg-purple-100 text-purple-700',
-        'Expo': 'bg-green-100 text-green-700',
-        'News': 'bg-orange-100 text-orange-700'
-    };
-    return colors[type] || 'bg-gray-100 text-gray-700';
 };
 
 onMounted(() => {
@@ -64,13 +38,87 @@ onMounted(() => {
 onUnmounted(() => {
     window.removeEventListener('scroll', handleScroll);
 });
+
+const membershipTiers = [
+    {
+        category: 'Corporate',
+        amount: 2000.00,
+        currency: 'ZMW',
+        description: 'Ideal for established companies and large enterprises',
+        features: [
+            'Maximum voting rights',
+            'Priority event attendance',
+            'Board eligibility',
+            'Prominence in directory',
+            'Dedicated support contact'
+        ]
+    },
+    {
+        category: 'Ordinary',
+        amount: 1000.00,
+        currency: 'ZMW',
+        description: 'Perfect for established businesses and professionals',
+        features: [
+            'Full voting rights',
+            'Event attendance',
+            'Networking opportunities',
+            'Business directory listing',
+            'Email updates'
+        ]
+    },
+    {
+        category: 'Associate | Cooperative',
+        amount: 500.00,
+        currency: 'ZMW',
+        description: 'For startups, cooperatives, and emerging businesses',
+        features: [
+            'Limited voting rights',
+            'Event access',
+            'Networking opportunities',
+            'Directory listing',
+            'Monthly newsletter'
+        ]
+    },
+];
+
+const membershipBenefits = [
+    {
+        image: 'https://images.unsplash.com/photo-1552664730-d307ca884978?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
+        title: 'Networking',
+        description: 'Connect with business leaders and entrepreneurs in Livingstone'
+    },
+    {
+        image: 'https://images.unsplash.com/photo-1552664730-d307ca884978?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
+        title: 'Advocacy',
+        description: 'Have your voice heard in policy discussions and business matters'
+    },
+    {
+        image: 'https://images.unsplash.com/photo-1552664730-d307ca884978?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
+        title: 'Training & Development',
+        description: 'Access workshops, seminars, and capacity building programs'
+    },
+    {
+        image: 'https://images.unsplash.com/photo-1552664730-d307ca884978?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
+        title: 'Market Intelligence',
+        description: 'Receive business reports and market analysis'
+    },
+    {
+        image: 'https://images.unsplash.com/photo-1552664730-d307ca884978?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
+        title: 'Business Directory',
+        description: 'Get listed in our regional business directory'
+    },
+    {
+        image: 'https://images.unsplash.com/photo-1552664730-d307ca884978?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
+        title: 'Growth Support',
+        description: 'Access resources and mentorship for business growth'
+    },
+];
 </script>
 
 <template>
-    <Head title="News & Events - LiVCCI" />
+    <Head title="Membership - LiVCCI" />
 
-    <div class="min-h-screen bg-gray-50 font-sans text-gray-900 flex flex-col">
-
+    <div class="min-h-screen bg-gray-50 font-sans text-gray-900">
         <!-- Navigation -->
         <nav :class="['bg-white border-b border-gray-100 sticky top-0 z-50 transition-all duration-300', scrollY > 10 ? 'shadow-lg' : 'shadow-sm']">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -85,12 +133,12 @@ onUnmounted(() => {
                         <Link href="/" class="text-sm font-semibold text-[#1D2A68] hover:text-[#1876C3] transition-colors">Home</Link>
                         <Link :href="route('about')" class="text-sm font-semibold text-[#1D2A68] hover:text-[#1876C3] transition-colors">About Us</Link>
                         <Link :href="route('sectors')" class="text-sm font-semibold text-[#1D2A68] hover:text-[#1876C3] transition-colors">Sectors</Link>
-                        <Link :href="route('news')" class="text-sm font-bold text-[#1876C3] border-b-2 border-[#1876C3] pb-1">News & Events</Link>
+                        <Link :href="route('news')" class="text-sm font-semibold text-[#1D2A68] hover:text-[#1876C3] transition-colors">News & Events</Link>
                         <Link :href="route('directory.index')" class="text-sm font-semibold text-[#1D2A68] hover:text-[#1876C3] transition-colors">Member Directory</Link>
                         
                         <!-- More Dropdown -->
                         <div class="relative group">
-                            <button class="text-sm font-semibold text-[#1D2A68] hover:text-[#1876C3] transition-colors flex items-center gap-1">
+                            <button class="text-sm font-bold text-[#1876C3] border-b-2 border-[#1876C3] pb-1 flex items-center gap-1">
                                 More
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"/>
@@ -116,77 +164,125 @@ onUnmounted(() => {
 
         <!-- HERO SECTION -->
         <div class="relative bg-[#1D2A68] overflow-hidden h-96 sm:h-[500px]" data-scroll>
-            <!-- Background Image -->
             <div class="absolute inset-0">
                 <img 
                     src="https://images.unsplash.com/photo-1552664730-d307ca884978?ixlib=rb-1.2.1&auto=format&fit=crop&w=1920&q=80" 
                     class="w-full h-full object-cover opacity-25 mix-blend-overlay" 
-                    alt="News & Events"
+                    alt="Membership"
                 >
                 <div class="absolute inset-0 bg-gradient-to-r from-[#1D2A68] to-[#1D2A68]/70 mix-blend-multiply"></div>
             </div>
             
-            <!-- Hero Content -->
             <div class="relative max-w-7xl mx-auto py-16 px-4 sm:py-24 sm:px-6 lg:px-8 flex flex-col justify-center h-full opacity-0 translate-y-10 transition-all duration-700 animate-in">
                 <span class="px-3 py-1 rounded-full bg-[#1876C3]/40 text-[#F6EED8] text-sm font-semibold tracking-wide border border-[#1876C3] mb-4 inline-block w-fit">
-                    Stay Connected
+                    Join LiVCCI
                 </span>
                 <h1 class="text-4xl font-extrabold tracking-tight text-white sm:text-5xl lg:text-6xl max-w-3xl leading-tight">
-                    News & Events
+                    Membership at LiVCCI
                 </h1>
                 <p class="mt-6 text-xl text-blue-100 max-w-2xl">
-                    Discover the latest updates, upcoming events, and business opportunities from the Livingstone Chamber of Commerce & Industry.
+                    Choose the membership category that best fits your business needs and unlock unprecedented opportunities.
                 </p>
             </div>
         </div>
 
-        <!-- Content Section -->
-        <div class="bg-white py-16 sm:py-20">
+        <!-- Content -->
+        <div class="bg-white py-16 sm:py-20" data-scroll>
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div v-if="events && events.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                    <div v-for="(event, index) in events" :key="event.id" class="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300 group opacity-0 translate-y-10 animate-in" :style="{ transitionDelay: `${index * 100}ms` }">
-                        <!-- Image Container -->
-                        <div class="relative h-64 bg-gray-200 overflow-hidden">
-                            <img 
-                                v-if="event.image_url"
-                                :src="`/storage/${event.image_url}`"
-                                :alt="event.title"
-                                class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                            >
-                            <div v-else class="w-full h-full bg-gradient-to-br from-[#1876C3] to-[#1460A0] flex items-center justify-center">
-                                <svg class="w-20 h-20 text-white opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                <!-- Membership Tiers -->
+                <div class="mb-20">
+                    <h2 class="text-3xl font-bold text-[#1D2A68] mb-12 text-center opacity-0 translate-y-10 transition-all duration-700 animate-in">Membership Categories & Pricing</h2>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                        <div 
+                            v-for="(tier, index) in membershipTiers" 
+                            :key="index"
+                            :style="{ transitionDelay: `${index * 100}ms` }"
+                            class="bg-gradient-to-br from-white to-blue-50 rounded-xl shadow-lg hover:shadow-2xl transition-all border-2 border-[#1876C3] overflow-hidden opacity-0 translate-y-10 animate-in"
+                        >
+                            <div class="bg-gradient-to-r from-[#1876C3] to-[#1460A0] text-white p-8 text-center">
+                                <h3 class="text-2xl font-bold mb-2">{{ tier.category }}</h3>
+                                <p class="text-blue-100 text-sm">{{ tier.description }}</p>
                             </div>
-                            <!-- Date Bar Overlay -->
-                            <div class="absolute bottom-0 left-0 right-0 bg-[#F4B223] text-[#1D2A68] py-2 px-4 text-center font-bold text-sm">
-                                {{ formatDate(event.event_date) }}
-                            </div>
-                        </div>
+                            
+                            <div class="p-8">
+                                <div class="text-center mb-8">
+                                    <p class="text-5xl font-bold text-[#1D2A68]">{{ tier.amount.toLocaleString() }}</p>
+                                    <p class="text-gray-600 mt-2">{{ tier.currency }} per year</p>
+                                </div>
 
-                        <!-- Content -->
-                        <div class="p-6">
-                            <h3 class="text-lg font-bold text-[#1D2A68] mb-2 line-clamp-2 group-hover:text-[#1876C3] transition-colors">{{ event.title }}</h3>
-                            <p class="text-gray-600 text-sm mb-4 line-clamp-2">{{ event.description }}</p>
-                            <div class="flex items-center justify-between">
-                                <span :class="['px-3 py-1 rounded text-xs font-bold', getTypeColor(event.type)]">
-                                    {{ event.type }}
-                                </span>
-                                <a 
-                                    v-if="event.external_link"
-                                    :href="event.external_link"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    class="text-[#1876C3] font-semibold text-sm hover:underline cursor-pointer"
-                                >
-                                    Read More →
-                                </a>
-                                <span v-else class="text-gray-400 font-semibold text-sm">Read More →</span>
+                                <div class="mb-8 space-y-4">
+                                    <h4 class="font-bold text-[#1D2A68] mb-4">Membership Benefits:</h4>
+                                    <ul class="space-y-3">
+                                        <li v-for="(feature, fIndex) in tier.features" :key="fIndex" class="flex items-start gap-3">
+                                            <svg class="w-5 h-5 text-[#1876C3] flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                                            </svg>
+                                            <span class="text-gray-600">{{ feature }}</span>
+                                        </li>
+                                    </ul>
+                                </div>
+
+                                <Link :href="route('register')" class="w-full block text-center bg-[#1876C3] text-white font-bold py-3 rounded-md hover:bg-[#1460A0] transition-colors">
+                                    Join Now
+                                </Link>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div v-else class="text-center py-16">
-                    <p class="text-lg text-gray-600 mb-2">No events yet</p>
-                    <p class="text-gray-500">Check back soon for upcoming news and events.</p>
+
+                <!-- Registration Fee Info -->
+                <div class="bg-gradient-to-r from-[#1876C3] to-[#1460A0] p-0 rounded-xl mb-20 opacity-0 translate-y-10 transition-all duration-700 animate-in overflow-hidden shadow-2xl" style="transition-delay: 300ms;">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+                        <div class="p-8 md:p-12">
+                            <span class="inline-block px-4 py-2 bg-[#F4B223]/20 text-[#F4B223] text-xs font-bold rounded-full mb-4 uppercase tracking-widest">One-Time Fee</span>
+                            <h3 class="text-4xl md:text-5xl font-black text-white mb-4">100.00 ZMW</h3>
+                            <p class="text-blue-100 text-lg mb-6">Registration Fee for All New Members</p>
+                            <p class="text-blue-50 mb-8">A one-time registration fee applies to all new members upon joining LiVCCI. This fee is separate from your annual membership subscription.</p>
+                            <Link :href="route('register')" class="inline-block bg-[#F4B223] text-[#1D2A68] font-bold py-3 px-8 rounded-lg hover:bg-white transition-colors shadow-lg">
+                                Start Registration →
+                            </Link>
+                        </div>
+                        <div class="h-64 md:h-80 overflow-hidden">
+                            <img 
+                                src="https://images.unsplash.com/photo-1450101499163-c8917c7b60c0?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60" 
+                                alt="Registration Process"
+                                class="w-full h-full object-cover"
+                            >
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Membership Benefits -->
+                <div class="mb-20 opacity-0 translate-y-10 transition-all duration-700 animate-in" style="transition-delay: 400ms;">
+                    <h2 class="text-3xl font-bold text-[#1D2A68] mb-12 text-center">Why Choose LiVCCI?</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                        <div v-for="(benefit, index) in membershipBenefits" :key="index" class="rounded-lg overflow-hidden shadow-lg hover:shadow-2xl transition-all group transform hover:-translate-y-2 duration-300">
+                            <div class="relative h-48 overflow-hidden bg-gray-200">
+                                <img 
+                                    :src="benefit.image" 
+                                    :alt="benefit.title"
+                                    class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                                >
+                                <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                            </div>
+                            <div class="bg-white p-6">
+                                <h3 class="text-xl font-bold text-[#1D2A68] mb-3">{{ benefit.title }}</h3>
+                                <p class="text-gray-600">{{ benefit.description }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Call to Action -->
+                <div class="bg-gradient-to-r from-[#1D2A68] to-[#1460A0] text-white rounded-xl p-12 text-center opacity-0 translate-y-10 transition-all duration-700 animate-in" style="transition-delay: 500ms;">
+                    <h2 class="text-3xl font-bold mb-6">Ready to Join?</h2>
+                    <p class="text-lg text-blue-100 mb-8 max-w-2xl mx-auto">
+                        Start your membership today and become part of Livingstone's most dynamic and influential business community.
+                    </p>
+                    <Link :href="route('register')" class="inline-block bg-[#F4B223] text-[#1D2A68] font-bold py-3 px-10 rounded-md hover:bg-[#E8A01A] transition-colors text-lg">
+                        Become a Member Today
+                    </Link>
                 </div>
             </div>
         </div>

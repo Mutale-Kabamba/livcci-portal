@@ -2,37 +2,11 @@
 import { Head, Link } from '@inertiajs/vue3';
 import { ref, onMounted, onUnmounted } from 'vue';
 
-const props = defineProps({
-    events: Array
-});
-
-// Scroll animation state
 const scrollY = ref(0);
+const dropdownOpen = ref(false);
 
-// Handle scroll events
 const handleScroll = () => {
     scrollY.value = window.scrollY;
-};
-
-// Format date for display
-const formatDate = (date) => {
-    if (!date) return '';
-    return new Date(date).toLocaleDateString('en-US', { 
-        year: 'numeric', 
-        month: 'long', 
-        day: 'numeric' 
-    });
-};
-
-// Get event type color
-const getTypeColor = (type) => {
-    const colors = {
-        'Meeting': 'bg-blue-100 text-blue-700',
-        'Workshop': 'bg-purple-100 text-purple-700',
-        'Expo': 'bg-green-100 text-green-700',
-        'News': 'bg-orange-100 text-orange-700'
-    };
-    return colors[type] || 'bg-gray-100 text-gray-700';
 };
 
 onMounted(() => {
@@ -64,13 +38,27 @@ onMounted(() => {
 onUnmounted(() => {
     window.removeEventListener('scroll', handleScroll);
 });
+
+const boardMembers = [
+    { position: 'President', name: 'Banwell Mwila', gender: 'male' },
+    { position: 'Vice President', name: 'Anthony Ranjan', gender: 'male' },
+    { position: 'Vice President', name: 'Peggy M. Hamukoma', gender: 'female' },
+    { position: 'Secretary', name: 'Peter Katebe', gender: 'male' },
+    { position: 'Vice Secretary', name: 'Steven Mwiinga', gender: 'male' },
+    { position: 'Treasurer', name: 'Kennedy Chaile', gender: 'male' },
+    { position: 'Marketing Officer', name: 'Petronella Mbesha', gender: 'female' },
+    { position: 'Membership Officer', name: 'Isaac Kapya', gender: 'male' },
+    { position: 'Research Officer', name: 'Diana Chipasha', gender: 'female' },
+    { position: 'Trustee', name: 'Nyambe Mwangala', gender: 'male' },
+    { position: 'Trustee', name: 'Dickson Mwika', gender: 'male' },
+    { position: 'Trustee', name: 'Ruth Hansen', gender: 'female' },
+];
 </script>
 
 <template>
-    <Head title="News & Events - LiVCCI" />
+    <Head title="Leadership - LiVCCI" />
 
-    <div class="min-h-screen bg-gray-50 font-sans text-gray-900 flex flex-col">
-
+    <div class="min-h-screen bg-gray-50 font-sans text-gray-900">
         <!-- Navigation -->
         <nav :class="['bg-white border-b border-gray-100 sticky top-0 z-50 transition-all duration-300', scrollY > 10 ? 'shadow-lg' : 'shadow-sm']">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -85,12 +73,12 @@ onUnmounted(() => {
                         <Link href="/" class="text-sm font-semibold text-[#1D2A68] hover:text-[#1876C3] transition-colors">Home</Link>
                         <Link :href="route('about')" class="text-sm font-semibold text-[#1D2A68] hover:text-[#1876C3] transition-colors">About Us</Link>
                         <Link :href="route('sectors')" class="text-sm font-semibold text-[#1D2A68] hover:text-[#1876C3] transition-colors">Sectors</Link>
-                        <Link :href="route('news')" class="text-sm font-bold text-[#1876C3] border-b-2 border-[#1876C3] pb-1">News & Events</Link>
+                        <Link :href="route('news')" class="text-sm font-semibold text-[#1D2A68] hover:text-[#1876C3] transition-colors">News & Events</Link>
                         <Link :href="route('directory.index')" class="text-sm font-semibold text-[#1D2A68] hover:text-[#1876C3] transition-colors">Member Directory</Link>
                         
                         <!-- More Dropdown -->
                         <div class="relative group">
-                            <button class="text-sm font-semibold text-[#1D2A68] hover:text-[#1876C3] transition-colors flex items-center gap-1">
+                            <button class="text-sm font-bold text-[#1876C3] border-b-2 border-[#1876C3] pb-1 flex items-center gap-1">
                                 More
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"/>
@@ -116,77 +104,106 @@ onUnmounted(() => {
 
         <!-- HERO SECTION -->
         <div class="relative bg-[#1D2A68] overflow-hidden h-96 sm:h-[500px]" data-scroll>
-            <!-- Background Image -->
             <div class="absolute inset-0">
                 <img 
                     src="https://images.unsplash.com/photo-1552664730-d307ca884978?ixlib=rb-1.2.1&auto=format&fit=crop&w=1920&q=80" 
                     class="w-full h-full object-cover opacity-25 mix-blend-overlay" 
-                    alt="News & Events"
+                    alt="Leadership"
                 >
                 <div class="absolute inset-0 bg-gradient-to-r from-[#1D2A68] to-[#1D2A68]/70 mix-blend-multiply"></div>
             </div>
             
-            <!-- Hero Content -->
             <div class="relative max-w-7xl mx-auto py-16 px-4 sm:py-24 sm:px-6 lg:px-8 flex flex-col justify-center h-full opacity-0 translate-y-10 transition-all duration-700 animate-in">
                 <span class="px-3 py-1 rounded-full bg-[#1876C3]/40 text-[#F6EED8] text-sm font-semibold tracking-wide border border-[#1876C3] mb-4 inline-block w-fit">
-                    Stay Connected
+                    Board of Directors
                 </span>
                 <h1 class="text-4xl font-extrabold tracking-tight text-white sm:text-5xl lg:text-6xl max-w-3xl leading-tight">
-                    News & Events
+                    Chamber Leadership
                 </h1>
                 <p class="mt-6 text-xl text-blue-100 max-w-2xl">
-                    Discover the latest updates, upcoming events, and business opportunities from the Livingstone Chamber of Commerce & Industry.
+                    Meet the elected board of directors guiding LiVCCI (Elected November 2024)
                 </p>
             </div>
         </div>
 
-        <!-- Content Section -->
-        <div class="bg-white py-16 sm:py-20">
+        <!-- Content -->
+        <div class="bg-white py-16 sm:py-20" data-scroll>
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div v-if="events && events.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                    <div v-for="(event, index) in events" :key="event.id" class="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300 group opacity-0 translate-y-10 animate-in" :style="{ transitionDelay: `${index * 100}ms` }">
-                        <!-- Image Container -->
-                        <div class="relative h-64 bg-gray-200 overflow-hidden">
-                            <img 
-                                v-if="event.image_url"
-                                :src="`/storage/${event.image_url}`"
-                                :alt="event.title"
-                                class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                            >
-                            <div v-else class="w-full h-full bg-gradient-to-br from-[#1876C3] to-[#1460A0] flex items-center justify-center">
-                                <svg class="w-20 h-20 text-white opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                            </div>
-                            <!-- Date Bar Overlay -->
-                            <div class="absolute bottom-0 left-0 right-0 bg-[#F4B223] text-[#1D2A68] py-2 px-4 text-center font-bold text-sm">
-                                {{ formatDate(event.event_date) }}
-                            </div>
-                        </div>
-
-                        <!-- Content -->
-                        <div class="p-6">
-                            <h3 class="text-lg font-bold text-[#1D2A68] mb-2 line-clamp-2 group-hover:text-[#1876C3] transition-colors">{{ event.title }}</h3>
-                            <p class="text-gray-600 text-sm mb-4 line-clamp-2">{{ event.description }}</p>
-                            <div class="flex items-center justify-between">
-                                <span :class="['px-3 py-1 rounded text-xs font-bold', getTypeColor(event.type)]">
-                                    {{ event.type }}
-                                </span>
-                                <a 
-                                    v-if="event.external_link"
-                                    :href="event.external_link"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    class="text-[#1876C3] font-semibold text-sm hover:underline cursor-pointer"
+                <!-- Board Members Grid -->
+                <div class="mb-20 opacity-0 translate-y-10 transition-all duration-700 animate-in">
+                    <h2 class="text-3xl font-bold text-[#1D2A68] mb-12 text-center">Elected Leadership</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                        <div 
+                            v-for="(member, index) in boardMembers" 
+                            :key="index"
+                            :style="{ transitionDelay: `${index * 50}ms` }"
+                            class="opacity-0 translate-y-10 transition-all duration-700 animate-in"
+                        >
+                            <!-- Photo -->
+                            <div class="rounded-lg h-64 mb-4 flex items-center justify-center overflow-hidden shadow-md group">
+                                <img 
+                                    :src="`/images/leader/${member.gender === 'male' ? 'man.png' : 'woman.png'}`"
+                                    :alt="member.name"
+                                    class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                                 >
-                                    Read More →
-                                </a>
-                                <span v-else class="text-gray-400 font-semibold text-sm">Read More →</span>
+                            </div>
+                            
+                            <!-- Member Info -->
+                            <div class="text-center">
+                                <h3 class="text-lg font-bold text-orange-600 mb-1 uppercase tracking-wide">{{ member.name }}</h3>
+                                <p class="text-gray-600 text-sm font-medium">{{ member.position }}</p>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div v-else class="text-center py-16">
-                    <p class="text-lg text-gray-600 mb-2">No events yet</p>
-                    <p class="text-gray-500">Check back soon for upcoming news and events.</p>
+
+                <!-- Leadership Structure Section -->
+                <div class="bg-gradient-to-r from-[#1D2A68] to-[#1460A0] text-white rounded-xl p-12 mb-20 opacity-0 translate-y-10 transition-all duration-700 animate-in" style="transition-delay: 100ms;">
+                    <h2 class="text-3xl font-bold mb-8 text-center">Board Structure</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div class="flex gap-4">
+                            <div class="flex-shrink-0 w-8 h-8 bg-[#F4B223] rounded-full flex items-center justify-center font-bold">1</div>
+                            <div>
+                                <h3 class="font-bold mb-2">Executive Committee</h3>
+                                <p class="text-blue-100">President, Vice Presidents, Secretary, Treasurer</p>
+                            </div>
+                        </div>
+
+                        <div class="flex gap-4">
+                            <div class="flex-shrink-0 w-8 h-8 bg-[#F4B223] rounded-full flex items-center justify-center font-bold">2</div>
+                            <div>
+                                <h3 class="font-bold mb-2">Officers</h3>
+                                <p class="text-blue-100">Marketing, Membership, Research, and Support Officers</p>
+                            </div>
+                        </div>
+
+                        <div class="flex gap-4">
+                            <div class="flex-shrink-0 w-8 h-8 bg-[#F4B223] rounded-full flex items-center justify-center font-bold">3</div>
+                            <div>
+                                <h3 class="font-bold mb-2">Trustees</h3>
+                                <p class="text-blue-100">Providing oversight and fiduciary responsibility</p>
+                            </div>
+                        </div>
+
+                        <div class="flex gap-4">
+                            <div class="flex-shrink-0 w-8 h-8 bg-[#F4B223] rounded-full flex items-center justify-center font-bold">4</div>
+                            <div>
+                                <h3 class="font-bold mb-2">Mission-Driven</h3>
+                                <p class="text-blue-100">Committed to advancing LiVCCI's vision and strategic goals</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Call to Action -->
+                <div class="text-center bg-gray-50 rounded-xl p-12 opacity-0 translate-y-10 transition-all duration-700 animate-in" style="transition-delay: 200ms;">
+                    <h2 class="text-3xl font-bold text-[#1D2A68] mb-6">Join the Chamber Community</h2>
+                    <p class="text-lg text-gray-600 mb-8 max-w-2xl mx-auto">
+                        Work alongside our dedicated leadership and connect with Livingstone's most influential business community.
+                    </p>
+                    <Link :href="route('register')" class="inline-block bg-[#1876C3] text-white font-bold py-3 px-10 rounded-md hover:bg-[#1460A0] shadow-lg transition-colors text-lg">
+                        Become a Member Today
+                    </Link>
                 </div>
             </div>
         </div>
