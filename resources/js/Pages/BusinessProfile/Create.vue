@@ -34,38 +34,21 @@ const handleLogoUpload = (event) => {
 
 // Industry Sectors
 const industrySectors = [
-    'Agriculture',
-    'Banking & Finance',
-    'Construction',
-    'Education',
-    'Energy',
-    'Entertainment',
-    'Food & Beverage',
-    'Healthcare',
-    'Hospitality',
-    'Information Technology',
-    'Insurance',
-    'Logistics & Transportation',
-    'Manufacturing',
-    'Media & Publishing',
-    'Mining',
-    'Professional Services',
-    'Real Estate',
-    'Retail',
-    'Telecommunications',
-    'Tourism',
-    'Utilities',
-    'Other'
+    'Tourism & Hospitality',
+    'Trade & Commerce',
+    'Financial Services',
+    'Construction & Engineering',
+    'Agriculture & Manufacturing',
+    'Cooperatives & Social Enterprise',
+    'IT & Creative Media'
 ];
 
 // Membership Types
 const membershipTypes = [
-    'Individual',
-    'Co-operative', 
-    'Business',
-    'Academia',
     'Corporate',
-    'Affiliate'
+    'Ordinary',
+    'Associate',
+    'Cooperative'
 ];
 
 // Membership Categories

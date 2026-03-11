@@ -23,8 +23,8 @@ class UpdateBusinessProfileRequest extends FormRequest
 
         return [
             'company_name' => 'required|string|max:255',
-            'industry_sector' => 'required|string|max:255',
-            'member_type' => 'required|in:Individual,Co-operative,Business,Academia,Corporate,Affiliate',
+            'industry_sector' => 'required|in:Tourism & Hospitality,Trade & Commerce,Financial Services,Construction & Engineering,Agriculture & Manufacturing,Cooperatives & Social Enterprise,IT & Creative Media',
+            'member_type' => 'required|in:Corporate,Ordinary,Associate,Cooperative',
             'member_category' => 'required|string|max:255',
             'tpin' => 'required|string|max:20|unique:business_profiles,tpin,' . $profileId,
             'pacra_reg_no' => 'nullable|string|max:50|unique:business_profiles,pacra_reg_no,' . $profileId,
@@ -46,6 +46,7 @@ class UpdateBusinessProfileRequest extends FormRequest
             'company_name.required' => 'Company name is required.',
             'company_name.max' => 'Company name cannot exceed 255 characters.',
             'industry_sector.required' => 'Please select an industry sector.',
+            'industry_sector.in' => 'Invalid industry sector selected.',
             'member_type.required' => 'Please select a membership type.',
             'member_type.in' => 'Invalid membership type selected.',
             'member_category.required' => 'Please select a membership category.',

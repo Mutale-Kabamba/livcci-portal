@@ -17,6 +17,17 @@ const handleScroll = () => {
 // Search and Filter Logic
 const searchQuery = ref('');
 const selectedCategories = ref([]);
+const selectedSectors = ref([]);
+
+const sectors = [
+    'Tourism & Hospitality',
+    'Trade & Commerce',
+    'Financial Services',
+    'Construction & Engineering',
+    'Agriculture & Manufacturing',
+    'Cooperatives & Social Enterprise',
+    'IT & Creative Media'
+];
 
 const filteredProfiles = computed(() => {
     return props.profiles.filter(profile => {
@@ -25,8 +36,9 @@ const filteredProfiles = computed(() => {
                               profile.short_description.toLowerCase().includes(searchQuery.value.toLowerCase());
         
         const matchesCategory = selectedCategories.value.length === 0 || selectedCategories.value.includes(profile.member_category);
+        const matchesSector = selectedSectors.value.length === 0 || selectedSectors.value.includes(profile.industry_sector);
         
-        return matchesSearch && matchesCategory;
+        return matchesSearch && matchesCategory && matchesSector;
     });
 });
 
@@ -42,6 +54,15 @@ const toggleCategory = (category) => {
         selectedCategories.value.splice(index, 1);
     } else {
         selectedCategories.value.push(category);
+    }
+};
+
+const toggleSector = (sector) => {
+    const index = selectedSectors.value.indexOf(sector);
+    if (index > -1) {
+        selectedSectors.value.splice(index, 1);
+    } else {
+        selectedSectors.value.push(sector);
     }
 };
 
@@ -175,6 +196,21 @@ onUnmounted(() => {
                                         class="w-4 h-4 text-[#1876C3] rounded focus:ring-[#1876C3]"
                                     >
                                     <span class="text-sm text-[#1D2A68]">{{ category }}</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="mt-6">
+                            <h4 class="font-semibold text-[#1D2A68] mb-3 text-sm">Filter by Sector</h4>
+                            <div class="space-y-2 max-h-80 overflow-y-auto">
+                                <label v-for="sector in sectors" :key="sector" class="flex items-center gap-2 cursor-pointer">
+                                    <input
+                                        type="checkbox"
+                                        :checked="selectedSectors.includes(sector)"
+                                        @change="toggleSector(sector)"
+                                        class="w-4 h-4 text-[#1876C3] rounded focus:ring-[#1876C3]"
+                                    >
+                                    <span class="text-sm text-[#1D2A68]">{{ sector }}</span>
                                 </label>
                             </div>
                         </div>
