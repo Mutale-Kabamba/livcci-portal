@@ -1,6 +1,6 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { Head, useForm } from '@inertiajs/vue3';
+import { Head, Link, useForm } from '@inertiajs/vue3';
 import { ref } from 'vue';
 
 const props = defineProps({
@@ -202,6 +202,7 @@ const deleteEvent = (eventId) => {
         });
     }
 };
+
 </script>
 
 <template>
@@ -211,9 +212,14 @@ const deleteEvent = (eventId) => {
         <template #header>
             <div class="flex justify-between items-center">
                 <h2 class="font-semibold text-xl text-[#1D2A68] leading-tight">LiVCCI Secretariat Admin</h2>
-                <button @click="openEventModal()" class="bg-[#1876C3] text-white text-sm font-bold py-2 px-4 rounded hover:bg-[#1460A0] shadow-md transition">
-                    + Post New Event
-                </button>
+                <div class="flex items-center gap-3">
+                    <Link :href="route('admin.accounts.index')" class="bg-white border border-[#1D2A68] text-[#1D2A68] text-sm font-bold py-2 px-4 rounded hover:bg-gray-50 shadow-sm transition">
+                        Manage Accounts
+                    </Link>
+                    <button @click="openEventModal()" class="bg-[#1876C3] text-white text-sm font-bold py-2 px-4 rounded hover:bg-[#1460A0] shadow-md transition">
+                        + Post New Event
+                    </button>
+                </div>
             </div>
         </template>
 
@@ -304,7 +310,7 @@ const deleteEvent = (eventId) => {
                                     </td>
                                     <td class="px-6 py-4">
                                         <div class="text-sm text-gray-900">
-                                                       php artisan migrate                                 <span class="font-medium">{{ profile.member_type }}</span>
+                                            <span class="font-medium">{{ profile.member_type }}</span>
                                         </div>
                                         <div class="text-xs text-gray-500">{{ profile.member_category }}</div>
                                     </td>
@@ -335,6 +341,7 @@ const deleteEvent = (eventId) => {
                         </table>
                     </div>
                 </div>
+
             </div>
         </div>
 

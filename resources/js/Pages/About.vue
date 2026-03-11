@@ -1,6 +1,35 @@
 <script setup>
 import { Head, Link } from '@inertiajs/vue3';
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
+
+const props = defineProps({
+    content: {
+        type: Object,
+        default: () => ({})
+    }
+});
+
+const aboutHero = computed(() => props.content.hero || {
+    badge: 'Our Story',
+    title: 'About the Chamber',
+    description: 'Building a thriving business ecosystem for Livingstone and the Southern Region of Zambia.'
+});
+
+const aboutMission = computed(() => props.content.mission || {
+    title: 'Our Mission',
+    text: 'To provide exceptional value to our members through proactive advocacy, strategic partnerships, and innovative business support services that promote economic growth and sustainable development in Livingstone.'
+});
+
+const aboutVision = computed(() => props.content.vision || {
+    title: 'Our Vision',
+    text: 'To be the most influential, sustainable, and member-driven Chamber of Commerce in Zambia, fostering a thriving and globally competitive business environment in Livingstone.'
+});
+
+const aboutWhoWeAre = computed(() => props.content.who_we_are || {
+    title: 'Who We Are',
+    paragraph_one: 'The Livingstone Chamber of Commerce and Industry (LiVCCI) is a vibrant, member-led organization representing businesses and entrepreneurs across diverse sectors in Livingstone and the Southern Region of Zambia. Established as a beacon of economic collaboration, we unite businesses to harness opportunities, overcome challenges, and drive sustainable growth.',
+    paragraph_two: "With Livingstone's strategic position at the epicenter of tourism, cross-border trade, and agricultural commerce, the Chamber serves as a critical bridge between government, business, civil society, and international partners-amplifying the voice of business and building an enabling environment for enterprise success."
+});
 
 const scrollY = ref(0);
 const dropdownOpen = ref(false);
@@ -100,13 +129,13 @@ onUnmounted(() => {
             
             <div class="relative max-w-7xl mx-auto py-16 px-4 sm:py-24 sm:px-6 lg:px-8 flex flex-col justify-center h-full opacity-0 translate-y-10 transition-all duration-700 animate-in">
                 <span class="px-3 py-1 rounded-full bg-[#1876C3]/40 text-[#F6EED8] text-sm font-semibold tracking-wide border border-[#1876C3] mb-4 inline-block w-fit">
-                    Our Story
+                    {{ aboutHero.badge }}
                 </span>
                 <h1 class="text-4xl font-extrabold tracking-tight text-white sm:text-5xl lg:text-6xl max-w-3xl leading-tight">
-                    About the Chamber
+                    {{ aboutHero.title }}
                 </h1>
                 <p class="mt-6 text-xl text-blue-100 max-w-2xl">
-                    Building a thriving business ecosystem for Livingstone and the Southern Region of Zambia.
+                    {{ aboutHero.description }}
                 </p>
             </div>
         </div>
@@ -117,30 +146,30 @@ onUnmounted(() => {
                 <!-- Mission & Vision Section -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-12 mb-20">
                     <div class="opacity-0 translate-y-10 transition-all duration-700 animate-in">
-                        <h2 class="text-3xl font-bold text-[#1D2A68] mb-6">Our Mission</h2>
+                        <h2 class="text-3xl font-bold text-[#1D2A68] mb-6">{{ aboutMission.title }}</h2>
                         <p class="text-gray-600 leading-relaxed text-lg">
-                            To provide exceptional value to our members through proactive advocacy, strategic partnerships, and innovative business support services that promote economic growth and sustainable development in Livingstone.
+                            {{ aboutMission.text }}
                         </p>
                     </div>
 
                     <div class="opacity-0 translate-y-10 transition-all duration-700 animate-in" style="transition-delay: 100ms;">
-                        <h2 class="text-3xl font-bold text-[#1D2A68] mb-6">Our Vision</h2>
+                        <h2 class="text-3xl font-bold text-[#1D2A68] mb-6">{{ aboutVision.title }}</h2>
                         <p class="text-gray-600 leading-relaxed text-lg">
-                            To be the most influential, sustainable, and member-driven Chamber of Commerce in Zambia, fostering a thriving and globally competitive business environment in Livingstone.
+                            {{ aboutVision.text }}
                         </p>
                     </div>
                 </div>
 
                 <!-- Who We Are Section -->
                 <div class="mb-20 opacity-0 translate-y-10 transition-all duration-700 animate-in" style="transition-delay: 200ms;">
-                    <h2 class="text-3xl font-bold text-[#1D2A68] mb-8">Who We Are</h2>
+                    <h2 class="text-3xl font-bold text-[#1D2A68] mb-8">{{ aboutWhoWeAre.title }}</h2>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
                         <div>
                             <p class="text-gray-600 leading-relaxed mb-4">
-                                The Livingstone Chamber of Commerce and Industry (LiVCCI) is a vibrant, member-led organization representing businesses and entrepreneurs across diverse sectors in Livingstone and the Southern Region of Zambia. Established as a beacon of economic collaboration, we unite businesses to harness opportunities, overcome challenges, and drive sustainable growth.
+                                {{ aboutWhoWeAre.paragraph_one }}
                             </p>
                             <p class="text-gray-600 leading-relaxed mb-4">
-                                With Livingstone's strategic position at the epicenter of tourism, cross-border trade, and agricultural commerce, the Chamber serves as a critical bridge between government, business, civil society, and international partners—amplifying the voice of business and building an enabling environment for enterprise success.
+                                {{ aboutWhoWeAre.paragraph_two }}
                             </p>
                         </div>
                         <img src="https://images.unsplash.com/photo-1552664730-d307ca884978?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80" alt="Chamber Office" class="rounded-lg shadow-lg">

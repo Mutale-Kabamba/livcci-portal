@@ -2,6 +2,13 @@
 import { Head, Link } from '@inertiajs/vue3';
 import { ref, onMounted, onUnmounted } from 'vue';
 
+const props = defineProps({
+    content: {
+        type: Object,
+        default: () => ({})
+    }
+});
+
 const scrollY = ref(0);
 const dropdownOpen = ref(false);
 
@@ -39,7 +46,7 @@ onUnmounted(() => {
     window.removeEventListener('scroll', handleScroll);
 });
 
-const membershipTiers = [
+const defaultMembershipTiers = [
     {
         category: 'Corporate',
         amount: 2000.00,
@@ -81,7 +88,7 @@ const membershipTiers = [
     },
 ];
 
-const membershipBenefits = [
+const defaultMembershipBenefits = [
     {
         image: 'https://images.unsplash.com/photo-1552664730-d307ca884978?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
         title: 'Networking',
@@ -113,6 +120,20 @@ const membershipBenefits = [
         description: 'Access resources and mentorship for business growth'
     },
 ];
+
+const membershipTiers = props.content.tiers || defaultMembershipTiers;
+const membershipBenefits = props.content.benefits || defaultMembershipBenefits;
+const membershipHero = props.content.hero || {
+    badge: 'Join LiVCCI',
+    title: 'Membership at LiVCCI',
+    description: 'Choose the membership category that best fits your business needs and unlock unprecedented opportunities.'
+};
+const registrationFee = props.content.registration_fee || {
+    label: 'One-Time Fee',
+    amount: '100.00 ZMW',
+    subtitle: 'Registration Fee for All New Members',
+    description: 'A one-time registration fee applies to all new members upon joining LiVCCI. This fee is separate from your annual membership subscription.'
+};
 </script>
 
 <template>
@@ -175,13 +196,13 @@ const membershipBenefits = [
             
             <div class="relative max-w-7xl mx-auto py-16 px-4 sm:py-24 sm:px-6 lg:px-8 flex flex-col justify-center h-full opacity-0 translate-y-10 transition-all duration-700 animate-in">
                 <span class="px-3 py-1 rounded-full bg-[#1876C3]/40 text-[#F6EED8] text-sm font-semibold tracking-wide border border-[#1876C3] mb-4 inline-block w-fit">
-                    Join LiVCCI
+                    {{ membershipHero.badge }}
                 </span>
                 <h1 class="text-4xl font-extrabold tracking-tight text-white sm:text-5xl lg:text-6xl max-w-3xl leading-tight">
-                    Membership at LiVCCI
+                    {{ membershipHero.title }}
                 </h1>
                 <p class="mt-6 text-xl text-blue-100 max-w-2xl">
-                    Choose the membership category that best fits your business needs and unlock unprecedented opportunities.
+                    {{ membershipHero.description }}
                 </p>
             </div>
         </div>
@@ -235,10 +256,10 @@ const membershipBenefits = [
                 <div class="bg-gradient-to-r from-[#1876C3] to-[#1460A0] p-0 rounded-xl mb-20 opacity-0 translate-y-10 transition-all duration-700 animate-in overflow-hidden shadow-2xl" style="transition-delay: 300ms;">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
                         <div class="p-8 md:p-12">
-                            <span class="inline-block px-4 py-2 bg-[#F4B223]/20 text-[#F4B223] text-xs font-bold rounded-full mb-4 uppercase tracking-widest">One-Time Fee</span>
-                            <h3 class="text-4xl md:text-5xl font-black text-white mb-4">100.00 ZMW</h3>
-                            <p class="text-blue-100 text-lg mb-6">Registration Fee for All New Members</p>
-                            <p class="text-blue-50 mb-8">A one-time registration fee applies to all new members upon joining LiVCCI. This fee is separate from your annual membership subscription.</p>
+                            <span class="inline-block px-4 py-2 bg-[#F4B223]/20 text-[#F4B223] text-xs font-bold rounded-full mb-4 uppercase tracking-widest">{{ registrationFee.label }}</span>
+                            <h3 class="text-4xl md:text-5xl font-black text-white mb-4">{{ registrationFee.amount }}</h3>
+                            <p class="text-blue-100 text-lg mb-6">{{ registrationFee.subtitle }}</p>
+                            <p class="text-blue-50 mb-8">{{ registrationFee.description }}</p>
                             <Link :href="route('register')" class="inline-block bg-[#F4B223] text-[#1D2A68] font-bold py-3 px-8 rounded-lg hover:bg-white transition-colors shadow-lg">
                                 Start Registration →
                             </Link>

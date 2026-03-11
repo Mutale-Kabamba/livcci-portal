@@ -2,6 +2,13 @@
 import { Head, Link } from '@inertiajs/vue3';
 import { ref, onMounted, onUnmounted } from 'vue';
 
+const props = defineProps({
+    content: {
+        type: Object,
+        default: () => ({})
+    }
+});
+
 const scrollY = ref(0);
 const dropdownOpen = ref(false);
 
@@ -39,7 +46,7 @@ onUnmounted(() => {
     window.removeEventListener('scroll', handleScroll);
 });
 
-const boardMembers = [
+const defaultBoardMembers = [
     { position: 'President', name: 'Banwell Mwila', gender: 'male' },
     { position: 'Vice President', name: 'Anthony Ranjan', gender: 'male' },
     { position: 'Vice President', name: 'Peggy M. Hamukoma', gender: 'female' },
@@ -53,6 +60,13 @@ const boardMembers = [
     { position: 'Trustee', name: 'Dickson Mwika', gender: 'male' },
     { position: 'Trustee', name: 'Ruth Hansen', gender: 'female' },
 ];
+
+const boardMembers = props.content.board_members || defaultBoardMembers;
+const leadershipHero = props.content.hero || {
+    badge: 'Board of Directors',
+    title: 'Chamber Leadership',
+    description: 'Meet the elected board of directors guiding LiVCCI (Elected November 2024)'
+};
 </script>
 
 <template>
@@ -115,13 +129,13 @@ const boardMembers = [
             
             <div class="relative max-w-7xl mx-auto py-16 px-4 sm:py-24 sm:px-6 lg:px-8 flex flex-col justify-center h-full opacity-0 translate-y-10 transition-all duration-700 animate-in">
                 <span class="px-3 py-1 rounded-full bg-[#1876C3]/40 text-[#F6EED8] text-sm font-semibold tracking-wide border border-[#1876C3] mb-4 inline-block w-fit">
-                    Board of Directors
+                    {{ leadershipHero.badge }}
                 </span>
                 <h1 class="text-4xl font-extrabold tracking-tight text-white sm:text-5xl lg:text-6xl max-w-3xl leading-tight">
-                    Chamber Leadership
+                    {{ leadershipHero.title }}
                 </h1>
                 <p class="mt-6 text-xl text-blue-100 max-w-2xl">
-                    Meet the elected board of directors guiding LiVCCI (Elected November 2024)
+                    {{ leadershipHero.description }}
                 </p>
             </div>
         </div>
