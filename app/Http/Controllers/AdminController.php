@@ -9,6 +9,7 @@ use Illuminate\Foundation\Application;
 use Inertia\Inertia;
 use App\Models\BusinessProfile;
 use App\Models\ChamberEvent;
+use App\Models\Invoice;
 use App\Models\SiteContent;
 use App\Models\User;
 
@@ -167,6 +168,55 @@ class AdminController extends Controller
             \Log::error('Error deleting member profile: ' . $e->getMessage());
             return back()->with('error', 'Failed to delete member profile. Please try again.');
         }
+    }
+
+    public function generateInvoice(BusinessProfile $profile)
+    {
+        if (!$profile->membership_type) {
+            return back()->with('error', 'Membership type is required before generating an invoice.');
+        }
+
+        $amount = match ($profile->membership_type) {
+            'Corporate' => 2000,
+            'Ordinary' => 1000,
+            'Associate', 'Cooperative' => 500,
+            default => 500,
+        };
+
+        Invoice::create([
+            'profile_id' => $profile->id,
+            'amount' => $amount,
+            'status' => 'Unpaid',
+            'invoice_number' => $this->generateInvoiceNumber(),
+            'due_date' => now()->addDays(30)->toDateString(),
+        ]);
+
+        return back()->with('message', 'Invoice generated successfully.');
+    }
+
+    public function markAsPaid(Invoice $invoice)
+    {
+        $today = now()->toDateString();
+
+        $invoice->update([
+            'status' => 'Paid',
+        ]);
+
+        $invoice->profile()->update([
+            'last_payment_date' => $today,
+            'subscription_expiry' => now()->addYear()->toDateString(),
+        ]);
+
+        return back()->with('message', 'Invoice marked as paid and membership updated.');
+    }
+
+    private function generateInvoiceNumber(): string
+    {
+        do {
+            $candidate = 'INV-' . now()->format('Ymd') . '-' . strtoupper(substr(bin2hex(random_bytes(3)), 0, 6));
+        } while (Invoice::where('invoice_number', $candidate)->exists());
+
+        return $candidate;
     }
 
     // 3. Logic to Add News/Events
