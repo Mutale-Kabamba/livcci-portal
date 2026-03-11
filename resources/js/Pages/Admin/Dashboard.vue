@@ -27,11 +27,27 @@ const updateStatus = (profileId, newStatus) => {
 
 const paymentForm = useForm({});
 
+const invoiceStoreForm = useForm({
+    profile_id: null,
+    membership_type: '',
+});
+
 const confirmPayment = (invoiceId) => {
     paymentForm.patch(route('admin.invoices.paid', invoiceId), {
         preserveScroll: true,
         onSuccess: () => alert('Payment confirmed and subscription updated.'),
         onError: () => alert('Failed to confirm payment.'),
+    });
+};
+
+const generateInvoice = (profile) => {
+    invoiceStoreForm.profile_id = profile.id;
+    invoiceStoreForm.membership_type = profile.membership_type || '';
+
+    invoiceStoreForm.post(route('admin.invoices.store'), {
+        preserveScroll: true,
+        onSuccess: () => alert('Invoice generated successfully.'),
+        onError: () => alert('Failed to generate invoice. Ensure membership type is set.'),
     });
 };
 
@@ -380,6 +396,12 @@ const deleteEvent = (eventId) => {
                                                         Download Certificate
                                                     </a>
                                                     <button
+                                                        @click="generateInvoice(profile)"
+                                                        class="block w-full rounded-md px-3 py-2 text-left text-xs font-semibold text-[#1D2A68] hover:bg-[#1D2A68]/10"
+                                                    >
+                                                        Generate Invoice
+                                                    </button>
+                                                    <button
                                                         @click="updateStatus(profile.id, 'approved')"
                                                         class="block w-full rounded-md px-3 py-2 text-left text-xs font-semibold text-green-700 hover:bg-green-50"
                                                     >
@@ -428,8 +450,8 @@ const deleteEvent = (eventId) => {
                                 <tbody class="bg-white divide-y divide-gray-100">
                                     <tr v-for="invoice in invoices" :key="invoice.id" class="hover:bg-gray-50">
                                         <td class="px-6 py-4 text-sm font-semibold text-gray-900">{{ invoice.invoice_number }}</td>
-                                        <td class="px-6 py-4 text-sm text-gray-900">{{ invoice.profile?.company_name || 'N/A' }}</td>
-                                        <td class="px-6 py-4 text-sm text-gray-600">{{ invoice.profile?.membership_type || 'N/A' }}</td>
+                                        <td class="px-6 py-4 text-sm text-gray-900">{{ invoice.business_profile?.company_name || 'N/A' }}</td>
+                                        <td class="px-6 py-4 text-sm text-gray-600">{{ invoice.business_profile?.membership_type || 'N/A' }}</td>
                                         <td class="px-6 py-4 text-sm font-medium text-[#1D2A68]">ZMW {{ Number(invoice.amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</td>
                                         <td class="px-6 py-4 text-sm text-gray-600">{{ new Date(invoice.due_date).toLocaleDateString() }}</td>
                                         <td class="px-6 py-4">

@@ -35,6 +35,7 @@ Route::middleware([IsAdminMiddleware::class])->group(function () {
     Route::get('/admin/members/{profile}/certificate', [AdminController::class, 'downloadCertificate'])->name('admin.members.certificate');
 
     // Invoices Management
+    Route::post('/admin/invoices', [AdminController::class, 'store'])->name('admin.invoices.store');
     Route::post('/admin/invoices/{profile}/generate', [AdminController::class, 'generateInvoice'])->name('admin.invoices.generate');
     Route::patch('/admin/invoices/{invoice}/paid', [AdminController::class, 'markAsPaid'])->name('admin.invoices.paid');
 

@@ -75,7 +75,7 @@ class AdminController extends Controller
     {
         $profiles = BusinessProfile::with('user')->latest()->get();
         $events = ChamberEvent::latest()->get();
-        $invoices = Invoice::with('profile:id,company_name,membership_id,membership_type')->latest()->get();
+        $invoices = Invoice::with('businessProfile:id,company_name,membership_id,membership_type')->latest()->get();
         $siteContents = SiteContent::orderBy('page')->orderBy('section')->get();
         $strategicPlan = $this->getStrategicPlanProgress();
 
@@ -219,12 +219,34 @@ class AdminController extends Controller
             return back()->with('error', 'Membership type is required before generating an invoice.');
         }
 
-        $amount = match ($profile->membership_type) {
-            'Corporate' => 2000,
-            'Ordinary' => 1000,
-            'Associate', 'Cooperative' => 500,
-            default => 500,
-        };
+        $amount = $this->resolveMembershipAmount($profile->membership_type);
+
+        Invoice::create([
+            'profile_id' => $profile->id,
+            'amount' => $amount,
+            'status' => 'Unpaid',
+            'invoice_number' => $this->generateInvoiceNumber(),
+            'due_date' => now()->addDays(30)->toDateString(),
+        ]);
+
+        return back()->with('message', 'Invoice generated successfully.');
+    }
+
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'profile_id' => 'required|exists:business_profiles,id',
+        ]);
+
+        $profile = BusinessProfile::query()
+            ->select(['id', 'membership_type'])
+            ->findOrFail($validated['profile_id']);
+
+        if (!$profile->membership_type) {
+            return back()->with('error', 'Membership type is required before generating an invoice.');
+        }
+
+        $amount = $this->resolveMembershipAmount($profile->membership_type);
 
         Invoice::create([
             'profile_id' => $profile->id,
@@ -255,11 +277,35 @@ class AdminController extends Controller
 
     private function generateInvoiceNumber(): string
     {
+        $year = now()->format('Y');
+        $prefix = 'INV-' . $year . '-';
+        $nextSequence = 1;
+
+        $lastInvoiceNumber = Invoice::query()
+            ->where('invoice_number', 'like', $prefix . '%')
+            ->latest('id')
+            ->value('invoice_number');
+
+        if ($lastInvoiceNumber && preg_match('/^INV-' . $year . '-(\d{3})$/', $lastInvoiceNumber, $matches)) {
+            $nextSequence = ((int) $matches[1]) + 1;
+        }
+
         do {
-            $candidate = 'INV-' . now()->format('Ymd') . '-' . strtoupper(substr(bin2hex(random_bytes(3)), 0, 6));
+            $candidate = $prefix . str_pad((string) $nextSequence, 3, '0', STR_PAD_LEFT);
+            $nextSequence++;
         } while (Invoice::where('invoice_number', $candidate)->exists());
 
         return $candidate;
+    }
+
+    private function resolveMembershipAmount(string $membershipType): int
+    {
+        return match ($membershipType) {
+            'Corporate' => 2000,
+            'Ordinary' => 1000,
+            'Associate', 'Cooperative' => 500,
+            default => 500,
+        };
     }
 
     // 3. Logic to Add News/Events

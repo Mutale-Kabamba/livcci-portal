@@ -29,4 +29,9 @@ class Invoice extends Model
     {
         return $this->belongsTo(BusinessProfile::class, 'profile_id');
     }
+
+    public function businessProfile()
+    {
+        return $this->belongsTo(BusinessProfile::class, 'profile_id');
+    }
 }
