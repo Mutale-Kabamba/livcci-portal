@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\WelcomeApprovedMember;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Foundation\Application;
 use Inertia\Inertia;
 use App\Models\BusinessProfile;
@@ -79,12 +81,42 @@ class AdminController extends Controller
         $siteContents = SiteContent::orderBy('page')->orderBy('section')->get();
         $strategicPlan = $this->getStrategicPlanProgress();
 
+        $totalExpectedRevenue = $profiles->sum(function (BusinessProfile $profile): int {
+            if (!$profile->membership_type) {
+                return 0;
+            }
+
+            return $this->resolveMembershipAmount($profile->membership_type);
+        });
+
+        $totalActualRevenue = (float) Invoice::query()
+            ->where('status', 'Paid')
+            ->sum('amount');
+
+        $collectionPercentage = $totalExpectedRevenue > 0
+            ? round(($totalActualRevenue / $totalExpectedRevenue) * 100, 2)
+            : 0;
+
+        $sectorStats = BusinessProfile::query()
+            ->where('status', 'approved')
+            ->selectRaw('industry_sector as sector, COUNT(*) as count')
+            ->whereNotNull('industry_sector')
+            ->groupBy('industry_sector')
+            ->orderByDesc('count')
+            ->get();
+
         return Inertia::render('Admin/Dashboard', [
             'profiles' => $profiles,
             'events' => $events,
             'invoices' => $invoices,
             'siteContents' => $siteContents,
             'strategicPlan' => $strategicPlan,
+            'financialHealth' => [
+                'totalExpectedRevenue' => $totalExpectedRevenue,
+                'totalActualRevenue' => $totalActualRevenue,
+                'collectionPercentage' => $collectionPercentage,
+            ],
+            'sectorStats' => $sectorStats,
             'flash' => [
                 'message' => session('message')
             ]
@@ -151,6 +183,18 @@ class AdminController extends Controller
             $newStatus = $validated['status'];
 
             $profile->update(['status' => $newStatus]);
+
+            if ($oldStatus !== 'approved' && $newStatus === 'approved' && $profile->contact_email) {
+                try {
+                    Mail::to($profile->contact_email)->send(new WelcomeApprovedMember($profile));
+                } catch (\Throwable $mailException) {
+                    \Log::warning('Failed to send approved-member welcome email', [
+                        'profile_id' => $profile->id,
+                        'email' => $profile->contact_email,
+                        'error' => $mailException->getMessage(),
+                    ]);
+                }
+            }
 
             // Log the status change for audit trail
             \Log::info('Business profile status updated', [

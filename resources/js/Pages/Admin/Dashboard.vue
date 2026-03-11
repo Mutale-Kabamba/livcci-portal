@@ -1,13 +1,15 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 
 const props = defineProps({
     profiles: Array,
     events: Array,
     invoices: Array,
-    strategicPlan: Object
+    strategicPlan: Object,
+    financialHealth: Object,
+    sectorStats: Array
 });
 
 const activeTab = ref('member-management');
@@ -84,6 +86,48 @@ const saveStrategicPlan = () => {
         onError: () => alert('Failed to save strategic plan tracker.'),
     });
 };
+
+const collectionPercentage = computed(() => {
+    const value = Number(props.financialHealth?.collectionPercentage ?? 0);
+    return Math.max(0, Math.min(100, value));
+});
+
+const totalExpectedRevenue = computed(() => Number(props.financialHealth?.totalExpectedRevenue ?? 0));
+const totalActualRevenue = computed(() => Number(props.financialHealth?.totalActualRevenue ?? 0));
+
+const sectorPalette = ['#1D2A68', '#1876C3', '#3B82F6', '#F4B223', '#14B8A6', '#F97316', '#9333EA'];
+
+const sectorStatsWithPercent = computed(() => {
+    const rows = Array.isArray(props.sectorStats) ? props.sectorStats : [];
+    const total = rows.reduce((sum, row) => sum + Number(row.count || 0), 0);
+
+    return rows.map((row, index) => {
+        const count = Number(row.count || 0);
+        return {
+            sector: row.sector,
+            count,
+            percent: total > 0 ? (count / total) * 100 : 0,
+            color: sectorPalette[index % sectorPalette.length],
+        };
+    });
+});
+
+const sectorChartStyle = computed(() => {
+    if (sectorStatsWithPercent.value.length === 0) {
+        return { background: '#e5e7eb' };
+    }
+
+    let cursor = 0;
+    const slices = sectorStatsWithPercent.value.map((item) => {
+        const start = cursor;
+        cursor += item.percent;
+        return `${item.color} ${start.toFixed(2)}% ${cursor.toFixed(2)}%`;
+    });
+
+    return {
+        background: `conic-gradient(${slices.join(', ')})`,
+    };
+});
 
 // Event Posting Form
 const showEventModal = ref(false);
@@ -338,6 +382,37 @@ const deleteEvent = (eventId) => {
                         </div>
                     </div>
 
+                    <div class="bg-white shadow sm:rounded-lg p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg font-bold text-[#1D2A68]">Chamber Diversity</h3>
+                            <span class="text-xs font-semibold text-gray-500 uppercase">Members by Sector</span>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+                            <div class="flex justify-center">
+                                <div class="relative h-56 w-56 rounded-full" :style="sectorChartStyle">
+                                    <div class="absolute inset-8 rounded-full bg-white flex items-center justify-center text-center">
+                                        <div>
+                                            <div class="text-xs text-gray-500 uppercase">Sectors</div>
+                                            <div class="text-2xl font-extrabold text-[#1D2A68]">{{ sectorStatsWithPercent.length }}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="space-y-2 max-h-56 overflow-y-auto pr-1">
+                                <div v-if="sectorStatsWithPercent.length === 0" class="text-sm text-gray-500">No approved members available for sector stats.</div>
+                                <div v-for="item in sectorStatsWithPercent" :key="item.sector" class="flex items-center justify-between text-sm">
+                                    <div class="flex items-center gap-2 min-w-0">
+                                        <span class="h-3 w-3 rounded-full flex-shrink-0" :style="{ backgroundColor: item.color }"></span>
+                                        <span class="text-gray-700 truncate">{{ item.sector }}</span>
+                                    </div>
+                                    <span class="font-semibold text-[#1D2A68]">{{ item.count }} ({{ item.percent.toFixed(1) }}%)</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="bg-white shadow sm:rounded-lg overflow-hidden">
                         <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
                             <h3 class="text-lg font-bold text-[#1D2A68]">Manage Member Directory</h3>
@@ -430,6 +505,28 @@ const deleteEvent = (eventId) => {
                 </template>
 
                 <template v-if="activeTab === 'financials'">
+                    <div class="bg-white shadow sm:rounded-lg p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg font-bold text-[#1D2A68]">Financial Health</h3>
+                            <span class="text-sm font-semibold text-[#1876C3]">{{ collectionPercentage.toFixed(1) }}% Collected</span>
+                        </div>
+
+                        <div class="w-full h-4 bg-gray-200 rounded-full overflow-hidden">
+                            <div class="h-full bg-gradient-to-r from-[#1876C3] to-[#1D2A68] transition-all duration-300" :style="{ width: collectionPercentage + '%' }"></div>
+                        </div>
+
+                        <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                            <div class="rounded-lg bg-gray-50 p-4 border border-gray-200">
+                                <div class="text-gray-500 uppercase text-xs font-semibold">Total Expected Revenue</div>
+                                <div class="text-xl font-extrabold text-[#1D2A68] mt-1">ZMW {{ totalExpectedRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</div>
+                            </div>
+                            <div class="rounded-lg bg-green-50 p-4 border border-green-200">
+                                <div class="text-green-700 uppercase text-xs font-semibold">Total Actual Revenue</div>
+                                <div class="text-xl font-extrabold text-green-700 mt-1">ZMW {{ totalActualRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</div>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="bg-white shadow sm:rounded-lg overflow-hidden">
                         <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
                             <h3 class="text-lg font-bold text-[#1D2A68]">Invoices</h3>
