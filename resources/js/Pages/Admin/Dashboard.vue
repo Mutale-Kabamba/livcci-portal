@@ -274,7 +274,7 @@ const deleteEvent = (eventId) => {
         <div class="py-12">
             <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-8">
                 <div class="bg-white shadow sm:rounded-lg p-2">
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    <div class="grid grid-cols-1 sm:grid-cols-4 gap-2">
                         <button
                             @click="activeTab = 'member-management'"
                             class="px-4 py-3 rounded-lg text-sm font-bold transition"
@@ -288,6 +288,13 @@ const deleteEvent = (eventId) => {
                             :class="activeTab === 'financials' ? 'bg-[#1D2A68] text-white shadow' : 'bg-white text-[#1D2A68] border border-[#1876C3] hover:bg-[#1876C3]/10'"
                         >
                             Financials
+                        </button>
+                        <button
+                            @click="activeTab = 'strategic-plan'"
+                            class="px-4 py-3 rounded-lg text-sm font-bold transition"
+                            :class="activeTab === 'strategic-plan' ? 'bg-[#1D2A68] text-white shadow' : 'bg-white text-[#1D2A68] border border-[#1876C3] hover:bg-[#1876C3]/10'"
+                        >
+                            Strategic Plan
                         </button>
                         <button
                             @click="activeTab = 'settings'"
@@ -328,7 +335,7 @@ const deleteEvent = (eventId) => {
                                         <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Contact</th>
                                         <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">TPIN/PACRA</th>
                                         <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Status</th>
-                                        <th class="px-6 py-3 text-right text-xs font-bold text-gray-500 uppercase">Actions</th>
+                                        <th class="px-6 py-3 text-right text-xs font-bold text-gray-500 uppercase w-72">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody class="bg-white divide-y divide-gray-100">
@@ -358,17 +365,40 @@ const deleteEvent = (eventId) => {
                                                 {{ profile.status }}
                                             </span>
                                         </td>
-                                        <td class="px-6 py-4 text-right space-x-2">
-                                            <a
-                                                v-if="profile.status === 'approved'"
-                                                :href="route('admin.members.certificate', profile.id)"
-                                                class="text-[#1876C3] font-bold text-sm hover:underline"
-                                            >
-                                                Download Certificate
-                                            </a>
-                                            <button @click="updateStatus(profile.id, 'approved')" class="text-green-600 font-bold text-sm hover:underline">Approve</button>
-                                            <button @click="updateStatus(profile.id, 'suspended')" class="text-orange-600 font-bold text-sm hover:underline">Suspend</button>
-                                            <button @click="updateStatus(profile.id, 'deactivated')" class="text-red-500 font-bold text-sm hover:underline">Deactivate</button>
+                                        <td class="px-6 py-4 text-right">
+                                            <details class="relative inline-block text-left">
+                                                <summary class="list-none cursor-pointer inline-flex items-center gap-2 rounded-full border border-[#1D2A68]/20 bg-white px-3 py-1.5 text-xs font-bold text-[#1D2A68] hover:border-[#1876C3] hover:text-[#1876C3] transition">
+                                                    Actions
+                                                    <span class="text-[10px]">▼</span>
+                                                </summary>
+                                                <div class="absolute right-0 mt-2 w-44 rounded-lg border border-gray-200 bg-white shadow-lg z-20 p-1">
+                                                    <a
+                                                        v-if="profile.status === 'approved'"
+                                                        :href="route('admin.members.certificate', profile.id)"
+                                                        class="block w-full rounded-md px-3 py-2 text-xs font-semibold text-[#1876C3] hover:bg-[#1876C3]/10"
+                                                    >
+                                                        Download Certificate
+                                                    </a>
+                                                    <button
+                                                        @click="updateStatus(profile.id, 'approved')"
+                                                        class="block w-full rounded-md px-3 py-2 text-left text-xs font-semibold text-green-700 hover:bg-green-50"
+                                                    >
+                                                        Approve
+                                                    </button>
+                                                    <button
+                                                        @click="updateStatus(profile.id, 'suspended')"
+                                                        class="block w-full rounded-md px-3 py-2 text-left text-xs font-semibold text-orange-700 hover:bg-orange-50"
+                                                    >
+                                                        Suspend
+                                                    </button>
+                                                    <button
+                                                        @click="updateStatus(profile.id, 'deactivated')"
+                                                        class="block w-full rounded-md px-3 py-2 text-left text-xs font-semibold text-red-700 hover:bg-red-50"
+                                                    >
+                                                        Deactivate
+                                                    </button>
+                                                </div>
+                                            </details>
                                         </td>
                                     </tr>
                                 </tbody>
@@ -392,7 +422,7 @@ const deleteEvent = (eventId) => {
                                         <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Amount</th>
                                         <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Due Date</th>
                                         <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Status</th>
-                                        <th class="px-6 py-3 text-right text-xs font-bold text-gray-500 uppercase">Actions</th>
+                                        <th class="px-6 py-3 text-right text-xs font-bold text-gray-500 uppercase w-44">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody class="bg-white divide-y divide-gray-100">
@@ -412,11 +442,11 @@ const deleteEvent = (eventId) => {
                                                 v-if="invoice.status === 'Unpaid'"
                                                 @click="confirmPayment(invoice.id)"
                                                 :disabled="paymentForm.processing"
-                                                class="bg-[#1876C3] text-white text-xs px-3 py-1.5 rounded hover:bg-[#1460A0] transition font-bold disabled:opacity-50 disabled:cursor-not-allowed"
+                                                class="inline-flex items-center whitespace-nowrap rounded-full border border-[#1876C3] bg-[#1876C3] px-3 py-1.5 text-xs font-bold text-white transition hover:bg-[#1460A0] disabled:cursor-not-allowed disabled:opacity-50"
                                             >
                                                 Confirm Payment
                                             </button>
-                                            <span v-else class="text-xs font-semibold text-green-600">Completed</span>
+                                            <span v-else class="inline-flex items-center rounded-full border border-green-200 bg-green-50 px-3 py-1.5 text-xs font-bold text-green-700">Completed</span>
                                         </td>
                                     </tr>
                                     <tr v-if="!invoices || invoices.length === 0">
@@ -428,7 +458,7 @@ const deleteEvent = (eventId) => {
                     </div>
                 </template>
 
-                <template v-if="activeTab === 'settings'">
+                <template v-if="activeTab === 'strategic-plan'">
                     <div class="bg-white shadow sm:rounded-lg overflow-hidden">
                         <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
                             <h3 class="text-lg font-bold text-[#1D2A68]">Strategic Plan Tracker</h3>
@@ -477,7 +507,9 @@ const deleteEvent = (eventId) => {
                             </div>
                         </div>
                     </div>
+                </template>
 
+                <template v-if="activeTab === 'settings'">
                     <div class="bg-white shadow sm:rounded-lg overflow-hidden">
                         <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
                             <h3 class="text-lg font-bold text-[#1D2A68]">Published Events</h3>
@@ -505,10 +537,10 @@ const deleteEvent = (eventId) => {
                                         <span v-else>No date set</span>
                                     </div>
                                     <div class="flex gap-2">
-                                        <button @click="editEvent(event)" class="bg-[#1876C3] text-white text-xs px-3 py-1.5 rounded hover:bg-[#1460A0] transition font-medium">
+                                        <button @click="editEvent(event)" class="inline-flex items-center rounded-full border border-[#1876C3] bg-[#1876C3] px-3 py-1.5 text-xs font-bold text-white transition hover:bg-[#1460A0]">
                                             Edit
                                         </button>
-                                        <button @click="deleteEvent(event.id)" class="bg-red-500 text-white text-xs px-3 py-1.5 rounded hover:bg-red-600 transition font-medium">
+                                        <button @click="deleteEvent(event.id)" class="inline-flex items-center rounded-full border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-bold text-red-700 transition hover:bg-red-600 hover:text-white">
                                             Delete
                                         </button>
                                     </div>
