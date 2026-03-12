@@ -321,6 +321,9 @@ const deleteEvent = (eventId) => {
             <div class="flex justify-between items-center">
                 <h2 class="font-semibold text-xl text-[#1D2A68] leading-tight">LiVCCI Secretariat Admin</h2>
                 <div class="flex items-center gap-3">
+                    <Link :href="route('admin.reports.index')" class="bg-[#1D2A68] text-white text-sm font-bold py-2 px-4 rounded hover:bg-[#15204f] shadow-sm transition">
+                        Reports Center
+                    </Link>
                     <Link :href="route('admin.accounts.index')" class="bg-white border border-[#1D2A68] text-[#1D2A68] text-sm font-bold py-2 px-4 rounded hover:bg-gray-50 shadow-sm transition">
                         Manage Accounts
                     </Link>
@@ -334,7 +337,7 @@ const deleteEvent = (eventId) => {
         <div class="py-12">
             <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-8">
                 <div class="bg-white shadow sm:rounded-lg p-2">
-                    <div class="grid grid-cols-1 sm:grid-cols-4 gap-2">
+                    <div class="grid grid-cols-1 sm:grid-cols-5 gap-2">
                         <button
                             @click="activeTab = 'member-management'"
                             class="px-4 py-3 rounded-lg text-sm font-bold transition"
@@ -363,6 +366,12 @@ const deleteEvent = (eventId) => {
                         >
                             News & Events
                         </button>
+                        <Link
+                            :href="route('admin.reports.index')"
+                            class="px-4 py-3 rounded-lg text-sm font-bold transition text-center bg-white text-[#1D2A68] border border-[#1876C3] hover:bg-[#1876C3]/10"
+                        >
+                            Reports
+                        </Link>
                     </div>
                 </div>
 

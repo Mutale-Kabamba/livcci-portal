@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\BusinessProfile;
 use App\Models\Invoice;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -12,7 +13,7 @@ class ReportController extends Controller
 {
     public function index(): Response
     {
-        return Inertia::render('Admin/ReportsCenter', [
+        return Inertia::render('Admin/Reports/Index', [
             'reportType' => null,
             'filters' => [
                 'sector' => null,
@@ -24,7 +25,7 @@ class ReportController extends Controller
         ]);
     }
 
-    public function generate(Request $request): Response
+    public function generate(Request $request)
     {
         $validated = $request->validate([
             'report_type' => 'required|in:membership_list,revenue_summary,sector_analysis',
@@ -44,7 +45,24 @@ class ReportController extends Controller
             'sector_analysis' => $this->buildSectorAnalysis($filters),
         };
 
-        return Inertia::render('Admin/ReportsCenter', [
+        if ($request->boolean('download')) {
+            $view = match ($reportType) {
+                'revenue_summary' => 'reports.revenue_report',
+                'sector_analysis' => 'reports.sector_report',
+                default => 'reports.membership_report',
+            };
+
+            $pdf = Pdf::loadView($view, [
+                'reportType' => $reportType,
+                'filters' => $filters,
+                'reportData' => $reportData,
+                'generatedAt' => now(),
+            ])->setPaper('a4', 'portrait');
+
+            return $pdf->download('livcci-' . $reportType . '-' . now()->format('Ymd-His') . '.pdf');
+        }
+
+        return Inertia::render('Admin/Reports/Index', [
             'reportType' => $reportType,
             'filters' => [
                 'sector' => $filters['sector'] ?? null,
@@ -58,6 +76,19 @@ class ReportController extends Controller
 
     private function buildRevenueSummary(array $filters): array
     {
+        $memberQuery = BusinessProfile::query();
+        $this->applyMemberFilters($memberQuery, [
+            'sector' => $filters['sector'] ?? null,
+            'member_type' => $filters['member_type'] ?? null,
+        ]);
+
+        $members = $memberQuery->get(['membership_type', 'member_type']);
+
+        $totalPotentialRevenue = $members->sum(function (BusinessProfile $profile): int {
+            $effectiveType = $profile->membership_type ?: $profile->member_type;
+            return $this->resolveMembershipAmount($effectiveType);
+        });
+
         $query = Invoice::query()
             ->join('business_profiles', 'invoices.profile_id', '=', 'business_profiles.id')
             ->where('invoices.status', 'Paid');
@@ -74,8 +105,12 @@ class ReportController extends Controller
             ->orderByDesc('total_amount')
             ->get();
 
+        $outstandingBalance = max(0, $totalPotentialRevenue - $totalPaid);
+
         return [
+            'total_potential_revenue' => $totalPotentialRevenue,
             'total_paid' => $totalPaid,
+            'outstanding_balance' => $outstandingBalance,
             'breakdown' => $byMembershipType,
         ];
     }
@@ -109,7 +144,7 @@ class ReportController extends Controller
 
         $this->applyMemberFilters($query, $filters);
 
-        $members = $query->get(['industry_sector', 'business_activities']);
+        $members = $query->get(['company_name', 'industry_sector', 'business_activities']);
 
         $rows = $members
             ->groupBy(function (BusinessProfile $profile) {
@@ -149,6 +184,13 @@ class ReportController extends Controller
         return [
             'total_members' => $members->count(),
             'sectors' => $rows,
+            'companies' => $members->map(function (BusinessProfile $member) {
+                return [
+                    'company_name' => $member->company_name,
+                    'industry_sector' => $member->industry_sector ?: 'Unspecified',
+                    'business_activities' => implode(', ', $this->normalizeActivities($member->business_activities)),
+                ];
+            })->sortBy('company_name')->values(),
         ];
     }
 
@@ -194,6 +236,16 @@ class ReportController extends Controller
                     ->orWhere('member_type', $filters['member_type']);
             });
         }
+    }
+
+    private function resolveMembershipAmount(?string $membershipType): int
+    {
+        return match ($membershipType) {
+            'Corporate' => 2000,
+            'Ordinary' => 1000,
+            'Associate', 'Cooperative' => 500,
+            default => 500,
+        };
     }
 
     private function normalizeActivities($raw): array
