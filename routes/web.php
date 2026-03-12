@@ -12,8 +12,9 @@ Route::get('/', [AdminController::class, 'showHome'])->name('home');
 
 Route::get('/dashboard', function () {
     return Inertia::render('Dashboard', [
-        // This line fetches the profile linked to the logged-in user
-        'businessProfile' => auth()->user()?->businessProfile 
+        'businessProfiles' => auth()->check()
+            ? \App\Models\BusinessProfile::where('user_id', auth()->id())->latest()->get()
+            : collect()
     ]);
 })->middleware(['auth', 'verified'])->name('dashboard');
 
