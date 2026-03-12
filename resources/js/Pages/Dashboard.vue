@@ -1,13 +1,31 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { Head, Link } from '@inertiajs/vue3';
+import { Head, Link, useForm } from '@inertiajs/vue3';
 
-defineProps({
+const props = defineProps({
     businessProfiles: {
         type: Array,
         default: () => [],
     },
+    totalOutstandingDues: {
+        type: Number,
+        default: 0,
+    },
+    unpaidProfileIds: {
+        type: Array,
+        default: () => [],
+    },
 });
+
+const payAllForm = useForm({});
+
+const payAllDues = () => {
+    payAllForm.post(route('dashboard.pay-all'), {
+        preserveScroll: true,
+    });
+};
+
+const hasUnpaidInvoice = (profileId) => props.unpaidProfileIds.includes(profileId);
 
 const normalizeActivities = (value) => {
     if (Array.isArray(value)) {
@@ -105,6 +123,21 @@ const getCompletionBarClass = (score) => {
                     </div>
                 </div>
 
+                <div class="bg-[#1D2A68] text-white rounded-xl shadow-sm p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div>
+                        <p class="text-xs uppercase tracking-wide text-blue-100 font-semibold">Financial Overview</p>
+                        <p class="text-sm text-blue-100 mt-1">Total Outstanding Dues across all businesses</p>
+                        <p class="text-2xl font-extrabold mt-2">ZMW {{ Number(totalOutstandingDues || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</p>
+                    </div>
+                    <button
+                        @click="payAllDues"
+                        :disabled="payAllForm.processing || Number(totalOutstandingDues || 0) <= 0"
+                        class="bg-[#1876C3] hover:bg-[#1460A0] transition-all duration-300 text-white font-bold py-2.5 px-5 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        {{ payAllForm.processing ? 'Processing...' : 'Pay All' }}
+                    </button>
+                </div>
+
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div
                         v-for="profile in businessProfiles"
@@ -187,6 +220,13 @@ const getCompletionBarClass = (score) => {
                             <div><span class="font-semibold">Email:</span> {{ profile.contact_email }}</div>
                             <div><span class="font-semibold">Phone:</span> {{ profile.phone }}</div>
                             <div><span class="font-semibold">TPIN:</span> {{ profile.tpin }}</div>
+                        </div>
+
+                        <div v-if="hasUnpaidInvoice(profile.id)" class="mt-4 rounded-lg border border-yellow-200 bg-yellow-50 px-3 py-2 text-xs text-yellow-800 font-semibold flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01M4.93 19h14.14c1.54 0 2.5-1.67 1.73-3L13.73 4c-.77-1.33-2.69-1.33-3.46 0L3.2 16c-.77 1.33.19 3 1.73 3z" />
+                            </svg>
+                            <span>Action Required: Annual Dues unpaid.</span>
                         </div>
                     </div>
 

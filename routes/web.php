@@ -11,12 +11,54 @@ use Inertia\Inertia;
 Route::get('/', [AdminController::class, 'showHome'])->name('home');
 
 Route::get('/dashboard', function () {
+    $businessProfiles = auth()->check()
+        ? \App\Models\BusinessProfile::where('user_id', auth()->id())->latest()->get()
+        : collect();
+
+    $profileIds = $businessProfiles->pluck('id');
+
+    $unpaidInvoices = \App\Models\Invoice::query()
+        ->whereIn('profile_id', $profileIds)
+        ->where('status', 'Unpaid')
+        ->get(['id', 'profile_id', 'amount']);
+
     return Inertia::render('Dashboard', [
-        'businessProfiles' => auth()->check()
-            ? \App\Models\BusinessProfile::where('user_id', auth()->id())->latest()->get()
-            : collect()
+        'businessProfiles' => $businessProfiles,
+        'totalOutstandingDues' => (float) $unpaidInvoices->sum('amount'),
+        'unpaidProfileIds' => $unpaidInvoices->pluck('profile_id')->unique()->values(),
     ]);
 })->middleware(['auth', 'verified'])->name('dashboard');
+
+Route::post('/dashboard/pay-all', function () {
+    $profiles = \App\Models\BusinessProfile::where('user_id', auth()->id())->get(['id']);
+    $profileIds = $profiles->pluck('id');
+
+    if ($profileIds->isEmpty()) {
+        return back()->with('error', 'No businesses found for this account.');
+    }
+
+    $unpaidInvoices = \App\Models\Invoice::query()
+        ->whereIn('profile_id', $profileIds)
+        ->where('status', 'Unpaid')
+        ->get();
+
+    if ($unpaidInvoices->isEmpty()) {
+        return back()->with('message', 'No outstanding dues to pay.');
+    }
+
+    \App\Models\Invoice::query()
+        ->whereIn('id', $unpaidInvoices->pluck('id'))
+        ->update(['status' => 'Paid']);
+
+    \App\Models\BusinessProfile::query()
+        ->whereIn('id', $unpaidInvoices->pluck('profile_id')->unique())
+        ->update([
+            'last_payment_date' => now()->toDateString(),
+            'subscription_expiry' => now()->addYear()->toDateString(),
+        ]);
+
+    return back()->with('message', 'All outstanding dues have been marked as paid.');
+})->middleware(['auth', 'verified'])->name('dashboard.pay-all');
 
 Route::get('/about', [AdminController::class, 'showAbout'])->name('about');
 Route::get('/sectors', [AdminController::class, 'showSectors'])->name('sectors');

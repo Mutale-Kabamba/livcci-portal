@@ -37,12 +37,13 @@ class BusinessProfileController extends Controller
     /**
      * Show the form for creating a new business profile.
      */
-    public function create(): Response
+    public function create(): Response|RedirectResponse
     {
-        // Ensure user doesn't have an existing profile
-        $existingProfile = auth()->user()->businessProfile;
-        if ($existingProfile) {
-            return redirect()->route('profile.business.edit');
+        $profileCount = BusinessProfile::where('user_id', auth()->id())->count();
+
+        if ($profileCount >= 4) {
+            return redirect()->route('dashboard')
+                ->with('error', 'You have reached the maximum of 4 business profiles.');
         }
 
         return Inertia::render('BusinessProfile/Create');
@@ -81,7 +82,7 @@ class BusinessProfileController extends Controller
     /**
      * Display the form for editing the authenticated user's business profile.
      */
-    public function edit(): Response
+    public function edit(): Response|RedirectResponse
     {
         $profile = auth()->user()->businessProfile;
 
