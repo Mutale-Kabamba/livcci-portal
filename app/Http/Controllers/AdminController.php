@@ -2,13 +2,18 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\WelcomeApprovedMember;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Foundation\Application;
 use Inertia\Inertia;
 use App\Models\BusinessProfile;
 use App\Models\ChamberEvent;
+use App\Models\Invoice;
+use App\Models\Setting;
 use App\Models\SiteContent;
 use App\Models\User;
 
@@ -72,16 +77,70 @@ class AdminController extends Controller
     {
         $profiles = BusinessProfile::with('user')->latest()->get();
         $events = ChamberEvent::latest()->get();
+        $invoices = Invoice::with('businessProfile:id,company_name,membership_id,membership_type')->latest()->get();
         $siteContents = SiteContent::orderBy('page')->orderBy('section')->get();
+        $strategicPlan = $this->getStrategicPlanProgress();
+
+        $totalExpectedRevenue = $profiles->sum(function (BusinessProfile $profile): int {
+            if (!$profile->membership_type) {
+                return 0;
+            }
+
+            return $this->resolveMembershipAmount($profile->membership_type);
+        });
+
+        $totalActualRevenue = (float) Invoice::query()
+            ->where('status', 'Paid')
+            ->sum('amount');
+
+        $collectionPercentage = $totalExpectedRevenue > 0
+            ? round(($totalActualRevenue / $totalExpectedRevenue) * 100, 2)
+            : 0;
+
+        $sectorStats = BusinessProfile::query()
+            ->where('status', 'approved')
+            ->selectRaw('industry_sector as sector, COUNT(*) as count')
+            ->whereNotNull('industry_sector')
+            ->groupBy('industry_sector')
+            ->orderByDesc('count')
+            ->get();
 
         return Inertia::render('Admin/Dashboard', [
             'profiles' => $profiles,
             'events' => $events,
+            'invoices' => $invoices,
             'siteContents' => $siteContents,
+            'strategicPlan' => $strategicPlan,
+            'financialHealth' => [
+                'totalExpectedRevenue' => $totalExpectedRevenue,
+                'totalActualRevenue' => $totalActualRevenue,
+                'collectionPercentage' => $collectionPercentage,
+            ],
+            'sectorStats' => $sectorStats,
             'flash' => [
                 'message' => session('message')
             ]
         ]);
+    }
+
+    public function saveStrategicPlan(Request $request)
+    {
+        $validated = $request->validate([
+            'goal_1' => 'required|integer|min:0|max:100',
+            'goal_2' => 'required|integer|min:0|max:100',
+            'goal_3' => 'required|integer|min:0|max:100',
+            'goal_4' => 'required|integer|min:0|max:100',
+            'goal_5' => 'required|integer|min:0|max:100',
+        ]);
+
+        foreach ($validated as $key => $value) {
+            Setting::updateOrCreate(
+                ['key' => 'strategic_plan_' . $key],
+                ['value' => (string) $value]
+            );
+        }
+
+        return back()->with('message', 'Strategic plan progress saved successfully.');
     }
 
     public function upsertSiteContent(Request $request)
@@ -125,6 +184,18 @@ class AdminController extends Controller
 
             $profile->update(['status' => $newStatus]);
 
+            if ($oldStatus !== 'approved' && $newStatus === 'approved' && $profile->contact_email) {
+                try {
+                    Mail::to($profile->contact_email)->send(new WelcomeApprovedMember($profile));
+                } catch (\Throwable $mailException) {
+                    \Log::warning('Failed to send approved-member welcome email', [
+                        'profile_id' => $profile->id,
+                        'email' => $profile->contact_email,
+                        'error' => $mailException->getMessage(),
+                    ]);
+                }
+            }
+
             // Log the status change for audit trail
             \Log::info('Business profile status updated', [
                 'profile_id' => $profile->id,
@@ -167,6 +238,118 @@ class AdminController extends Controller
             \Log::error('Error deleting member profile: ' . $e->getMessage());
             return back()->with('error', 'Failed to delete member profile. Please try again.');
         }
+    }
+
+    public function downloadCertificate(BusinessProfile $profile)
+    {
+        if ($profile->status !== 'approved') {
+            return back()->with('error', 'Certificates can only be downloaded for approved members.');
+        }
+
+        $validUntil = $profile->subscription_expiry ?? now()->addYear();
+
+        $pdf = Pdf::loadView('emails.certificate', [
+            'profile' => $profile,
+            'validUntil' => $validUntil,
+            'issueDate' => now(),
+        ])->setPaper('a4', 'portrait');
+
+        return $pdf->download('membership-certificate-' . $profile->id . '.pdf');
+    }
+
+    public function generateInvoice(BusinessProfile $profile)
+    {
+        if (!$profile->membership_type) {
+            return back()->with('error', 'Membership type is required before generating an invoice.');
+        }
+
+        $amount = $this->resolveMembershipAmount($profile->membership_type);
+
+        Invoice::create([
+            'profile_id' => $profile->id,
+            'amount' => $amount,
+            'status' => 'Unpaid',
+            'invoice_number' => $this->generateInvoiceNumber(),
+            'due_date' => now()->addDays(30)->toDateString(),
+        ]);
+
+        return back()->with('message', 'Invoice generated successfully.');
+    }
+
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'profile_id' => 'required|exists:business_profiles,id',
+        ]);
+
+        $profile = BusinessProfile::query()
+            ->select(['id', 'membership_type'])
+            ->findOrFail($validated['profile_id']);
+
+        if (!$profile->membership_type) {
+            return back()->with('error', 'Membership type is required before generating an invoice.');
+        }
+
+        $amount = $this->resolveMembershipAmount($profile->membership_type);
+
+        Invoice::create([
+            'profile_id' => $profile->id,
+            'amount' => $amount,
+            'status' => 'Unpaid',
+            'invoice_number' => $this->generateInvoiceNumber(),
+            'due_date' => now()->addDays(30)->toDateString(),
+        ]);
+
+        return back()->with('message', 'Invoice generated successfully.');
+    }
+
+    public function markAsPaid(Invoice $invoice)
+    {
+        $today = now()->toDateString();
+
+        $invoice->update([
+            'status' => 'Paid',
+        ]);
+
+        $invoice->profile()->update([
+            'last_payment_date' => $today,
+            'subscription_expiry' => now()->addYear()->toDateString(),
+        ]);
+
+        return back()->with('message', 'Invoice marked as paid and membership updated.');
+    }
+
+    private function generateInvoiceNumber(): string
+    {
+        $year = now()->format('Y');
+        $prefix = 'INV-' . $year . '-';
+        $nextSequence = 1;
+
+        $lastInvoiceNumber = Invoice::query()
+            ->where('invoice_number', 'like', $prefix . '%')
+            ->latest('id')
+            ->value('invoice_number');
+
+        if ($lastInvoiceNumber && preg_match('/^INV-' . $year . '-(\d{3})$/', $lastInvoiceNumber, $matches)) {
+            $nextSequence = ((int) $matches[1]) + 1;
+        }
+
+        do {
+            $candidate = $prefix . str_pad((string) $nextSequence, 3, '0', STR_PAD_LEFT);
+            $nextSequence++;
+        } while (Invoice::where('invoice_number', $candidate)->exists());
+
+        return $candidate;
+    }
+
+    private function resolveMembershipAmount(string $membershipType): int
+    {
+        return match ($membershipType) {
+            'Corporate' => 2000,
+            'Ordinary' => 1000,
+            'Associate', 'Cooperative' => 500,
+            default => 500,
+        };
     }
 
     // 3. Logic to Add News/Events
@@ -311,5 +494,35 @@ class AdminController extends Controller
                 return [$item->section => $item->content];
             })
             ->toArray();
+    }
+
+    private function getStrategicPlanProgress(): array
+    {
+        $defaults = [
+            'goal_1' => 0,
+            'goal_2' => 0,
+            'goal_3' => 0,
+            'goal_4' => 0,
+            'goal_5' => 0,
+        ];
+
+        $stored = Setting::query()
+            ->whereIn('key', [
+                'strategic_plan_goal_1',
+                'strategic_plan_goal_2',
+                'strategic_plan_goal_3',
+                'strategic_plan_goal_4',
+                'strategic_plan_goal_5',
+            ])
+            ->pluck('value', 'key');
+
+        foreach (array_keys($defaults) as $goalKey) {
+            $storedKey = 'strategic_plan_' . $goalKey;
+            if ($stored->has($storedKey)) {
+                $defaults[$goalKey] = max(0, min(100, (int) $stored->get($storedKey)));
+            }
+        }
+
+        return $defaults;
     }
 }

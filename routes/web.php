@@ -3,6 +3,7 @@
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\BusinessProfileController;
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\ReportController;
 use App\Http\Middleware\IsAdminMiddleware; 
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
@@ -32,6 +33,15 @@ Route::middleware([IsAdminMiddleware::class])->group(function () {
     // Member Management
     Route::patch('/admin/members/{profile}/status', [AdminController::class, 'updateMemberStatus'])->name('admin.members.status');
     Route::delete('/admin/members/{profile}', [AdminController::class, 'deleteMember'])->name('admin.members.delete');
+    Route::get('/admin/members/{profile}/certificate', [AdminController::class, 'downloadCertificate'])->name('admin.members.certificate');
+
+    // Invoices Management
+    Route::post('/admin/invoices', [AdminController::class, 'store'])->name('admin.invoices.store');
+    Route::post('/admin/invoices/{profile}/generate', [AdminController::class, 'generateInvoice'])->name('admin.invoices.generate');
+    Route::patch('/admin/invoices/{invoice}/paid', [AdminController::class, 'markAsPaid'])->name('admin.invoices.paid');
+
+    // Strategic Plan Tracker
+    Route::post('/admin/strategic-plan', [AdminController::class, 'saveStrategicPlan'])->name('admin.strategic-plan.save');
     
     // Events Management
     Route::post('/admin/events', [AdminController::class, 'storeEvent'])->name('admin.events.store');
@@ -41,6 +51,10 @@ Route::middleware([IsAdminMiddleware::class])->group(function () {
     // Frontend Content Management
     Route::put('/admin/content', [AdminController::class, 'upsertSiteContent'])->name('admin.content.upsert');
     Route::delete('/admin/content/{content}', [AdminController::class, 'deleteSiteContent'])->name('admin.content.delete');
+
+    // Reports Center
+    Route::get('/admin/reports', [ReportController::class, 'index'])->name('admin.reports.index');
+    Route::post('/admin/reports/generate', [ReportController::class, 'generate'])->name('admin.reports.generate');
 });
 Route::middleware('auth')->group(function () { 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

@@ -21,9 +21,10 @@ class StoreBusinessProfileRequest extends FormRequest
     {
         return [
             'company_name' => 'required|string|max:255',
-            'industry_sector' => 'required|string|max:255',
-            'member_type' => 'required|in:Individual,Co-operative,Business,Academia,Corporate,Affiliate',
+            'industry_sector' => 'required|in:Tourism & Hospitality,Trade & Commerce,Financial Services,Construction & Engineering,Agriculture & Manufacturing,Cooperatives & Social Enterprise,IT & Creative Media',
+            'member_type' => 'required|in:Corporate,Ordinary,Associate,Cooperative',
             'member_category' => 'required|string|max:255',
+            'business_activities' => 'required',
             'tpin' => 'required|string|max:20|unique:business_profiles,tpin',
             'pacra_reg_no' => 'nullable|string|max:50|unique:business_profiles,pacra_reg_no',
             'short_description' => 'required|string|max:500',
@@ -44,9 +45,11 @@ class StoreBusinessProfileRequest extends FormRequest
             'company_name.required' => 'Company name is required.',
             'company_name.max' => 'Company name cannot exceed 255 characters.',
             'industry_sector.required' => 'Please select an industry sector.',
+            'industry_sector.in' => 'Invalid industry sector selected.',
             'member_type.required' => 'Please select a membership type.',
             'member_type.in' => 'Invalid membership type selected.',
             'member_category.required' => 'Please select a membership category.',
+            'business_activities.required' => 'Please select at least one business activity.',
             'tpin.required' => 'TPIN is required.',
             'tpin.max' => 'TPIN cannot exceed 20 characters.',
             'tpin.unique' => 'This TPIN is already registered. Please use a different one.',
@@ -62,5 +65,41 @@ class StoreBusinessProfileRequest extends FormRequest
             'logo.mimes' => 'Logo must be a JPEG, PNG, JPG, or GIF image.',
             'logo.max' => 'Logo file size cannot exceed 5MB.',
         ];
+    }
+
+    public function withValidator($validator): void
+    {
+        $validator->sometimes('business_activities', 'array|min:1|max:6', function ($input) {
+            return is_array($input->business_activities);
+        });
+
+        $validator->sometimes('business_activities', [function ($attribute, $value, $fail) {
+            if (!is_string($value)) {
+                $fail('Business activities must be an array or a comma-separated string.');
+                return;
+            }
+
+            $decoded = json_decode($value, true);
+            if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                $items = array_values(array_filter(array_map('trim', $decoded), function ($item) {
+                    return $item !== '';
+                }));
+            } else {
+                $items = array_values(array_filter(array_map('trim', explode(',', $value)), function ($item) {
+                    return $item !== '';
+                }));
+            }
+
+            if (count($items) < 1) {
+                $fail('Please select at least one business activity.');
+                return;
+            }
+
+            if (count($items) > 6) {
+                $fail('You may select up to 6 business activities only.');
+            }
+        }], function ($input) {
+            return is_string($input->business_activities);
+        });
     }
 }
