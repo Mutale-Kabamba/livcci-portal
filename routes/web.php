@@ -3,6 +3,7 @@
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\BusinessProfileController;
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\ReportController;
 use App\Http\Middleware\IsAdminMiddleware; 
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
@@ -50,6 +51,10 @@ Route::middleware([IsAdminMiddleware::class])->group(function () {
     // Frontend Content Management
     Route::put('/admin/content', [AdminController::class, 'upsertSiteContent'])->name('admin.content.upsert');
     Route::delete('/admin/content/{content}', [AdminController::class, 'deleteSiteContent'])->name('admin.content.delete');
+
+    // Reports Center
+    Route::get('/admin/reports', [ReportController::class, 'index'])->name('admin.reports.index');
+    Route::post('/admin/reports/generate', [ReportController::class, 'generate'])->name('admin.reports.generate');
 });
 Route::middleware('auth')->group(function () { 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
