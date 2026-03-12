@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\PaymentThresholdReached;
 use App\Mail\WelcomeApprovedMember;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
@@ -10,6 +11,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Foundation\Application;
 use Inertia\Inertia;
+use App\Models\BusinessPayment;
 use App\Models\BusinessProfile;
 use App\Models\ChamberEvent;
 use App\Models\Invoice;
@@ -75,7 +77,24 @@ class AdminController extends Controller
 
     public function dashboard()
     {
-        $profiles = BusinessProfile::with('user')->latest()->get();
+        $profiles = BusinessProfile::with([
+                'user',
+                'payments' => fn ($query) => $query->latest('payment_date')->latest('id'),
+            ])
+            ->latest()
+            ->get()
+            ->map(function (BusinessProfile $profile) {
+                $effectiveType = $profile->membership_type ?: $profile->member_type;
+                $annualFee = $this->resolveMembershipAmount((string) $effectiveType);
+                $amountPaid = (float) $profile->payments->sum('amount');
+                $percentage = $annualFee > 0 ? round(($amountPaid / $annualFee) * 100, 2) : 0;
+
+                $profile->setAttribute('annual_fee', $annualFee);
+                $profile->setAttribute('amount_paid', $amountPaid);
+                $profile->setAttribute('payment_percentage', $percentage);
+
+                return $profile;
+            });
         $events = ChamberEvent::latest()->get();
         $invoices = Invoice::with('businessProfile:id,company_name,membership_id,membership_type')->latest()->get();
         $siteContents = SiteContent::orderBy('page')->orderBy('section')->get();
@@ -317,6 +336,35 @@ class AdminController extends Controller
         ]);
 
         return back()->with('message', 'Invoice marked as paid and membership updated.');
+    }
+
+    public function recordPayment(Request $request, BusinessProfile $profile)
+    {
+        $validated = $request->validate([
+            'amount' => 'required|numeric|min:0.01',
+            'payment_method' => 'required|in:Cash,Airtel Money,Bank Transfer',
+            'reference_number' => 'nullable|string|max:255',
+            'payment_date' => 'required|date',
+        ]);
+
+        BusinessPayment::create([
+            'profile_id' => $profile->id,
+            'amount' => $validated['amount'],
+            'payment_method' => $validated['payment_method'],
+            'reference_number' => $validated['reference_number'] ?? null,
+            'payment_date' => $validated['payment_date'],
+        ]);
+
+        $effectiveType = $profile->membership_type ?: $profile->member_type;
+        $annualFee = $this->resolveMembershipAmount((string) $effectiveType);
+        $amountPaid = (float) $profile->payments()->sum('amount');
+        $percentage = $annualFee > 0 ? round(($amountPaid / $annualFee) * 100, 2) : 0;
+
+        if ($percentage >= 50 && !$profile->is_active) {
+            event(new PaymentThresholdReached($profile->fresh(), $percentage, $amountPaid, $annualFee));
+        }
+
+        return back()->with('message', 'Payment recorded successfully.');
     }
 
     private function generateInvoiceNumber(): string

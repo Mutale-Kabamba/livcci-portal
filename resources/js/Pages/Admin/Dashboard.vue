@@ -311,6 +311,60 @@ const deleteEvent = (eventId) => {
     }
 };
 
+const showPaymentModal = ref(false);
+const selectedPaymentProfileId = ref(null);
+const paymentRecordForm = useForm({
+    amount: '',
+    payment_method: 'Cash',
+    reference_number: '',
+    payment_date: new Date().toISOString().slice(0, 10),
+});
+
+const selectedPaymentProfile = computed(() =>
+    (props.profiles || []).find((profile) => profile.id === selectedPaymentProfileId.value) || null
+);
+
+const paymentProgress = (profile) => {
+    const annualFee = Number(profile.annual_fee || 0);
+    const amountPaid = Number(profile.amount_paid || 0);
+    if (annualFee <= 0) return 0;
+    return Math.max(0, Math.min(100, (amountPaid / annualFee) * 100));
+};
+
+const paymentEligibility = (profile) => {
+    return paymentProgress(profile) >= 50;
+};
+
+const openPaymentModal = (profile) => {
+    selectedPaymentProfileId.value = profile.id;
+    paymentRecordForm.reset();
+    paymentRecordForm.clearErrors();
+    paymentRecordForm.payment_method = 'Cash';
+    paymentRecordForm.payment_date = new Date().toISOString().slice(0, 10);
+    showPaymentModal.value = true;
+};
+
+const closePaymentModal = () => {
+    showPaymentModal.value = false;
+    selectedPaymentProfileId.value = null;
+};
+
+const submitPaymentRecord = () => {
+    if (!selectedPaymentProfileId.value) return;
+
+    paymentRecordForm.post(route('admin.members.payments.store', selectedPaymentProfileId.value), {
+        preserveScroll: true,
+        onSuccess: () => {
+            closePaymentModal();
+            alert('Payment saved successfully.');
+            location.reload();
+        },
+        onError: () => {
+            alert('Failed to save payment.');
+        },
+    });
+};
+
 </script>
 
 <template>
@@ -434,6 +488,7 @@ const deleteEvent = (eventId) => {
                                         <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Type/Category</th>
                                         <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Contact</th>
                                         <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">TPIN/PACRA</th>
+                                        <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Financial</th>
                                         <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Status</th>
                                         <th class="px-6 py-3 text-right text-xs font-bold text-gray-500 uppercase w-72">Actions</th>
                                     </tr>
@@ -458,6 +513,19 @@ const deleteEvent = (eventId) => {
                                         <td class="px-6 py-4">
                                             <div class="text-sm text-gray-900">{{ profile.tpin }}</div>
                                             <div v-if="profile.pacra_reg_no" class="text-xs text-gray-500">{{ profile.pacra_reg_no }}</div>
+                                        </td>
+                                        <td class="px-6 py-4 min-w-[240px]">
+                                            <div class="text-xs text-gray-500 mb-1">
+                                                Paid: ZMW {{ Number(profile.amount_paid || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }} /
+                                                {{ Number(profile.annual_fee || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
+                                            </div>
+                                            <div class="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+                                                <div class="h-full transition-all duration-300" :class="paymentEligibility(profile) ? 'bg-green-500' : 'bg-yellow-500'" :style="{ width: paymentProgress(profile).toFixed(2) + '%' }"></div>
+                                            </div>
+                                            <div class="mt-2">
+                                                <span v-if="paymentEligibility(profile)" class="px-2 py-1 text-[10px] font-bold rounded-full bg-green-100 text-green-700 uppercase">Ready - Eligible for Directory</span>
+                                                <span v-else class="px-2 py-1 text-[10px] font-bold rounded-full bg-yellow-100 text-yellow-700 uppercase">Inactive - Insufficient Payment</span>
+                                            </div>
                                         </td>
                                         <td class="px-6 py-4">
                                             <span class="px-2 py-1 text-[10px] font-bold rounded-full uppercase"
@@ -484,6 +552,12 @@ const deleteEvent = (eventId) => {
                                                         class="block w-full rounded-md px-3 py-2 text-left text-xs font-semibold text-[#1D2A68] hover:bg-[#1D2A68]/10"
                                                     >
                                                         Generate Invoice
+                                                    </button>
+                                                    <button
+                                                        @click="openPaymentModal(profile)"
+                                                        class="block w-full rounded-md px-3 py-2 text-left text-xs font-semibold text-[#1876C3] hover:bg-[#1876C3]/10"
+                                                    >
+                                                        Record Payment
                                                     </button>
                                                     <button
                                                         @click="updateStatus(profile.id, 'approved')"
@@ -755,6 +829,77 @@ const deleteEvent = (eventId) => {
                         </button>
                     </div>
                 </form>
+            </div>
+        </div>
+
+        <div v-if="showPaymentModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+            <div class="bg-white rounded-xl shadow-2xl max-w-3xl w-full p-8 border border-gray-100 max-h-[92vh] overflow-y-auto">
+                <h3 class="text-2xl font-extrabold text-[#1D2A68] mb-2">Record Payment</h3>
+                <p class="text-sm text-gray-500 mb-6">{{ selectedPaymentProfile?.company_name || 'Business Profile' }}</p>
+
+                <form @submit.prevent="submitPaymentRecord" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-xs font-bold text-gray-500 uppercase">Amount</label>
+                        <input v-model="paymentRecordForm.amount" step="0.01" min="0.01" type="number" class="w-full border-gray-200 rounded-lg p-3 mt-1" required>
+                        <span v-if="paymentRecordForm.errors.amount" class="text-red-500 text-xs mt-1">{{ paymentRecordForm.errors.amount }}</span>
+                    </div>
+
+                    <div>
+                        <label class="text-xs font-bold text-gray-500 uppercase">Payment Method</label>
+                        <select v-model="paymentRecordForm.payment_method" class="w-full border-gray-200 rounded-lg p-3 mt-1" required>
+                            <option>Cash</option>
+                            <option>Airtel Money</option>
+                            <option>Bank Transfer</option>
+                        </select>
+                        <span v-if="paymentRecordForm.errors.payment_method" class="text-red-500 text-xs mt-1">{{ paymentRecordForm.errors.payment_method }}</span>
+                    </div>
+
+                    <div>
+                        <label class="text-xs font-bold text-gray-500 uppercase">Reference Number</label>
+                        <input v-model="paymentRecordForm.reference_number" type="text" class="w-full border-gray-200 rounded-lg p-3 mt-1" placeholder="Optional receipt/transaction ref">
+                        <span v-if="paymentRecordForm.errors.reference_number" class="text-red-500 text-xs mt-1">{{ paymentRecordForm.errors.reference_number }}</span>
+                    </div>
+
+                    <div>
+                        <label class="text-xs font-bold text-gray-500 uppercase">Date</label>
+                        <input v-model="paymentRecordForm.payment_date" type="date" class="w-full border-gray-200 rounded-lg p-3 mt-1" required>
+                        <span v-if="paymentRecordForm.errors.payment_date" class="text-red-500 text-xs mt-1">{{ paymentRecordForm.errors.payment_date }}</span>
+                    </div>
+
+                    <div class="md:col-span-2 flex justify-end items-center gap-3 pt-2">
+                        <button type="button" @click="closePaymentModal" class="text-gray-500 font-bold hover:text-gray-700 transition">Cancel</button>
+                        <button type="submit" :disabled="paymentRecordForm.processing" class="bg-[#1D2A68] text-white px-6 py-2.5 rounded-lg font-bold hover:bg-[#1876C3] transition disabled:opacity-50">
+                            {{ paymentRecordForm.processing ? 'Saving...' : 'Save Payment' }}
+                        </button>
+                    </div>
+                </form>
+
+                <div class="mt-8 border-t border-gray-200 pt-6">
+                    <h4 class="text-lg font-bold text-[#1D2A68] mb-3">Financial Summary</h4>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-4 py-2 text-left text-xs font-bold text-gray-500 uppercase">Date</th>
+                                    <th class="px-4 py-2 text-left text-xs font-bold text-gray-500 uppercase">Method</th>
+                                    <th class="px-4 py-2 text-left text-xs font-bold text-gray-500 uppercase">Reference</th>
+                                    <th class="px-4 py-2 text-left text-xs font-bold text-gray-500 uppercase">Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-100">
+                                <tr v-for="payment in selectedPaymentProfile?.payments || []" :key="payment.id">
+                                    <td class="px-4 py-2 text-sm text-gray-700">{{ payment.payment_date ? new Date(payment.payment_date).toLocaleDateString() : '-' }}</td>
+                                    <td class="px-4 py-2 text-sm text-gray-700">{{ payment.payment_method }}</td>
+                                    <td class="px-4 py-2 text-sm text-gray-700">{{ payment.reference_number || '-' }}</td>
+                                    <td class="px-4 py-2 text-sm font-semibold text-[#1D2A68]">ZMW {{ Number(payment.amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</td>
+                                </tr>
+                                <tr v-if="!selectedPaymentProfile?.payments || selectedPaymentProfile.payments.length === 0">
+                                    <td colspan="4" class="px-4 py-4 text-center text-sm text-gray-500">No payments recorded for this business yet.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
         </div>
     </AuthenticatedLayout>

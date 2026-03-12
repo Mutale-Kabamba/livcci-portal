@@ -20,17 +20,32 @@ const props = defineProps({
 // Scroll animation state
 const scrollY = ref(0);
 const visibleElements = ref(new Set());
-const dropdownOpen = ref(false);
+let heroIntervalId = null;
+let observerInstance = null;
 
 // Hero Carousel
 const currentHeroIndex = ref(0);
 const heroImages = [
     'https://images.unsplash.com/photo-1552664730-d307ca884978?ixlib=rb-1.2.1&auto=format&fit=crop&w=1920&q=80',
-    'https://images.unsplash.com/photo-1552664730-d307ca884978?ixlib=rb-1.2.1&auto=format&fit=crop&w=1920&q=80',
     'https://images.unsplash.com/photo-1540553016722-983e48a2cd10?ixlib=rb-1.2.1&auto=format&fit=crop&w=1920&q=80',
     'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?ixlib=rb-1.2.1&auto=format&fit=crop&w=1920&q=80',
-    'https://images.unsplash.com/photo-1552664730-d307ca884978?ixlib=rb-1.2.1&auto=format&fit=crop&w=1920&q=80',
+    'https://images.unsplash.com/photo-1444653614773-995cb1ef9efa?ixlib=rb-1.2.1&auto=format&fit=crop&w=1920&q=80',
 ];
+
+const heroStats = computed(() => [
+    {
+        label: 'Approved Members',
+        value: props.approvedMembers?.length || 0,
+    },
+    {
+        label: 'Upcoming Events',
+        value: props.events?.length || 0,
+    },
+    {
+        label: 'Core Sectors',
+        value: homeSectors.value?.length || 0,
+    },
+]);
 
 const defaultHeroContent = {
     badge: 'Together we make a difference for better business',
@@ -73,11 +88,6 @@ const chairperson = computed(() => props.content.chairperson || defaultChairpers
 const coreValues = computed(() => props.content.core_values || defaultCoreValues);
 const homeSectors = computed(() => props.content.home_sectors || defaultHomeSectors);
 
-// Auto-advance hero carousel
-setInterval(() => {
-    currentHeroIndex.value = (currentHeroIndex.value + 1) % heroImages.length;
-}, 5000);
-
 // Handle scroll events
 const handleScroll = () => {
     scrollY.value = window.scrollY;
@@ -86,13 +96,17 @@ const handleScroll = () => {
 // Intersection Observer for fade-in animations
 onMounted(() => {
     window.addEventListener('scroll', handleScroll);
+
+    heroIntervalId = setInterval(() => {
+        currentHeroIndex.value = (currentHeroIndex.value + 1) % heroImages.length;
+    }, 5000);
     
     const observerOptions = {
         threshold: 0.1,
         rootMargin: '0px 0px -50px 0px'
     };
     
-    const observer = new IntersectionObserver((entries) => {
+    observerInstance = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
             if (entry.isIntersecting) {
                 entry.target.classList.add('animate-in');
@@ -103,17 +117,18 @@ onMounted(() => {
     
     // Observe all elements with data-scroll attribute
     document.querySelectorAll('[data-scroll]').forEach(el => {
-        observer.observe(el);
+        observerInstance.observe(el);
     });
-    
-    return () => {
-        window.removeEventListener('scroll', handleScroll);
-        observer.disconnect();
-    };
 });
 
 onUnmounted(() => {
     window.removeEventListener('scroll', handleScroll);
+    if (heroIntervalId) {
+        clearInterval(heroIntervalId);
+    }
+    if (observerInstance) {
+        observerInstance.disconnect();
+    }
 });
 
 // Members Carousel
@@ -233,6 +248,13 @@ const formatDate = (date) => {
                         Explore Directory
                     </Link>
                 </div>
+
+                <div class="mt-10 grid grid-cols-1 sm:grid-cols-3 gap-3 w-full max-w-3xl">
+                    <div v-for="item in heroStats" :key="item.label" class="rounded-xl border border-white/20 bg-white/10 backdrop-blur-sm px-4 py-3">
+                        <div class="text-blue-100 text-xs uppercase tracking-wide">{{ item.label }}</div>
+                        <div class="text-white text-2xl font-black mt-1">{{ item.value }}</div>
+                    </div>
+                </div>
             </div>
 
             <!-- Carousel Indicators -->
@@ -243,6 +265,29 @@ const formatDate = (date) => {
                     @click="currentHeroIndex = index"
                     :class="['w-3 h-3 rounded-full transition-all', currentHeroIndex === index ? 'bg-[#F4B223] w-8' : 'bg-white/50']"
                 ></button>
+            </div>
+        </div>
+
+        <!-- QUICK ACTIONS -->
+        <div class="py-10 bg-white border-b border-gray-200" data-scroll>
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <Link :href="route('register')" class="rounded-xl border border-gray-200 p-5 hover:border-[#1876C3] hover:shadow-md transition-all duration-300">
+                        <p class="text-xs font-bold uppercase tracking-wide text-[#1876C3]">New Member</p>
+                        <h3 class="mt-2 text-lg font-extrabold text-[#1D2A68]">Start Membership Application</h3>
+                        <p class="mt-1 text-sm text-gray-600">Apply online and join the chamber network.</p>
+                    </Link>
+                    <Link :href="route('directory.index')" class="rounded-xl border border-gray-200 p-5 hover:border-[#1876C3] hover:shadow-md transition-all duration-300">
+                        <p class="text-xs font-bold uppercase tracking-wide text-[#1876C3]">Find Partners</p>
+                        <h3 class="mt-2 text-lg font-extrabold text-[#1D2A68]">Browse Member Directory</h3>
+                        <p class="mt-1 text-sm text-gray-600">Discover verified local businesses by sector.</p>
+                    </Link>
+                    <Link :href="route('news')" class="rounded-xl border border-gray-200 p-5 hover:border-[#1876C3] hover:shadow-md transition-all duration-300">
+                        <p class="text-xs font-bold uppercase tracking-wide text-[#1876C3]">Stay Current</p>
+                        <h3 class="mt-2 text-lg font-extrabold text-[#1D2A68]">See News & Events</h3>
+                        <p class="mt-1 text-sm text-gray-600">Track chamber updates, workshops, and expos.</p>
+                    </Link>
+                </div>
             </div>
         </div>
 
@@ -576,10 +621,6 @@ const formatDate = (date) => {
         opacity: 1;
         transform: scale(1);
     }
-}
-
-.animate-in {
-    animation: slideInUp 0.6s ease-out forwards;
 }
 
 .animate-in {

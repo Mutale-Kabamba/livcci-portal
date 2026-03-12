@@ -75,6 +75,7 @@ Route::middleware([IsAdminMiddleware::class])->group(function () {
     
     // Member Management
     Route::patch('/admin/members/{profile}/status', [AdminController::class, 'updateMemberStatus'])->name('admin.members.status');
+    Route::post('/admin/members/{profile}/payments', [AdminController::class, 'recordPayment'])->name('admin.members.payments.store');
     Route::delete('/admin/members/{profile}', [AdminController::class, 'deleteMember'])->name('admin.members.delete');
     Route::get('/admin/members/{profile}/certificate', [AdminController::class, 'downloadCertificate'])->name('admin.members.certificate');
 
