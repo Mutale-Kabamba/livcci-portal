@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreBusinessProfileRequest;
 use App\Http\Requests\UpdateBusinessProfileRequest;
+use App\Mail\InvoiceIssuedMail;
 use App\Models\BusinessPayment;
 use App\Models\BusinessProfile;
 use App\Models\Invoice;
@@ -11,6 +12,7 @@ use App\Services\BusinessProfileFileService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -82,7 +84,7 @@ class BusinessProfileController extends Controller
                 ]));
 
                 $invoiceNumber = $this->generateInvoiceNumber();
-                Invoice::create([
+                $invoice = Invoice::create([
                     'profile_id' => $profile->id,
                     'amount' => $annualFee,
                     'status' => 'Unpaid',
@@ -94,6 +96,18 @@ class BusinessProfileController extends Controller
                 $profile->update([
                     'invoice_pdf_path' => $invoicePdfPath,
                 ]);
+
+                if (!blank($profile->contact_email)) {
+                    try {
+                        Mail::to($profile->contact_email)->send(new InvoiceIssuedMail($profile->fresh(), $invoice));
+                    } catch (\Throwable $exception) {
+                        \Log::warning('Failed to send initial invoice email', [
+                            'profile_id' => $profile->id,
+                            'invoice_id' => $invoice->id,
+                            'error' => $exception->getMessage(),
+                        ]);
+                    }
+                }
             });
 
             return redirect()->route('dashboard')
