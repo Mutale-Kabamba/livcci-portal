@@ -4,8 +4,10 @@ namespace App\Providers;
 
 use App\Events\PaymentThresholdReached;
 use App\Listeners\ActivateBusinessProfileAndNotifyMember;
+use App\Models\User;
 use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 use App\Models\BusinessProfile;
 use App\Policies\BusinessProfilePolicy;
@@ -33,6 +35,26 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Vite::prefetch(concurrency: 3);
+
+        Gate::define('manage_finance', function (User $user): bool {
+            return $user->isSuperAdmin() || $user->hasAnyRole(['finance', 'finance_officer']);
+        });
+
+        Gate::define('manage_content', function (User $user): bool {
+            return $user->isSuperAdmin() || $user->hasAnyRole(['media', 'media_officer', 'media_communication']);
+        });
+
+        Gate::define('manage_members', function (User $user): bool {
+            return $user->isSuperAdmin() || $user->hasAnyRole(['secretariat']);
+        });
+
+        Gate::define('view_reports', function (User $user): bool {
+            return $user->isSuperAdmin() || $user->hasAnyRole(['finance', 'finance_officer']);
+        });
+
+        Gate::define('manage_accounts', function (User $user): bool {
+            return $user->isSuperAdmin();
+        });
 
         Event::listen(
             PaymentThresholdReached::class,

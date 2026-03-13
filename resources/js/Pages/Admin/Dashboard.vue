@@ -1,8 +1,8 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import FinanceTicker from '@/Components/FinanceTicker.vue';
-import { Head, Link, useForm } from '@inertiajs/vue3';
-import { computed, ref } from 'vue';
+import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
+import { computed, ref, watchEffect } from 'vue';
 
 const props = defineProps({
     profiles: Array,
@@ -14,7 +14,32 @@ const props = defineProps({
     siteContents: Array,
 });
 
-const activeTab = ref('member-management');
+const page = usePage();
+
+const permissions = computed(() => page.props?.auth?.permissions || {});
+const canManageFinance = computed(() => Boolean(permissions.value.can_manage_finance || permissions.value.is_super_admin));
+const canManageContent = computed(() => Boolean(permissions.value.can_manage_content || permissions.value.is_super_admin));
+const canManageMembers = computed(() => Boolean(permissions.value.can_manage_members || permissions.value.is_super_admin));
+const canViewReports = computed(() => Boolean(permissions.value.can_view_reports || permissions.value.is_super_admin));
+const canManageAccounts = computed(() => Boolean(permissions.value.can_manage_accounts || permissions.value.is_super_admin));
+
+const availableTabs = computed(() => {
+    const tabs = ['overview'];
+    if (canManageMembers.value) tabs.push('member-management');
+    if (canManageFinance.value) tabs.push('financials');
+    if (canManageMembers.value) tabs.push('strategic-plan');
+    if (canManageContent.value) tabs.push('leadership');
+    if (canManageContent.value) tabs.push('settings');
+    return tabs;
+});
+
+const activeTab = ref('overview');
+
+watchEffect(() => {
+    if (!availableTabs.value.includes(activeTab.value)) {
+        activeTab.value = availableTabs.value[0] || 'member-management';
+    }
+});
 
 // Member Status Form
 const statusForm = useForm({
@@ -96,6 +121,10 @@ const collectionPercentage = computed(() => {
 
 const totalExpectedRevenue = computed(() => Number(props.financialHealth?.totalExpectedRevenue ?? 0));
 const totalActualRevenue = computed(() => Number(props.financialHealth?.totalActualRevenue ?? 0));
+
+const publishedEventsCount = computed(() => Array.isArray(props.events) ? props.events.length : 0);
+const externalLinksCount = computed(() => (Array.isArray(props.events) ? props.events : []).filter((event) => Boolean(event?.external_link)).length);
+const publishedNewsCount = computed(() => (Array.isArray(props.events) ? props.events : []).filter((event) => String(event?.type || '').toLowerCase() === 'news').length);
 
 const sectorPalette = ['#1D2A68', '#1876C3', '#3B82F6', '#F4B223', '#14B8A6', '#F97316', '#9333EA'];
 
@@ -472,13 +501,13 @@ const saveMemberSpotlight = () => {
             <div class="flex justify-between items-center">
                 <h2 class="font-semibold text-xl text-[#1D2A68] leading-tight">LiVCCI Secretariat Admin</h2>
                 <div class="flex items-center gap-3">
-                    <Link :href="route('admin.reports.index')" class="bg-[#1D2A68] text-white text-sm font-bold py-2 px-4 rounded hover:bg-[#15204f] shadow-sm transition">
+                    <Link v-if="canViewReports" :href="route('admin.reports.index')" class="bg-[#1D2A68] text-white text-sm font-bold py-2 px-4 rounded hover:bg-[#15204f] shadow-sm transition">
                         Reports Center
                     </Link>
-                    <Link :href="route('admin.accounts.index')" class="bg-white border border-[#1D2A68] text-[#1D2A68] text-sm font-bold py-2 px-4 rounded hover:bg-gray-50 shadow-sm transition">
+                    <Link v-if="canManageAccounts" :href="route('admin.accounts.index')" class="bg-white border border-[#1D2A68] text-[#1D2A68] text-sm font-bold py-2 px-4 rounded hover:bg-gray-50 shadow-sm transition">
                         Manage Accounts
                     </Link>
-                    <button @click="openEventModal()" class="bg-[#1876C3] text-white text-sm font-bold py-2 px-4 rounded hover:bg-[#1460A0] shadow-md transition">
+                    <button v-if="canManageContent" @click="openEventModal()" class="bg-[#1876C3] text-white text-sm font-bold py-2 px-4 rounded hover:bg-[#1460A0] shadow-md transition">
                         + Post New Event
                     </button>
                 </div>
@@ -488,14 +517,38 @@ const saveMemberSpotlight = () => {
         <div class="py-12">
             <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-8">
                 <FinanceTicker
+                    v-if="canManageFinance"
                     :revenue-collected-today="Number(financialHealth?.revenueCollectedToday || 0)"
                     :total-outstanding-receivables="Number(financialHealth?.totalOutstandingReceivables || 0)"
                     :activation-pipeline="Number(financialHealth?.activationPipeline || 0)"
                 />
 
+                <div v-else-if="canManageContent" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="bg-white shadow sm:rounded-lg p-6 border-l-4 border-[#1876C3]">
+                        <div class="text-xs font-bold text-gray-400 uppercase">Published Updates</div>
+                        <div class="mt-1 text-3xl font-bold text-[#1D2A68]">{{ publishedEventsCount }}</div>
+                    </div>
+                    <div class="bg-white shadow sm:rounded-lg p-6 border-l-4 border-[#F4B223]">
+                        <div class="text-xs font-bold text-gray-400 uppercase">External Coverage Links</div>
+                        <div class="mt-1 text-3xl font-bold text-[#1D2A68]">{{ externalLinksCount }}</div>
+                    </div>
+                    <div class="bg-white shadow sm:rounded-lg p-6 border-l-4 border-green-500">
+                        <div class="text-xs font-bold text-gray-400 uppercase">Published News Posts</div>
+                        <div class="mt-1 text-3xl font-bold text-[#1D2A68]">{{ publishedNewsCount }}</div>
+                    </div>
+                </div>
+
                 <div class="bg-white shadow sm:rounded-lg p-2">
-                    <div class="grid grid-cols-1 sm:grid-cols-5 gap-2">
+                    <div class="flex flex-wrap gap-2">
                         <button
+                            @click="activeTab = 'overview'"
+                            class="px-4 py-3 rounded-lg text-sm font-bold transition"
+                            :class="activeTab === 'overview' ? 'bg-[#1D2A68] text-white shadow' : 'bg-white text-[#1D2A68] border border-[#1876C3] hover:bg-[#1876C3]/10'"
+                        >
+                            Overview
+                        </button>
+                        <button
+                            v-if="canManageMembers"
                             @click="activeTab = 'member-management'"
                             class="px-4 py-3 rounded-lg text-sm font-bold transition"
                             :class="activeTab === 'member-management' ? 'bg-[#1D2A68] text-white shadow' : 'bg-white text-[#1D2A68] border border-[#1876C3] hover:bg-[#1876C3]/10'"
@@ -503,6 +556,7 @@ const saveMemberSpotlight = () => {
                             Member Management
                         </button>
                         <button
+                            v-if="canManageFinance"
                             @click="activeTab = 'financials'"
                             class="px-4 py-3 rounded-lg text-sm font-bold transition"
                             :class="activeTab === 'financials' ? 'bg-[#1D2A68] text-white shadow' : 'bg-white text-[#1D2A68] border border-[#1876C3] hover:bg-[#1876C3]/10'"
@@ -510,6 +564,7 @@ const saveMemberSpotlight = () => {
                             Financials
                         </button>
                         <button
+                            v-if="canManageMembers"
                             @click="activeTab = 'strategic-plan'"
                             class="px-4 py-3 rounded-lg text-sm font-bold transition"
                             :class="activeTab === 'strategic-plan' ? 'bg-[#1D2A68] text-white shadow' : 'bg-white text-[#1D2A68] border border-[#1876C3] hover:bg-[#1876C3]/10'"
@@ -517,13 +572,23 @@ const saveMemberSpotlight = () => {
                             Strategic Plan
                         </button>
                         <button
+                            v-if="canManageContent"
+                            @click="activeTab = 'leadership'"
+                            class="px-4 py-3 rounded-lg text-sm font-bold transition"
+                            :class="activeTab === 'leadership' ? 'bg-[#1D2A68] text-white shadow' : 'bg-white text-[#1D2A68] border border-[#1876C3] hover:bg-[#1876C3]/10'"
+                        >
+                            Leadership Management
+                        </button>
+                        <button
+                            v-if="canManageContent"
                             @click="activeTab = 'settings'"
                             class="px-4 py-3 rounded-lg text-sm font-bold transition"
                             :class="activeTab === 'settings' ? 'bg-[#1D2A68] text-white shadow' : 'bg-white text-[#1D2A68] border border-[#1876C3] hover:bg-[#1876C3]/10'"
                         >
-                            News & Events
+                            Published Events
                         </button>
                         <Link
+                            v-if="canViewReports"
                             :href="route('admin.reports.index')"
                             class="px-4 py-3 rounded-lg text-sm font-bold transition text-center bg-white text-[#1D2A68] border border-[#1876C3] hover:bg-[#1876C3]/10"
                         >
@@ -532,7 +597,11 @@ const saveMemberSpotlight = () => {
                     </div>
                 </div>
 
-                <template v-if="activeTab === 'member-management'">
+                <div v-if="availableTabs.length === 0" class="bg-yellow-50 border border-yellow-200 text-yellow-800 rounded-lg p-4 text-sm font-medium">
+                    No modules are currently assigned to your account. Contact a Super Admin to update your role permissions.
+                </div>
+
+                <template v-if="activeTab === 'overview'">
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div class="bg-white shadow sm:rounded-lg p-6 border-l-4 border-[#1876C3]">
                             <div class="text-xs font-bold text-gray-400 uppercase">Total Applications</div>
@@ -579,6 +648,28 @@ const saveMemberSpotlight = () => {
                         </div>
                     </div>
 
+                    <div v-if="canManageFinance" class="bg-white shadow sm:rounded-lg p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg font-bold text-[#1D2A68]">Financial Snapshot</h3>
+                            <span class="text-sm font-semibold text-[#1876C3]">{{ collectionPercentage.toFixed(1) }}% Collected</span>
+                        </div>
+                        <div class="w-full h-4 bg-gray-200 rounded-full overflow-hidden">
+                            <div class="h-full bg-gradient-to-r from-[#1876C3] to-[#1D2A68] transition-all duration-300" :style="{ width: collectionPercentage + '%' }"></div>
+                        </div>
+                        <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                            <div class="rounded-lg bg-gray-50 p-4 border border-gray-200">
+                                <div class="text-gray-500 uppercase text-xs font-semibold">Total Expected Revenue</div>
+                                <div class="text-xl font-extrabold text-[#1D2A68] mt-1">ZMW {{ totalExpectedRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</div>
+                            </div>
+                            <div class="rounded-lg bg-green-50 p-4 border border-green-200">
+                                <div class="text-green-700 uppercase text-xs font-semibold">Total Actual Revenue</div>
+                                <div class="text-xl font-extrabold text-green-700 mt-1">ZMW {{ totalActualRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+
+                <template v-if="activeTab === 'member-management' && canManageMembers">
                     <div class="bg-white shadow sm:rounded-lg overflow-hidden">
                         <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
                             <h3 class="text-lg font-bold text-[#1D2A68]">Manage Member Directory</h3>
@@ -657,6 +748,7 @@ const saveMemberSpotlight = () => {
                                                         Generate Invoice
                                                     </button>
                                                     <button
+                                                        v-if="canManageFinance"
                                                         @click="openPaymentModal(profile)"
                                                         class="block w-full rounded-md px-3 py-2 text-left text-xs font-semibold text-[#1876C3] hover:bg-[#1876C3]/10"
                                                     >
@@ -688,9 +780,50 @@ const saveMemberSpotlight = () => {
                             </table>
                         </div>
                     </div>
+
+                    <div class="bg-white shadow sm:rounded-lg overflow-hidden mb-6">
+                        <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
+                            <h3 class="text-lg font-bold text-[#1D2A68]">Home Member Spotlight</h3>
+                            <p class="text-sm text-gray-500 mt-1">Manage the spotlight section shown on the home page.</p>
+                        </div>
+                        <div class="p-6 space-y-4">
+                            <div>
+                                <label class="text-xs font-bold text-gray-500 uppercase">Spotlight Member</label>
+                                <select v-model="spotlightForm.content.profile_id" class="w-full border-gray-200 rounded-lg p-3 mt-1">
+                                    <option :value="null">-- Select Approved Member --</option>
+                                    <option v-for="profile in approvedProfiles" :key="profile.id" :value="profile.id">{{ profile.company_name }}</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="text-xs font-bold text-gray-500 uppercase">Title</label>
+                                <input v-model="spotlightForm.content.title" type="text" class="w-full border-gray-200 rounded-lg p-3 mt-1">
+                            </div>
+                            <div>
+                                <label class="text-xs font-bold text-gray-500 uppercase">Subtitle</label>
+                                <input v-model="spotlightForm.content.subtitle" type="text" class="w-full border-gray-200 rounded-lg p-3 mt-1">
+                            </div>
+                            <div>
+                                <label class="text-xs font-bold text-gray-500 uppercase">Blurb</label>
+                                <textarea v-model="spotlightForm.content.blurb" rows="3" class="w-full border-gray-200 rounded-lg p-3 mt-1"></textarea>
+                            </div>
+                            <div>
+                                <label class="text-xs font-bold text-gray-500 uppercase">Button Text</label>
+                                <input v-model="spotlightForm.content.cta_text" type="text" class="w-full border-gray-200 rounded-lg p-3 mt-1">
+                            </div>
+                            <div class="flex justify-end">
+                                <button
+                                    @click="saveMemberSpotlight"
+                                    :disabled="spotlightForm.processing"
+                                    class="bg-[#1D2A68] text-white text-sm font-bold px-6 py-2.5 rounded-lg hover:bg-[#1876C3] transition disabled:opacity-50"
+                                >
+                                    {{ spotlightForm.processing ? 'Saving...' : 'Save Spotlight' }}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </template>
 
-                <template v-if="activeTab === 'financials'">
+                <template v-if="activeTab === 'financials' && canManageFinance">
                     <div class="bg-white shadow sm:rounded-lg p-6">
                         <div class="flex items-center justify-between mb-4">
                             <h3 class="text-lg font-bold text-[#1D2A68]">Financial Health</h3>
@@ -763,7 +896,7 @@ const saveMemberSpotlight = () => {
                     </div>
                 </template>
 
-                <template v-if="activeTab === 'strategic-plan'">
+                <template v-if="activeTab === 'strategic-plan' && canManageMembers">
                     <div class="bg-white shadow sm:rounded-lg overflow-hidden">
                         <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
                             <h3 class="text-lg font-bold text-[#1D2A68]">Strategic Plan Tracker</h3>
@@ -814,7 +947,7 @@ const saveMemberSpotlight = () => {
                     </div>
                 </template>
 
-                <template v-if="activeTab === 'settings'">
+                <template v-if="activeTab === 'leadership' && canManageContent">
                     <div class="bg-white shadow sm:rounded-lg overflow-hidden mb-6">
                         <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
                             <h3 class="text-lg font-bold text-[#1D2A68]">Leadership Management</h3>
@@ -895,46 +1028,9 @@ const saveMemberSpotlight = () => {
                         </div>
                     </div>
 
-                    <div class="bg-white shadow sm:rounded-lg overflow-hidden mb-6">
-                        <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
-                            <h3 class="text-lg font-bold text-[#1D2A68]">Home Member Spotlight</h3>
-                            <p class="text-sm text-gray-500 mt-1">Manage the spotlight section shown on the home page.</p>
-                        </div>
-                        <div class="p-6 space-y-4">
-                            <div>
-                                <label class="text-xs font-bold text-gray-500 uppercase">Spotlight Member</label>
-                                <select v-model="spotlightForm.content.profile_id" class="w-full border-gray-200 rounded-lg p-3 mt-1">
-                                    <option :value="null">-- Select Approved Member --</option>
-                                    <option v-for="profile in approvedProfiles" :key="profile.id" :value="profile.id">{{ profile.company_name }}</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="text-xs font-bold text-gray-500 uppercase">Title</label>
-                                <input v-model="spotlightForm.content.title" type="text" class="w-full border-gray-200 rounded-lg p-3 mt-1">
-                            </div>
-                            <div>
-                                <label class="text-xs font-bold text-gray-500 uppercase">Subtitle</label>
-                                <input v-model="spotlightForm.content.subtitle" type="text" class="w-full border-gray-200 rounded-lg p-3 mt-1">
-                            </div>
-                            <div>
-                                <label class="text-xs font-bold text-gray-500 uppercase">Blurb</label>
-                                <textarea v-model="spotlightForm.content.blurb" rows="3" class="w-full border-gray-200 rounded-lg p-3 mt-1"></textarea>
-                            </div>
-                            <div>
-                                <label class="text-xs font-bold text-gray-500 uppercase">Button Text</label>
-                                <input v-model="spotlightForm.content.cta_text" type="text" class="w-full border-gray-200 rounded-lg p-3 mt-1">
-                            </div>
-                            <div class="flex justify-end">
-                                <button
-                                    @click="saveMemberSpotlight"
-                                    :disabled="spotlightForm.processing"
-                                    class="bg-[#1D2A68] text-white text-sm font-bold px-6 py-2.5 rounded-lg hover:bg-[#1876C3] transition disabled:opacity-50"
-                                >
-                                    {{ spotlightForm.processing ? 'Saving...' : 'Save Spotlight' }}
-                                </button>
-                            </div>
-                        </div>
-                    </div>
+                </template>
+
+                <template v-if="activeTab === 'settings' && canManageContent">
 
                     <div class="bg-white shadow sm:rounded-lg overflow-hidden">
                         <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
@@ -1056,7 +1152,7 @@ const saveMemberSpotlight = () => {
             </div>
         </div>
 
-        <div v-if="showPaymentModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+        <div v-if="showPaymentModal && canManageFinance" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
             <div class="bg-white rounded-xl shadow-2xl max-w-3xl w-full p-8 border border-gray-100 max-h-[92vh] overflow-y-auto">
                 <h3 class="text-2xl font-extrabold text-[#1D2A68] mb-2">Record Payment</h3>
                 <p class="text-sm text-gray-500 mb-6">{{ selectedPaymentProfile?.company_name || 'Business Profile' }}</p>

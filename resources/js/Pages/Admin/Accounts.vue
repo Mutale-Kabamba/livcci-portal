@@ -8,13 +8,58 @@ const props = defineProps({
 
 const roleForm = useForm({
     is_admin: false,
+    role: '',
 });
 
+const roleOptions = [
+    { label: 'Super Admin', value: 'super_admin' },
+    { label: 'Finance', value: 'finance' },
+    { label: 'Media', value: 'media' },
+    { label: 'Secretariat', value: 'secretariat' },
+];
+
+const promptRoleSelection = () => {
+    const menu = roleOptions
+        .map((option, index) => `${index + 1}. ${option.label}`)
+        .join('\n');
+
+    const answer = window.prompt(`Select admin role:\n${menu}\n\nEnter number (1-${roleOptions.length}):`, '4');
+    if (answer === null) return null;
+
+    const choice = Number.parseInt(answer, 10);
+    if (Number.isNaN(choice) || choice < 1 || choice > roleOptions.length) {
+        alert('Invalid role selection. Admin access was not changed.');
+        return null;
+    }
+
+    return roleOptions[choice - 1].value;
+};
+
 const setAdminStatus = (user, isAdmin) => {
-    const actionLabel = isAdmin ? 'grant admin access to' : 'remove admin access from';
-    if (!confirm(`Are you sure you want to ${actionLabel} ${user.name}?`)) return;
+    let selectedRole = user.role || '';
+    if (isAdmin) {
+        const role = promptRoleSelection();
+        if (!role) return;
+        selectedRole = role;
+    }
+
+    const selectedRoleLabel = roleOptions.find((option) => option.value === selectedRole)?.label || selectedRole;
+    const confirmationMessage = isAdmin
+        ? `Promote ${user.name} to Admin with role: ${selectedRoleLabel}?`
+        : `Are you sure you want to remove admin access from ${user.name}?`;
+
+    if (!confirm(confirmationMessage)) return;
 
     roleForm.is_admin = isAdmin;
+    roleForm.role = selectedRole;
+    roleForm.patch(route('admin.accounts.role', user.id), {
+        preserveScroll: true,
+    });
+};
+
+const updateRole = (user, role) => {
+    roleForm.is_admin = Boolean(user.is_admin);
+    roleForm.role = role;
     roleForm.patch(route('admin.accounts.role', user.id), {
         preserveScroll: true,
     });
@@ -73,6 +118,16 @@ const deleteAccount = (user) => {
                                         <span class="px-2 py-1 text-[10px] font-bold rounded-full uppercase" :class="user.is_admin ? 'bg-blue-100 text-blue-700' : 'bg-gray-200 text-gray-700'">
                                             {{ user.is_admin ? 'Admin' : 'User' }}
                                         </span>
+                                        <div v-if="user.is_admin" class="mt-2">
+                                            <select
+                                                :value="user.role || ''"
+                                                @change="updateRole(user, $event.target.value)"
+                                                class="w-full border-gray-200 rounded-lg p-2 text-xs"
+                                            >
+                                                <option value="">Select role...</option>
+                                                <option v-for="option in roleOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
+                                            </select>
+                                        </div>
                                     </td>
                                     <td class="px-6 py-4 text-sm text-gray-700">
                                         <span v-if="user.email_verified_at">Verified</span>

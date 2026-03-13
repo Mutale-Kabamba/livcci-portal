@@ -24,7 +24,7 @@ class AdminController extends Controller
     public function accounts()
     {
         $users = User::query()
-            ->select(['id', 'name', 'email', 'is_admin', 'email_verified_at', 'created_at'])
+            ->select(['id', 'name', 'email', 'is_admin', 'role', 'email_verified_at', 'created_at'])
             ->latest()
             ->get();
 
@@ -37,6 +37,7 @@ class AdminController extends Controller
     {
         $validated = $request->validate([
             'is_admin' => 'required|boolean',
+            'role' => 'nullable|in:super_admin,finance,finance_officer,media,media_officer,media_communication,secretariat',
         ]);
 
         if ((int) $user->id === (int) auth()->id() && !$validated['is_admin']) {
@@ -50,8 +51,15 @@ class AdminController extends Controller
             }
         }
 
+        $role = $validated['role'] ?? $user->role;
+
+        if ($validated['is_admin'] && blank($role)) {
+            $role = 'secretariat';
+        }
+
         User::whereKey($user->id)->update([
             'is_admin' => $validated['is_admin'],
+            'role' => $role,
         ]);
 
         return back()->with('message', 'Account role updated successfully.');
@@ -77,6 +85,10 @@ class AdminController extends Controller
 
     public function dashboard()
     {
+        $user = auth()->user();
+        $canManageFinance = $user?->can('manage_finance') ?? false;
+        $canManageMembers = $user?->can('manage_members') ?? false;
+
         $profiles = BusinessProfile::with([
                 'user',
                 'payments' => fn ($query) => $query->latest('payment_date')->latest('id'),
@@ -101,8 +113,24 @@ class AdminController extends Controller
 
                 return $profile;
             });
+
+        if (!$canManageMembers && !$canManageFinance) {
+            // Content-focused roles should not receive TPIN/PACRA or payment-sensitive fields.
+            $profiles = $profiles->map(function (BusinessProfile $profile) {
+                return [
+                    'id' => $profile->id,
+                    'company_name' => $profile->company_name,
+                    'status' => $profile->status,
+                    'member_category' => $profile->member_category,
+                    'industry_sector' => $profile->industry_sector,
+                ];
+            });
+        }
+
         $events = ChamberEvent::latest()->get();
-        $invoices = Invoice::with('businessProfile:id,company_name,membership_id,membership_type')->latest()->get();
+        $invoices = $canManageFinance
+            ? Invoice::with('businessProfile:id,company_name,membership_id,membership_type')->latest()->get()
+            : collect();
         $siteContents = SiteContent::orderBy('page')->orderBy('section')->get();
         $strategicPlan = $this->getStrategicPlanProgress();
 
@@ -150,20 +178,33 @@ class AdminController extends Controller
             ->orderByDesc('count')
             ->get();
 
+        $financialHealth = [
+            'totalExpectedRevenue' => $totalExpectedRevenue,
+            'totalActualRevenue' => $totalActualRevenue,
+            'collectionPercentage' => $collectionPercentage,
+            'revenueCollectedToday' => $revenueCollectedToday,
+            'totalOutstandingReceivables' => $totalOutstandingReceivables,
+            'activationPipeline' => $activationPipeline,
+        ];
+
+        if (!$canManageFinance) {
+            $financialHealth = [
+                'totalExpectedRevenue' => 0,
+                'totalActualRevenue' => 0,
+                'collectionPercentage' => 0,
+                'revenueCollectedToday' => 0,
+                'totalOutstandingReceivables' => 0,
+                'activationPipeline' => 0,
+            ];
+        }
+
         return Inertia::render('Admin/Dashboard', [
             'profiles' => $profiles,
             'events' => $events,
             'invoices' => $invoices,
             'siteContents' => $siteContents,
             'strategicPlan' => $strategicPlan,
-            'financialHealth' => [
-                'totalExpectedRevenue' => $totalExpectedRevenue,
-                'totalActualRevenue' => $totalActualRevenue,
-                'collectionPercentage' => $collectionPercentage,
-                'revenueCollectedToday' => $revenueCollectedToday,
-                'totalOutstandingReceivables' => $totalOutstandingReceivables,
-                'activationPipeline' => $activationPipeline,
-            ],
+            'financialHealth' => $financialHealth,
             'sectorStats' => $sectorStats,
             'flash' => [
                 'message' => session('message')
