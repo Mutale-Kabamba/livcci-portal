@@ -19,6 +19,11 @@ class IsAdminMiddleware
                 ->with('error', 'Admin access is restricted to authorized Secretariat users.');
         }
 
+        if ($request->session()->get('portal_mode') !== 'admin') {
+            return redirect()->route('portal.mode.choose')
+                ->with('error', 'Select Admin mode to access the admin portal.');
+        }
+
         return $next($request);
     }
 }

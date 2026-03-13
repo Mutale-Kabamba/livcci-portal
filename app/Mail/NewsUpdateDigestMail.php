@@ -4,6 +4,7 @@ namespace App\Mail;
 
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
+use Illuminate\Mail\Mailables\Address;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
@@ -20,6 +21,7 @@ class NewsUpdateDigestMail extends Mailable
     {
         return new Envelope(
             subject: 'LiVCCI Updates - News & Events Digest',
+            from: new Address((string) config('mail.from.address'), 'LiVCCI Secretariat'),
         );
     }
 

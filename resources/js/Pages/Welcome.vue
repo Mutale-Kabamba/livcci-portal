@@ -570,7 +570,7 @@ const onMemberLogoError = (event) => {
                             <p class="text-[#1876C3] text-3xl font-bold uppercase tracking-wide">Member Spotlight</p>
                             <div class="mt-3 flex items-center gap-3 flex-wrap">
                                 <span class="text-[#1D2A68] text-3xl md:text-5xl font-black tracking-tight">LiVCCI</span>
-                                <span class="bg-[#1D2A68] text-[#F6EED8] text-2xl md:text-4xl font-black px-4 py-1 leading-none">Member Spotlight</span>
+                                <span class="bg-[#1D2A68] text-[#F4B223] text-2xl md:text-4xl font-black px-4 py-1 leading-none">Member Spotlight</span>
                             </div>
                         </div>
 

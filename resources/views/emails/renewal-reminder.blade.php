@@ -17,7 +17,10 @@
 <p style="margin:0 0 12px 0;font-size:15px;line-height:1.6;"><strong>Expiry Date:</strong> {{ $profile->subscription_expiry->format('M d, Y') }}</p>
 @endif
 <p style="margin:0 0 12px 0;font-size:15px;line-height:1.6;">Please renew on time to keep your profile active in the member directory and maintain access to chamber services.</p>
+<p style="margin:0 0 12px 0;font-size:15px;line-height:1.6;">If you have already made your payment, please disregard this reminder and allow some time for processing.</p>
 <p style="margin:20px 0 0 0;font-size:15px;line-height:1.6;">Regards,<br><strong>LiVCCI Secretariat</strong></p>
+<p style="margin:16px 0 0 0;font-size:12px;line-height:1.6;color:#6b7280;">Livingstone Chamber of Commerce, [Your Address], Livingstone, Zambia.</p>
+<p style="margin:8px 0 0 0;font-size:12px;line-height:1.6;color:#6b7280;">You are receiving this because you registered for the LiVCCI Member Portal. To manage notifications, login to your dashboard.</p>
 </td></tr>
 </table>
 </td></tr>

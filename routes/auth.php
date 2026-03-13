@@ -36,6 +36,12 @@ Route::middleware('guest')->group(function () {
 });
 
 Route::middleware('auth')->group(function () {
+    Route::get('portal-mode', [AuthenticatedSessionController::class, 'choosePortalMode'])
+        ->name('portal.mode.choose');
+
+    Route::post('portal-mode', [AuthenticatedSessionController::class, 'setPortalMode'])
+        ->name('portal.mode.set');
+
     Route::get('verify-email', EmailVerificationPromptController::class)
         ->name('verification.notice');
 

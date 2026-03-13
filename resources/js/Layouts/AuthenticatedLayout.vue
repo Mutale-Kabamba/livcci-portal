@@ -9,6 +9,9 @@ import { Link, usePage } from '@inertiajs/vue3';
 const showingNavigationDropdown = ref(false);
 const page = usePage();
 
+const portalMode = computed(() => page.props?.auth?.portal_mode || 'ordinary');
+const canSwitchPortalMode = computed(() => Boolean(page.props?.auth?.can_switch_portal_mode));
+
 const isAdminPortalUser = computed(() => {
     const permissions = page.props?.auth?.permissions || {};
     return Boolean(
@@ -24,6 +27,9 @@ const isAdminPortalUser = computed(() => {
 
 const dashboardRoute = computed(() => (isAdminPortalUser.value ? route('admin.dashboard') : route('dashboard')));
 const dashboardActive = computed(() => (isAdminPortalUser.value ? route().current('admin.*') : route().current('dashboard')));
+
+const switchModeTarget = computed(() => (portalMode.value === 'admin' ? 'ordinary' : 'admin'));
+const switchModeLabel = computed(() => (portalMode.value === 'admin' ? 'Switch to Ordinary User' : 'Switch to Admin'));
 </script>
 
 <template>
@@ -85,6 +91,15 @@ const dashboardActive = computed(() => (isAdminPortalUser.value ? route().curren
                                     </template>
 
                                     <template #content>
+                                        <DropdownLink
+                                            v-if="canSwitchPortalMode"
+                                            :href="route('portal.mode.set')"
+                                            method="post"
+                                            as="button"
+                                            :data="{ mode: switchModeTarget }"
+                                        >
+                                            {{ switchModeLabel }}
+                                        </DropdownLink>
                                         <DropdownLink
                                             :href="route('profile.edit')"
                                         >
@@ -178,6 +193,15 @@ const dashboardActive = computed(() => (isAdminPortalUser.value ? route().curren
                         </div>
 
                         <div class="mt-3 space-y-1">
+                            <ResponsiveNavLink
+                                v-if="canSwitchPortalMode"
+                                :href="route('portal.mode.set')"
+                                method="post"
+                                as="button"
+                                :data="{ mode: switchModeTarget }"
+                            >
+                                {{ switchModeLabel }}
+                            </ResponsiveNavLink>
                             <ResponsiveNavLink :href="route('profile.edit')">
                                 Profile
                             </ResponsiveNavLink>
