@@ -1,6 +1,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
+import { confirmAction, promptSelect, showError } from '@/utils/dialogs';
 
 const props = defineProps({
     users: Array,
@@ -18,27 +19,24 @@ const roleOptions = [
     { label: 'Secretariat', value: 'secretariat' },
 ];
 
-const promptRoleSelection = () => {
-    const menu = roleOptions
-        .map((option, index) => `${index + 1}. ${option.label}`)
-        .join('\n');
+const promptRoleSelection = async () => {
+    const options = roleOptions.reduce((acc, option) => {
+        acc[option.value] = option.label;
+        return acc;
+    }, {});
 
-    const answer = window.prompt(`Select admin role:\n${menu}\n\nEnter number (1-${roleOptions.length}):`, '4');
-    if (answer === null) return null;
-
-    const choice = Number.parseInt(answer, 10);
-    if (Number.isNaN(choice) || choice < 1 || choice > roleOptions.length) {
-        alert('Invalid role selection. Admin access was not changed.');
-        return null;
-    }
-
-    return roleOptions[choice - 1].value;
+    return promptSelect({
+        title: 'Select admin role',
+        options,
+        inputPlaceholder: 'Choose a role',
+        confirmText: 'Continue',
+    });
 };
 
-const setAdminStatus = (user, isAdmin) => {
+const setAdminStatus = async (user, isAdmin) => {
     let selectedRole = user.role || '';
     if (isAdmin) {
-        const role = promptRoleSelection();
+        const role = await promptRoleSelection();
         if (!role) return;
         selectedRole = role;
     }
@@ -48,12 +46,18 @@ const setAdminStatus = (user, isAdmin) => {
         ? `Promote ${user.name} to Admin with role: ${selectedRoleLabel}?`
         : `Are you sure you want to remove admin access from ${user.name}?`;
 
-    if (!confirm(confirmationMessage)) return;
+    const confirmed = await confirmAction({
+        title: isAdmin ? 'Confirm admin promotion' : 'Confirm admin removal',
+        text: confirmationMessage,
+        confirmText: isAdmin ? 'Promote user' : 'Remove admin',
+    });
+    if (!confirmed) return;
 
     roleForm.is_admin = isAdmin;
     roleForm.role = selectedRole;
     roleForm.patch(route('admin.accounts.role', user.id), {
         preserveScroll: true,
+        onError: () => showError('Failed to update account role. Please try again.'),
     });
 };
 
@@ -62,15 +66,22 @@ const updateRole = (user, role) => {
     roleForm.role = role;
     roleForm.patch(route('admin.accounts.role', user.id), {
         preserveScroll: true,
+        onError: () => showError('Failed to update user role.'),
     });
 };
 
 const removeForm = useForm({});
-const deleteAccount = (user) => {
-    if (!confirm(`Delete account for ${user.name}? This cannot be undone.`)) return;
+const deleteAccount = async (user) => {
+    const confirmed = await confirmAction({
+        title: 'Delete account?',
+        text: `Delete account for ${user.name}? This cannot be undone.`,
+        confirmText: 'Delete account',
+    });
+    if (!confirmed) return;
 
     removeForm.delete(route('admin.accounts.delete', user.id), {
         preserveScroll: true,
+        onError: () => showError('Failed to delete account.'),
     });
 };
 </script>

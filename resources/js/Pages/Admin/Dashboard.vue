@@ -3,6 +3,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import FinanceTicker from '@/Components/FinanceTicker.vue';
 import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
 import { computed, ref, watchEffect } from 'vue';
+import { confirmAction, showError, showInfo, showSuccess } from '@/utils/dialogs';
 
 const props = defineProps({
     profiles: Array,
@@ -50,7 +51,8 @@ const updateStatus = (profileId, newStatus) => {
     statusForm.status = newStatus;
     statusForm.patch(route('admin.members.status', profileId), {
         preserveScroll: true,
-        onSuccess: () => alert('Status successfully updated to ' + newStatus)
+        onSuccess: () => showSuccess('Status successfully updated to ' + newStatus),
+        onError: () => showError('Failed to update status.'),
     });
 };
 
@@ -64,8 +66,8 @@ const invoiceStoreForm = useForm({
 const confirmPayment = (invoiceId) => {
     paymentForm.patch(route('admin.invoices.paid', invoiceId), {
         preserveScroll: true,
-        onSuccess: () => alert('Payment confirmed and subscription updated.'),
-        onError: () => alert('Failed to confirm payment.'),
+        onSuccess: () => showSuccess('Payment confirmed and subscription updated.'),
+        onError: () => showError('Failed to confirm payment.'),
     });
 };
 
@@ -75,8 +77,8 @@ const generateInvoice = (profile) => {
 
     invoiceStoreForm.post(route('admin.invoices.store'), {
         preserveScroll: true,
-        onSuccess: () => alert('Invoice generated successfully.'),
-        onError: () => alert('Failed to generate invoice. Ensure membership type is set.'),
+        onSuccess: () => showSuccess('Invoice generated successfully.'),
+        onError: () => showError('Failed to generate invoice. Ensure membership type is set.'),
     });
 };
 
@@ -109,8 +111,8 @@ const setGoalValue = (key, value) => {
 const saveStrategicPlan = () => {
     strategicPlanForm.post(route('admin.strategic-plan.save'), {
         preserveScroll: true,
-        onSuccess: () => alert('Strategic plan tracker updated.'),
-        onError: () => alert('Failed to save strategic plan tracker.'),
+        onSuccess: () => showSuccess('Strategic plan tracker updated.'),
+        onError: () => showError('Failed to save strategic plan tracker.'),
     });
 };
 
@@ -267,7 +269,7 @@ const submitEvent = () => {
             
             // Success: status 200, 201, 204, or 2xx range
             if (response.ok) {
-                alert('Event updated!');
+                showSuccess('Event updated!');
                 resetEventForm();
                 showEventModal.value = false;
                 location.reload();
@@ -315,7 +317,7 @@ const submitEvent = () => {
             onSuccess: () => {
                 resetEventForm();
                 showEventModal.value = false;
-                alert('Event Published!');
+                showSuccess('Event Published!');
                 location.reload();
             },
             onError: (errors) => {
@@ -327,19 +329,25 @@ const submitEvent = () => {
 };
 
 const deleteEvent = (eventId) => {
-    if (confirm('Are you sure you want to delete this event?')) {
+    confirmAction({
+        title: 'Delete this event?',
+        text: 'This action cannot be undone.',
+        confirmText: 'Delete event',
+    }).then((confirmed) => {
+        if (!confirmed) return;
+
         const deleteForm = useForm({});
         deleteForm.delete(route('admin.events.destroy', eventId), {
             onSuccess: () => {
-                alert('Event deleted!');
+                showSuccess('Event deleted!');
                 location.reload();
             },
             onError: (error) => {
-                alert('Failed to delete event');
+                showError('Failed to delete event');
                 console.log(error);
             }
         });
-    }
+    });
 };
 
 const showPaymentModal = ref(false);
@@ -387,11 +395,11 @@ const submitPaymentRecord = () => {
         preserveScroll: true,
         onSuccess: () => {
             closePaymentModal();
-            alert('Payment saved successfully.');
+            showSuccess('Payment saved successfully.');
             location.reload();
         },
         onError: () => {
-            alert('Failed to save payment.');
+            showError('Failed to save payment.');
         },
     });
 };
@@ -472,22 +480,22 @@ const removeLeadershipMember = (index) => {
 
 const saveLeadershipMembers = () => {
     if (!Array.isArray(leadershipForm.content) || leadershipForm.content.length === 0) {
-        alert('Please add at least one leadership member.');
+        showInfo('Please add at least one leadership member.');
         return;
     }
 
     leadershipForm.put(route('admin.content.upsert'), {
         preserveScroll: true,
-        onSuccess: () => alert('Leadership members updated successfully.'),
-        onError: () => alert('Failed to update leadership members.'),
+        onSuccess: () => showSuccess('Leadership members updated successfully.'),
+        onError: () => showError('Failed to update leadership members.'),
     });
 };
 
 const saveMemberSpotlight = () => {
     spotlightForm.put(route('admin.content.upsert'), {
         preserveScroll: true,
-        onSuccess: () => alert('Member spotlight updated successfully.'),
-        onError: () => alert('Failed to update member spotlight.'),
+        onSuccess: () => showSuccess('Member spotlight updated successfully.'),
+        onError: () => showError('Failed to update member spotlight.'),
     });
 };
 
