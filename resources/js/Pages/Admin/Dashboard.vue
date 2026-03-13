@@ -17,6 +17,18 @@ const props = defineProps({
 
 const page = usePage();
 
+const formattedRole = computed(() => {
+    const role = String(page.props?.auth?.user?.role || '').trim();
+    if (!role) return 'Admin';
+
+    return role
+        .replace(/_/g, ' ')
+        .split(' ')
+        .filter(Boolean)
+        .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+        .join(' ');
+});
+
 const permissions = computed(() => page.props?.auth?.permissions || {});
 const canManageFinance = computed(() => Boolean(permissions.value.can_manage_finance || permissions.value.is_super_admin));
 const canManageContent = computed(() => Boolean(permissions.value.can_manage_content || permissions.value.is_super_admin));
@@ -507,7 +519,7 @@ const saveMemberSpotlight = () => {
     <AuthenticatedLayout>
         <template #header>
             <div class="flex justify-between items-center">
-                <h2 class="font-semibold text-xl text-[#1D2A68] leading-tight">LiVCCI Secretariat Admin</h2>
+                <h2 class="font-semibold text-xl text-[#1D2A68] leading-tight">LiVCCI {{ formattedRole }} Dashboard</h2>
                 <div class="flex items-center gap-3">
                     <Link v-if="canViewReports" :href="route('admin.reports.index')" class="bg-[#1D2A68] text-white text-sm font-bold py-2 px-4 rounded hover:bg-[#15204f] shadow-sm transition">
                         Reports Center
