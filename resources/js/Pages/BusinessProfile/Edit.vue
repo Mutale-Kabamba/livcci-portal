@@ -7,6 +7,7 @@ import { INDUSTRY_ACTIVITIES } from '@/constants/industryActivities';
 const props = defineProps({
     businessProfile: Object
 });
+const MAX_ACTIVITIES = 6;
 
 const parseActivities = (value) => {
     if (!value) return [];
@@ -20,6 +21,18 @@ const parseActivities = (value) => {
             .split(',')
             .map((item) => item.trim())
             .filter(Boolean);
+    }
+};
+
+const parseSocialLinks = (value) => {
+    if (!value) return {};
+    if (typeof value === 'object' && !Array.isArray(value)) return value;
+
+    try {
+        const parsed = JSON.parse(value);
+        return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
+    } catch {
+        return {};
     }
 };
 
@@ -41,8 +54,53 @@ const form = useForm({
     phone: props.businessProfile.phone,
     address: props.businessProfile.address || '',
     website_url: props.businessProfile.website_url || '',
+    social_links: parseSocialLinks(props.businessProfile.social_links),
     logo: null,
 });
+
+const socialPlatformOptions = [
+    { key: 'linkedin', label: 'LinkedIn' },
+    { key: 'facebook', label: 'Facebook' },
+    { key: 'x', label: 'X / Twitter' },
+    { key: 'instagram', label: 'Instagram' },
+    { key: 'whatsapp', label: 'WhatsApp' },
+];
+const selectedSocialPlatform = ref('linkedin');
+const socialLinkInput = ref('');
+const socialLinkError = ref('');
+
+const normalizeUrl = (value) => {
+    const trimmed = String(value || '').trim();
+    if (!trimmed) return '';
+    return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+};
+
+const addSocialLink = () => {
+    socialLinkError.value = '';
+    const normalized = normalizeUrl(socialLinkInput.value);
+
+    try {
+        if (!normalized) {
+            socialLinkError.value = 'Please enter a URL.';
+            return;
+        }
+
+        new URL(normalized);
+        form.social_links = {
+            ...(form.social_links || {}),
+            [selectedSocialPlatform.value]: normalized,
+        };
+        socialLinkInput.value = '';
+    } catch {
+        socialLinkError.value = 'Please enter a valid URL.';
+    }
+};
+
+const removeSocialLink = (platform) => {
+    const next = { ...(form.social_links || {}) };
+    delete next[platform];
+    form.social_links = next;
+};
 
 const handleLogoUpload = (event) => {
     const file = event.target.files[0];
@@ -67,33 +125,26 @@ const membershipTypes = [
     'Cooperative'
 ];
 
-// Membership Categories by selected sector
-const membershipCategories = computed(() => INDUSTRY_ACTIVITIES[form.industry_sector] || []);
 const filteredActivities = computed(() => INDUSTRY_ACTIVITIES[form.industry_sector] || []);
 const activitiesWarning = ref('');
 
-const toggleActivity = (activity, event) => {
-    const checked = event.target.checked;
+const toggleActivity = (activity) => {
     const current = [...form.selectedActivities];
+    const exists = current.includes(activity);
 
-    if (checked) {
-        if (current.length >= 6) {
-            event.target.checked = false;
-            activitiesWarning.value = 'You can select up to 6 activities only.';
-            return;
-        }
-
-        current.push(activity);
+    if (exists) {
+        form.selectedActivities = current.filter((item) => item !== activity);
         activitiesWarning.value = '';
-    } else {
-        const index = current.indexOf(activity);
-        if (index > -1) {
-            current.splice(index, 1);
-        }
-        activitiesWarning.value = '';
+        return;
     }
 
-    form.selectedActivities = current;
+    if (current.length >= MAX_ACTIVITIES) {
+            activitiesWarning.value = 'You can select up to 6 activities only.';
+            return;
+    }
+
+    form.selectedActivities = [...current, activity];
+    activitiesWarning.value = '';
 };
 
 watch(
@@ -117,6 +168,12 @@ const getError = (field) => {
     return Array.isArray(form.errors[field]) ? form.errors[field][0] : form.errors[field];
 };
 
+const inputClasses = (field) => [
+    'w-full rounded-xl border-2 bg-white px-4 py-3 text-sm text-gray-900 outline-none transition-all duration-300',
+    'placeholder:text-gray-400 hover:border-[#1876C3]/50 focus:border-[#1876C3] focus:ring-4 focus:ring-[#1876C3]/15',
+    getError(field) ? 'border-red-400 bg-red-50' : 'border-gray-200',
+];
+
 const submit = () => {
     // Keep backend compatibility where member_category is currently required.
     form.member_category = form.industry_sector || 'General';
@@ -133,8 +190,9 @@ const submit = () => {
         </template>
 
         <div class="py-12">
-            <div class="max-w-3xl mx-auto sm:px-6 lg:px-8">
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-8">
+            <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+                    <div class="lg:col-span-2 bg-white overflow-hidden shadow-sm sm:rounded-xl p-8 border border-gray-100">
                     
                     <!-- VALIDATION ERRORS SUMMARY -->
                     <div v-if="Object.keys(form.errors).length > 0" class="mb-6 p-4 bg-red-50 border border-red-200 rounded">
@@ -146,20 +204,19 @@ const submit = () => {
                         </ul>
                     </div>
 
-                    <!-- SUCCESS MESSAGE -->
-                    <div v-if="form.recentlySuccessful" class="mb-6 p-4 bg-green-50 border border-green-200 rounded">
+                        <!-- SUCCESS MESSAGE -->
+                        <div v-if="form.recentlySuccessful" class="mb-6 p-4 bg-green-50 border border-green-200 rounded">
                         <p class="text-green-800 font-bold">Profile updated successfully!</p>
                     </div>
 
                     <form @submit.prevent="submit" class="space-y-6">
                         <!-- Company Name -->
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Company Name *</label>
+                            <label class="block text-xs font-bold tracking-wide text-gray-500 uppercase mb-2">Company Name *</label>
                             <input 
                                 v-model="form.company_name" 
                                 type="text"
-                                :class="['w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500', 
-                                         getError('company_name') ? 'border-red-500 bg-red-50' : 'border-gray-300']"
+                                :class="inputClasses('company_name')"
                                 required
                             >
                             <p v-if="getError('company_name')" class="text-red-600 text-xs mt-1">{{ getError('company_name') }}</p>
@@ -167,11 +224,10 @@ const submit = () => {
 
                         <!-- Industry Sector -->
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Industry Sector *</label>
+                            <label class="block text-xs font-bold tracking-wide text-gray-500 uppercase mb-2">Industry Sector *</label>
                             <select 
                                 v-model="form.industry_sector"
-                                :class="['w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500',
-                                         getError('industry_sector') ? 'border-red-500 bg-red-50' : 'border-gray-300']"
+                                :class="inputClasses('industry_sector')"
                                 required
                             >
                                 <option value="">-- Select Sector --</option>
@@ -182,11 +238,10 @@ const submit = () => {
 
                         <!-- Member Type -->
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Membership Type *</label>
+                            <label class="block text-xs font-bold tracking-wide text-gray-500 uppercase mb-2">Membership Type *</label>
                             <select 
                                 v-model="form.member_type"
-                                :class="['w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500',
-                                         getError('member_type') ? 'border-red-500 bg-red-50' : 'border-gray-300']"
+                                :class="inputClasses('member_type')"
                                 required
                             >
                                 <option value="">-- Select Type --</option>
@@ -197,18 +252,21 @@ const submit = () => {
 
                         <!-- Business Activities -->
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Business Activities (Select up to 6)</label>
-                            <div v-if="!form.industry_sector" class="text-xs text-gray-500">Select an industry sector first.</div>
-                            <div v-else class="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
-                                <label v-for="activity in filteredActivities" :key="activity" class="flex items-center gap-2 rounded border border-gray-200 px-3 py-2">
-                                    <input
-                                        type="checkbox"
-                                        :checked="form.selectedActivities.includes(activity)"
-                                        @change="toggleActivity(activity, $event)"
-                                        class="h-4 w-4 text-indigo-600 border-gray-300 rounded"
-                                    >
-                                    <span class="text-sm text-gray-700">{{ activity }}</span>
-                                </label>
+                            <label class="block text-xs font-bold tracking-wide text-gray-500 uppercase mb-2">Business Activities (Select up to 6)</label>
+                            <div v-if="!form.industry_sector" class="text-xs text-gray-500">Select an industry sector first to load activity tags.</div>
+                            <div v-else class="flex flex-wrap gap-2 mt-2">
+                                <button
+                                    v-for="activity in filteredActivities"
+                                    :key="activity"
+                                    type="button"
+                                    @click="toggleActivity(activity)"
+                                    class="px-3 py-1.5 rounded-full text-xs font-semibold border transition-all duration-300"
+                                    :class="form.selectedActivities.includes(activity)
+                                        ? 'bg-[#1876C3] text-white border-[#1876C3]'
+                                        : 'bg-white text-gray-700 border-gray-200 hover:border-[#1876C3] hover:text-[#1876C3]'"
+                                >
+                                    {{ activity }}
+                                </button>
                             </div>
                             <p class="text-xs text-gray-500 mt-2">{{ form.selectedActivities.length }}/6 selected</p>
                             <p v-if="activitiesWarning" class="text-orange-600 text-xs mt-1">{{ activitiesWarning }}</p>
@@ -217,12 +275,11 @@ const submit = () => {
 
                         <!-- TPIN -->
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">TPIN (Tax ID) *</label>
+                            <label class="block text-xs font-bold tracking-wide text-gray-500 uppercase mb-2">TPIN (Tax ID) *</label>
                             <input 
                                 v-model="form.tpin" 
                                 type="text"
-                                :class="['w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500',
-                                         getError('tpin') ? 'border-red-500 bg-red-50' : 'border-gray-300']"
+                                :class="inputClasses('tpin')"
                                 required
                             >
                             <p v-if="getError('tpin')" class="text-red-600 text-xs mt-1">{{ getError('tpin') }}</p>
@@ -230,24 +287,22 @@ const submit = () => {
 
                         <!-- PACRA Reg No -->
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">PACRA Reg No. (Optional)</label>
+                            <label class="block text-xs font-bold tracking-wide text-gray-500 uppercase mb-2">PACRA Reg No. (Optional)</label>
                             <input 
                                 v-model="form.pacra_reg_no" 
                                 type="text"
-                                :class="['w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500',
-                                         getError('pacra_reg_no') ? 'border-red-500 bg-red-50' : 'border-gray-300']"
+                                :class="inputClasses('pacra_reg_no')"
                             >
                             <p v-if="getError('pacra_reg_no')" class="text-red-600 text-xs mt-1">{{ getError('pacra_reg_no') }}</p>
                         </div>
 
                         <!-- Short Description -->
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Business Description (Max 500) *</label>
+                            <label class="block text-xs font-bold tracking-wide text-gray-500 uppercase mb-2">Business Description (Max 500) *</label>
                             <textarea 
                                 v-model="form.short_description" 
                                 rows="3"
-                                :class="['w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500',
-                                         getError('short_description') ? 'border-red-500 bg-red-50' : 'border-gray-300']"
+                                :class="inputClasses('short_description')"
                                 required
                             ></textarea>
                             <p class="text-xs text-gray-500 mt-1">{{ form.short_description.length }}/500</p>
@@ -256,12 +311,11 @@ const submit = () => {
 
                         <!-- Contact Email -->
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Contact Email *</label>
+                            <label class="block text-xs font-bold tracking-wide text-gray-500 uppercase mb-2">Contact Email *</label>
                             <input 
                                 v-model="form.contact_email" 
                                 type="email"
-                                :class="['w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500',
-                                         getError('contact_email') ? 'border-red-500 bg-red-50' : 'border-gray-300']"
+                                :class="inputClasses('contact_email')"
                                 required
                             >
                             <p v-if="getError('contact_email')" class="text-red-600 text-xs mt-1">{{ getError('contact_email') }}</p>
@@ -269,12 +323,11 @@ const submit = () => {
 
                         <!-- Phone -->
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Phone Number *</label>
+                            <label class="block text-xs font-bold tracking-wide text-gray-500 uppercase mb-2">Phone Number *</label>
                             <input 
                                 v-model="form.phone" 
                                 type="tel"
-                                :class="['w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500',
-                                         getError('phone') ? 'border-red-500 bg-red-50' : 'border-gray-300']"
+                                :class="inputClasses('phone')"
                                 required
                             >
                             <p v-if="getError('phone')" class="text-red-600 text-xs mt-1">{{ getError('phone') }}</p>
@@ -282,37 +335,68 @@ const submit = () => {
 
                         <!-- Address -->
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Business Address (Optional)</label>
+                            <label class="block text-xs font-bold tracking-wide text-gray-500 uppercase mb-2">Business Address (Optional)</label>
                             <textarea 
                                 v-model="form.address" 
                                 rows="2"
-                                :class="['w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500',
-                                         getError('address') ? 'border-red-500 bg-red-50' : 'border-gray-300']"
+                                :class="inputClasses('address')"
                             ></textarea>
                             <p v-if="getError('address')" class="text-red-600 text-xs mt-1">{{ getError('address') }}</p>
                         </div>
 
                         <!-- Website URL -->
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Website URL (Optional)</label>
+                            <label class="block text-xs font-bold tracking-wide text-gray-500 uppercase mb-2">Website URL (Optional)</label>
                             <input 
                                 v-model="form.website_url" 
                                 type="url"
-                                :class="['w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500',
-                                         getError('website_url') ? 'border-red-500 bg-red-50' : 'border-gray-300']"
+                                :class="inputClasses('website_url')"
                             >
                             <p v-if="getError('website_url')" class="text-red-600 text-xs mt-1">{{ getError('website_url') }}</p>
                         </div>
 
+                        <!-- Social Connectivity -->
+                        <div>
+                            <label class="block text-xs font-bold tracking-wide text-gray-500 uppercase mb-2">Social Connectivity (Optional)</label>
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                                <select v-model="selectedSocialPlatform" :class="inputClasses('social_links')">
+                                    <option v-for="option in socialPlatformOptions" :key="option.key" :value="option.key">{{ option.label }}</option>
+                                </select>
+                                <input
+                                    v-model="socialLinkInput"
+                                    type="url"
+                                    placeholder="https://..."
+                                    class="sm:col-span-2 w-full rounded-xl border-2 bg-white px-4 py-3 text-sm text-gray-900 outline-none transition-all duration-300 placeholder:text-gray-400 hover:border-[#1876C3]/50 focus:border-[#1876C3] focus:ring-4 focus:ring-[#1876C3]/15 border-gray-200"
+                                >
+                            </div>
+                            <div class="mt-2">
+                                <button type="button" @click="addSocialLink" class="inline-flex px-4 py-2 rounded-lg bg-[#1876C3] text-white text-xs font-bold hover:bg-[#1460A0] transition-all duration-300">Add Social Link</button>
+                            </div>
+                            <p v-if="socialLinkError" class="text-red-600 text-xs mt-1">{{ socialLinkError }}</p>
+
+                            <div v-if="Object.keys(form.social_links || {}).length" class="mt-3 space-y-2">
+                                <div v-for="(url, platform) in form.social_links" :key="platform" class="flex items-center justify-between rounded-lg border border-gray-200 bg-gray-50 px-3 py-2">
+                                    <div>
+                                        <p class="text-xs font-bold text-[#1D2A68] uppercase">{{ platform }}</p>
+                                        <p class="text-xs text-gray-600 truncate max-w-[240px]">{{ url }}</p>
+                                    </div>
+                                    <button type="button" @click="removeSocialLink(platform)" class="text-xs font-bold text-red-600 hover:text-red-700">Remove</button>
+                                </div>
+                            </div>
+                            <p v-if="getError('social_links')" class="text-red-600 text-xs mt-1">{{ getError('social_links') }}</p>
+                            <p v-if="getError('social_links.linkedin') || getError('social_links.facebook') || getError('social_links.x') || getError('social_links.instagram') || getError('social_links.whatsapp')" class="text-red-600 text-xs mt-1">
+                                One or more social links are invalid.
+                            </p>
+                        </div>
+
                         <!-- Logo Upload -->
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Company Logo (Optional)</label>
+                            <label class="block text-xs font-bold tracking-wide text-gray-500 uppercase mb-2">Company Logo (Optional)</label>
                             <input 
                                 @change="handleLogoUpload" 
                                 type="file" 
                                 accept="image/*"
-                                :class="['w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500',
-                                         getError('logo') ? 'border-red-500 bg-red-50' : 'border-gray-300']"
+                                :class="inputClasses('logo')"
                             >
                             <p class="text-xs text-gray-500 mt-1">JPG, PNG, GIF (Max 5MB)</p>
                             <p v-if="getError('logo')" class="text-red-600 text-xs mt-1">{{ getError('logo') }}</p>
@@ -324,16 +408,40 @@ const submit = () => {
                             <button 
                                 type="submit" 
                                 :disabled="form.processing"
-                                class="flex-1 bg-indigo-600 text-white font-bold py-3 rounded hover:bg-indigo-700 disabled:opacity-50"
+                                class="flex-1 bg-[#1D2A68] text-white font-bold py-3 rounded-xl hover:bg-[#15204f] transition-all duration-300 disabled:opacity-50"
                             >
                                 {{ form.processing ? 'Saving...' : 'Save Changes' }}
                             </button>
-                            <a href="/dashboard" class="flex-1 bg-gray-300 text-gray-800 font-bold py-3 rounded hover:bg-gray-400 text-center">
+                            <a href="/dashboard" class="flex-1 bg-gray-100 border border-gray-200 text-gray-700 font-bold py-3 rounded-xl hover:bg-gray-200 transition-all duration-300 text-center">
                                 Cancel
                             </a>
                         </div>
                     </form>
 
+                    </div>
+
+                    <aside class="bg-white border border-gray-100 rounded-xl p-6 shadow-sm lg:sticky lg:top-24">
+                        <h3 class="text-sm font-bold tracking-wide text-[#1D2A68] uppercase mb-4">Live Preview</h3>
+                        <div class="rounded-xl border border-gray-200 p-5 bg-gray-50">
+                            <h4 class="text-lg font-bold text-gray-900">{{ form.company_name || 'Your Business Name' }}</h4>
+                            <p class="mt-2 text-sm text-gray-600">{{ form.short_description || 'Your business description will appear here as members browse the directory.' }}</p>
+
+                            <div class="mt-3 flex flex-wrap gap-2">
+                                <span v-if="form.member_type" class="inline-block px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-bold">{{ form.member_type }}</span>
+                                <span v-if="form.industry_sector" class="inline-block px-3 py-1 bg-indigo-100 text-indigo-800 rounded-full text-xs font-bold">{{ form.industry_sector }}</span>
+                            </div>
+
+                            <div class="mt-4 flex flex-wrap gap-2">
+                                <span
+                                    v-for="activity in form.selectedActivities"
+                                    :key="activity"
+                                    class="inline-flex px-2.5 py-1 rounded-full text-[11px] font-semibold bg-gray-200 text-gray-700"
+                                >
+                                    {{ activity }}
+                                </span>
+                            </div>
+                        </div>
+                    </aside>
                 </div>
             </div>
         </div>
