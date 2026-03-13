@@ -2,6 +2,13 @@
 import { Head, Link } from '@inertiajs/vue3';
 import { ref, onMounted, onUnmounted } from 'vue';
 
+const props = defineProps({
+    content: {
+        type: Object,
+        default: () => ({})
+    }
+});
+
 const scrollY = ref(0);
 const dropdownOpen = ref(false);
 
@@ -39,7 +46,7 @@ onUnmounted(() => {
     window.removeEventListener('scroll', handleScroll);
 });
 
-const boardMembers = [
+const defaultBoardMembers = [
     { position: 'President', name: 'Banwell Mwila', gender: 'male' },
     { position: 'Vice President', name: 'Anthony Ranjan', gender: 'male' },
     { position: 'Vice President', name: 'Peggy M. Hamukoma', gender: 'female' },
@@ -53,6 +60,43 @@ const boardMembers = [
     { position: 'Trustee', name: 'Dickson Mwika', gender: 'male' },
     { position: 'Trustee', name: 'Ruth Hansen', gender: 'female' },
 ];
+
+const boardMembers = Array.isArray(props.content.board_members) && props.content.board_members.length > 0
+    ? props.content.board_members
+    : defaultBoardMembers;
+const defaultContactLinks = {
+    phone: '+260977105068',
+    whatsapp: '260977105068',
+    facebook: 'https://www.facebook.com/livcci',
+    linkedin: 'https://www.linkedin.com/company/livcci'
+};
+
+const getContactLink = (member, type) => {
+    const memberContact = member?.contact || {};
+    const value = memberContact[type] || defaultContactLinks[type];
+
+    if (!value) {
+        return '#';
+    }
+
+    if (type === 'phone') {
+        const phone = String(value).replace(/\s+/g, '');
+        return phone.startsWith('tel:') ? phone : `tel:${phone}`;
+    }
+
+    if (type === 'whatsapp') {
+        const phone = String(value).replace(/[^\d]/g, '');
+        return String(value).includes('wa.me/') ? String(value) : `https://wa.me/${phone}`;
+    }
+
+    return value;
+};
+
+const leadershipHero = props.content.hero || {
+    badge: 'Board of Directors',
+    title: 'Chamber Leadership',
+    description: 'Meet the elected board of directors guiding LiVCCI (Elected November 2024)'
+};
 </script>
 
 <template>
@@ -115,13 +159,13 @@ const boardMembers = [
             
             <div class="relative max-w-7xl mx-auto py-16 px-4 sm:py-24 sm:px-6 lg:px-8 flex flex-col justify-center h-full opacity-0 translate-y-10 transition-all duration-700 animate-in">
                 <span class="px-3 py-1 rounded-full bg-[#1876C3]/40 text-[#F6EED8] text-sm font-semibold tracking-wide border border-[#1876C3] mb-4 inline-block w-fit">
-                    Board of Directors
+                    {{ leadershipHero.badge }}
                 </span>
                 <h1 class="text-4xl font-extrabold tracking-tight text-white sm:text-5xl lg:text-6xl max-w-3xl leading-tight">
-                    Chamber Leadership
+                    {{ leadershipHero.title }}
                 </h1>
                 <p class="mt-6 text-xl text-blue-100 max-w-2xl">
-                    Meet the elected board of directors guiding LiVCCI (Elected November 2024)
+                    {{ leadershipHero.description }}
                 </p>
             </div>
         </div>
@@ -137,12 +181,12 @@ const boardMembers = [
                             v-for="(member, index) in boardMembers" 
                             :key="index"
                             :style="{ transitionDelay: `${index * 50}ms` }"
-                            class="opacity-0 translate-y-10 transition-all duration-700 animate-in"
+                            class="opacity-0 translate-y-10 transition-all duration-700 animate-in px-2"
                         >
                             <!-- Photo -->
-                            <div class="rounded-lg h-64 mb-4 flex items-center justify-center overflow-hidden shadow-md group">
+                            <div class="w-56 h-56 mb-5 mx-auto flex items-center justify-center overflow-hidden rounded-full group">
                                 <img 
-                                    :src="`/images/leader/${member.gender === 'male' ? 'man.png' : 'woman.png'}`"
+                                    :src="member.image_url || `/images/leader/${member.gender === 'male' ? 'man.png' : 'woman.png'}`"
                                     :alt="member.name"
                                     class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                                 >
@@ -152,6 +196,28 @@ const boardMembers = [
                             <div class="text-center">
                                 <h3 class="text-lg font-bold text-orange-600 mb-1 uppercase tracking-wide">{{ member.name }}</h3>
                                 <p class="text-gray-600 text-sm font-medium">{{ member.position }}</p>
+                                <div class="mt-6 flex items-center justify-center gap-4 text-[#d11a1a]">
+                                    <a :href="getContactLink(member, 'phone')" class="hover:text-[#1876C3] transition-colors" title="Call">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h2.2a1 1 0 01.98.804l.57 2.86a1 1 0 01-.27.92l-1.2 1.2a16 16 0 007.94 7.94l1.2-1.2a1 1 0 01.92-.27l2.86.57A1 1 0 0121 16.8V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
+                                        </svg>
+                                    </a>
+                                    <a :href="getContactLink(member, 'whatsapp')" target="_blank" rel="noopener noreferrer" class="hover:text-[#1876C3] transition-colors" title="WhatsApp">
+                                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                            <path d="M20.52 3.48A11.84 11.84 0 0012.07 0C5.5 0 .17 5.33.17 11.9c0 2.1.55 4.16 1.6 5.98L0 24l6.3-1.64a11.88 11.88 0 005.77 1.47h.01c6.56 0 11.9-5.34 11.9-11.9 0-3.18-1.24-6.16-3.46-8.45zM12.08 21.8h-.01a9.9 9.9 0 01-5.04-1.38l-.36-.21-3.74.97 1-3.64-.24-.38a9.87 9.87 0 01-1.52-5.26c0-5.45 4.44-9.9 9.9-9.9 2.64 0 5.12 1.03 6.99 2.9a9.82 9.82 0 012.91 6.99c0 5.45-4.45 9.9-9.9 9.9zm5.43-7.43c-.3-.15-1.77-.87-2.05-.96-.27-.1-.47-.15-.67.15-.2.3-.77.96-.95 1.15-.17.2-.35.22-.65.08-.3-.15-1.24-.46-2.36-1.47-.88-.78-1.47-1.75-1.64-2.05-.17-.3-.02-.47.13-.62.13-.13.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.03-.52-.07-.15-.67-1.62-.92-2.22-.24-.57-.48-.5-.67-.51h-.57c-.2 0-.52.08-.8.37-.27.3-1.05 1.03-1.05 2.5s1.08 2.9 1.23 3.1c.15.2 2.12 3.23 5.12 4.53.72.31 1.29.5 1.73.63.72.23 1.37.2 1.88.12.57-.08 1.77-.72 2.02-1.42.25-.7.25-1.3.17-1.42-.07-.12-.27-.2-.57-.35z"/>
+                                        </svg>
+                                    </a>
+                                    <a :href="getContactLink(member, 'facebook')" target="_blank" rel="noopener noreferrer" class="hover:text-[#1876C3] transition-colors" title="Facebook">
+                                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                            <path d="M24 12.073c0-6.627-5.373-12-12-12S0 5.446 0 12.073c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.49 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                                        </svg>
+                                    </a>
+                                    <a :href="getContactLink(member, 'linkedin')" target="_blank" rel="noopener noreferrer" class="hover:text-[#1876C3] transition-colors" title="LinkedIn">
+                                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                            <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.475-2.236-1.986-2.236-1.08 0-1.722.722-2.004 1.418-.103.249-.129.597-.129.946v5.441H9.22s.047-8.733 0-9.652h3.554v1.366c.43-.664 1.199-1.61 2.919-1.61 2.136 0 3.734 1.39 3.734 4.38v5.516zM5.337 8.855c-1.144 0-1.915-.762-1.915-1.715 0-.953.77-1.715 1.958-1.715 1.188 0 1.915.762 1.915 1.715 0 .953-.726 1.715-1.958 1.715zm1.608 11.597H3.73V9.097h3.215v11.355zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.225 0z"/>
+                                        </svg>
+                                    </a>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -269,7 +335,12 @@ const boardMembers = [
                 
                 <div class="flex flex-col md:flex-row justify-between items-center mt-8 text-sm text-blue-300">
                     <p>&copy; 2026 Livingstone Chamber of Commerce & Industry. All rights reserved.</p>
-                    <p class="mt-4 md:mt-0">Designed & Developed by <span class="font-bold text-[#F4B223]">Ori Studio Limited</span></p>
+                    <p class="mt-4 md:mt-0">
+                        Designed & Developed by
+                        <a href="https://oristudiozm.com/" target="_blank" rel="noopener noreferrer" class="font-bold text-[#F4B223] hover:text-[#f9cb63] transition-colors">
+                            Ori Studio Limited
+                        </a>
+                    </p>
                 </div>
             </div>
         </footer>

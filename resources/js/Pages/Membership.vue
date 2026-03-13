@@ -2,6 +2,13 @@
 import { Head, Link } from '@inertiajs/vue3';
 import { ref, onMounted, onUnmounted } from 'vue';
 
+const props = defineProps({
+    content: {
+        type: Object,
+        default: () => ({})
+    }
+});
+
 const scrollY = ref(0);
 const dropdownOpen = ref(false);
 
@@ -39,7 +46,7 @@ onUnmounted(() => {
     window.removeEventListener('scroll', handleScroll);
 });
 
-const membershipTiers = [
+const defaultMembershipTiers = [
     {
         category: 'Corporate',
         amount: 2000.00,
@@ -81,7 +88,7 @@ const membershipTiers = [
     },
 ];
 
-const membershipBenefits = [
+const defaultMembershipBenefits = [
     {
         image: 'https://images.unsplash.com/photo-1552664730-d307ca884978?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
         title: 'Networking',
@@ -113,6 +120,31 @@ const membershipBenefits = [
         description: 'Access resources and mentorship for business growth'
     },
 ];
+
+const membershipTiers = props.content.tiers || defaultMembershipTiers;
+const membershipBenefits = props.content.benefits || defaultMembershipBenefits;
+const membershipHero = props.content.hero || {
+    badge: 'Join LiVCCI',
+    title: 'Membership at LiVCCI',
+    description: 'Choose the membership category that best fits your business needs and unlock unprecedented opportunities.'
+};
+const registrationFee = props.content.registration_fee || {
+    label: 'One-Time Fee',
+    amount: '100.00 ZMW',
+    subtitle: 'Registration Fee for All New Members',
+    description: 'A one-time registration fee applies to all new members upon joining LiVCCI. This fee is separate from your annual membership subscription.'
+};
+
+const defaultRegistrationImage = 'https://images.unsplash.com/photo-1450101499163-c8917c7b60c0?ixlib=rb-1.2.1&auto=format&fit=crop&w=1400&q=80';
+const registrationImageErrored = ref(false);
+
+const getRegistrationImage = () => {
+    return props.content?.registration_fee?.image || defaultRegistrationImage;
+};
+
+const onRegistrationImageError = () => {
+    registrationImageErrored.value = true;
+};
 </script>
 
 <template>
@@ -175,13 +207,13 @@ const membershipBenefits = [
             
             <div class="relative max-w-7xl mx-auto py-16 px-4 sm:py-24 sm:px-6 lg:px-8 flex flex-col justify-center h-full opacity-0 translate-y-10 transition-all duration-700 animate-in">
                 <span class="px-3 py-1 rounded-full bg-[#1876C3]/40 text-[#F6EED8] text-sm font-semibold tracking-wide border border-[#1876C3] mb-4 inline-block w-fit">
-                    Join LiVCCI
+                    {{ membershipHero.badge }}
                 </span>
                 <h1 class="text-4xl font-extrabold tracking-tight text-white sm:text-5xl lg:text-6xl max-w-3xl leading-tight">
-                    Membership at LiVCCI
+                    {{ membershipHero.title }}
                 </h1>
                 <p class="mt-6 text-xl text-blue-100 max-w-2xl">
-                    Choose the membership category that best fits your business needs and unlock unprecedented opportunities.
+                    {{ membershipHero.description }}
                 </p>
             </div>
         </div>
@@ -198,24 +230,40 @@ const membershipBenefits = [
                             v-for="(tier, index) in membershipTiers" 
                             :key="index"
                             :style="{ transitionDelay: `${index * 100}ms` }"
-                            class="bg-gradient-to-br from-white to-blue-50 rounded-xl shadow-lg hover:shadow-2xl transition-all border-2 border-[#1876C3] overflow-hidden opacity-0 translate-y-10 animate-in"
+                            :class="[
+                                'rounded-xl shadow-lg hover:shadow-2xl transition-all border-2 overflow-hidden opacity-0 translate-y-10 animate-in',
+                                index === 0
+                                    ? 'bg-gradient-to-br from-[#f7f9ff] to-[#e8f0ff] border-[#1D2A68] hover:shadow-[#1D2A68]/20'
+                                    : index === 1
+                                        ? 'bg-gradient-to-br from-[#f6fbff] to-[#e8f4ff] border-[#1876C3] hover:shadow-[#1876C3]/20'
+                                        : 'bg-gradient-to-br from-[#fffdf6] to-[#fff3d6] border-[#F4B223] hover:shadow-[#F4B223]/25'
+                            ]"
                         >
-                            <div class="bg-gradient-to-r from-[#1876C3] to-[#1460A0] text-white p-8 text-center">
+                            <div
+                                :class="[
+                                    'text-white p-8 text-center',
+                                    index === 0
+                                        ? 'bg-gradient-to-r from-[#1D2A68] to-[#243b8e]'
+                                        : index === 1
+                                            ? 'bg-gradient-to-r from-[#1876C3] to-[#1460A0]'
+                                            : 'bg-gradient-to-r from-[#D79A12] to-[#F4B223]'
+                                ]"
+                            >
                                 <h3 class="text-2xl font-bold mb-2">{{ tier.category }}</h3>
-                                <p class="text-blue-100 text-sm">{{ tier.description }}</p>
+                                <p :class="['text-sm', index === 2 ? 'text-[#1D2A68]/85 font-medium' : 'text-blue-100']">{{ tier.description }}</p>
                             </div>
                             
                             <div class="p-8">
                                 <div class="text-center mb-8">
-                                    <p class="text-5xl font-bold text-[#1D2A68]">{{ tier.amount.toLocaleString() }}</p>
+                                    <p :class="['text-5xl font-bold', index === 2 ? 'text-[#A66E00]' : 'text-[#1D2A68]']">{{ tier.amount.toLocaleString() }}</p>
                                     <p class="text-gray-600 mt-2">{{ tier.currency }} per year</p>
                                 </div>
 
                                 <div class="mb-8 space-y-4">
-                                    <h4 class="font-bold text-[#1D2A68] mb-4">Membership Benefits:</h4>
+                                    <h4 :class="['font-bold mb-4', index === 2 ? 'text-[#A66E00]' : 'text-[#1D2A68]']">Membership Benefits:</h4>
                                     <ul class="space-y-3">
                                         <li v-for="(feature, fIndex) in tier.features" :key="fIndex" class="flex items-start gap-3">
-                                            <svg class="w-5 h-5 text-[#1876C3] flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                            <svg :class="['w-5 h-5 flex-shrink-0 mt-0.5', index === 0 ? 'text-[#1D2A68]' : index === 1 ? 'text-[#1876C3]' : 'text-[#D79A12]']" fill="currentColor" viewBox="0 0 20 20">
                                                 <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
                                             </svg>
                                             <span class="text-gray-600">{{ feature }}</span>
@@ -223,7 +271,17 @@ const membershipBenefits = [
                                     </ul>
                                 </div>
 
-                                <Link :href="route('register')" class="w-full block text-center bg-[#1876C3] text-white font-bold py-3 rounded-md hover:bg-[#1460A0] transition-colors">
+                                <Link
+                                    :href="route('register')"
+                                    :class="[
+                                        'w-full block text-center text-white font-bold py-3 rounded-md transition-colors',
+                                        index === 0
+                                            ? 'bg-[#1D2A68] hover:bg-[#15204f]'
+                                            : index === 1
+                                                ? 'bg-[#1876C3] hover:bg-[#1460A0]'
+                                                : 'bg-[#F4B223] hover:bg-[#E0A11B] text-[#1D2A68]'
+                                    ]"
+                                >
                                     Join Now
                                 </Link>
                             </div>
@@ -232,23 +290,34 @@ const membershipBenefits = [
                 </div>
 
                 <!-- Registration Fee Info -->
-                <div class="bg-gradient-to-r from-[#1876C3] to-[#1460A0] p-0 rounded-xl mb-20 opacity-0 translate-y-10 transition-all duration-700 animate-in overflow-hidden shadow-2xl" style="transition-delay: 300ms;">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-                        <div class="p-8 md:p-12">
-                            <span class="inline-block px-4 py-2 bg-[#F4B223]/20 text-[#F4B223] text-xs font-bold rounded-full mb-4 uppercase tracking-widest">One-Time Fee</span>
-                            <h3 class="text-4xl md:text-5xl font-black text-white mb-4">100.00 ZMW</h3>
-                            <p class="text-blue-100 text-lg mb-6">Registration Fee for All New Members</p>
-                            <p class="text-blue-50 mb-8">A one-time registration fee applies to all new members upon joining LiVCCI. This fee is separate from your annual membership subscription.</p>
-                            <Link :href="route('register')" class="inline-block bg-[#F4B223] text-[#1D2A68] font-bold py-3 px-8 rounded-lg hover:bg-white transition-colors shadow-lg">
+                <div class="bg-gradient-to-r from-[#1D2A68] via-[#1876C3] to-[#1460A0] p-0 rounded-2xl mb-20 opacity-0 translate-y-10 transition-all duration-700 animate-in overflow-hidden shadow-2xl border border-[#2a4e9a]/40" style="transition-delay: 300ms;">
+                    <div class="grid grid-cols-1 md:grid-cols-5 gap-0 items-stretch">
+                        <div class="p-8 md:p-12 md:col-span-3">
+                            <span class="inline-block px-4 py-2 bg-[#F4B223]/20 text-[#F4B223] text-xs font-bold rounded-full mb-4 uppercase tracking-widest">{{ registrationFee.label }}</span>
+                            <h3 class="text-4xl md:text-5xl font-black text-white mb-4">{{ registrationFee.amount }}</h3>
+                            <p class="text-blue-100 text-lg mb-6">{{ registrationFee.subtitle }}</p>
+                            <p class="text-blue-50 mb-8 max-w-xl">{{ registrationFee.description }}</p>
+                            <Link :href="route('register')" class="inline-block bg-[#F4B223] text-[#1D2A68] font-bold py-3 px-8 rounded-lg hover:bg-[#f8cb58] transition-colors shadow-lg">
                                 Start Registration →
                             </Link>
                         </div>
-                        <div class="h-64 md:h-80 overflow-hidden">
+
+                        <div class="h-64 md:h-auto md:min-h-[340px] overflow-hidden md:col-span-2 relative">
                             <img 
-                                src="https://images.unsplash.com/photo-1450101499163-c8917c7b60c0?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60" 
+                                v-if="!registrationImageErrored"
+                                :src="getRegistrationImage()"
                                 alt="Registration Process"
                                 class="w-full h-full object-cover"
+                                @error="onRegistrationImageError"
                             >
+                            <div v-else class="w-full h-full bg-gradient-to-br from-[#0f1d52] to-[#1d4a97] flex flex-col items-center justify-center p-8 text-center">
+                                <svg class="w-16 h-16 text-[#F4B223] mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                </svg>
+                                <p class="text-white font-bold text-lg">Fast Digital Registration</p>
+                                <p class="text-blue-100 text-sm mt-2">Submit your membership application online and receive onboarding guidance from our team.</p>
+                            </div>
+                            <div class="absolute inset-0 bg-gradient-to-t from-[#0c1a49]/30 to-transparent pointer-events-none"></div>
                         </div>
                     </div>
                 </div>
@@ -348,7 +417,12 @@ const membershipBenefits = [
                 
                 <div class="flex flex-col md:flex-row justify-between items-center mt-8 text-sm text-blue-300">
                     <p>&copy; 2026 Livingstone Chamber of Commerce & Industry. All rights reserved.</p>
-                    <p class="mt-4 md:mt-0">Designed & Developed by <span class="font-bold text-[#F4B223]">Ori Studio Limited</span></p>
+                    <p class="mt-4 md:mt-0">
+                        Designed & Developed by
+                        <a href="https://oristudiozm.com/" target="_blank" rel="noopener noreferrer" class="font-bold text-[#F4B223] hover:text-[#f9cb63] transition-colors">
+                            Ori Studio Limited
+                        </a>
+                    </p>
                 </div>
             </div>
         </footer>

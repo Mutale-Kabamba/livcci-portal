@@ -1,6 +1,13 @@
 <script setup>
 import { Head, Link } from '@inertiajs/vue3';
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
+
+const props = defineProps({
+    content: {
+        type: Object,
+        default: () => ({})
+    }
+});
 
 const scrollY = ref(0);
 const dropdownOpen = ref(false);
@@ -39,43 +46,58 @@ onUnmounted(() => {
     window.removeEventListener('scroll', handleScroll);
 });
 
-const strategicGoals = [
+const defaultStrategicGoals = [
     {
         number: 1,
         title: 'Strengthened Governance and Institutional Capacity',
         description: 'Build robust governance structures, enhance institutional systems, and develop a capable management team to ensure sustainable operations and member accountability.',
         image: 'https://images.unsplash.com/photo-1552664730-d307ca884978?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
-        bgColor: 'from-blue-600 to-blue-700'
+        detail_link: '/strategic-goals/goal-1'
     },
     {
         number: 2,
         title: 'Enhanced Member Services and Value Proposition',
         description: 'Expand and improve services offered to members, including training programs, networking events, business development support, and market intelligence to maximize member satisfaction and retention.',
         image: 'https://images.unsplash.com/photo-1552664730-d307ca884978?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
-        bgColor: 'from-purple-600 to-purple-700'
+        detail_link: '/strategic-goals/goal-2'
     },
     {
         number: 3,
         title: 'Dynamic Advocacy and Strategic Partnerships',
         description: 'Strengthen advocacy efforts on behalf of members, develop strategic partnerships with government, development partners, and other organizations to create an enabling business environment.',
         image: 'https://images.unsplash.com/photo-1552664730-d307ca884978?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
-        bgColor: 'from-green-600 to-green-700'
+        detail_link: '/strategic-goals/goal-3'
     },
     {
         number: 4,
         title: 'Financial Sustainability and Resource Mobilization',
         description: 'Diversify revenue streams, improve financial management, and mobilize resources through grants and partnerships to ensure long-term financial sustainability of the chamber.',
         image: 'https://images.unsplash.com/photo-1552664730-d307ca884978?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
-        bgColor: 'from-yellow-500 to-yellow-600'
+        detail_link: '/strategic-goals/goal-4'
     },
     {
         number: 5,
         title: 'Communication, Publicity, and Research',
         description: 'Enhance communication channels, increase chamber visibility in the market, conduct business research, and provide timely information to members and stakeholders.',
         image: 'https://images.unsplash.com/photo-1552664730-d307ca884978?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
-        bgColor: 'from-red-600 to-red-700'
+        detail_link: '/strategic-goals/goal-5'
     },
 ];
+
+const strategicGoals = props.content.goals || defaultStrategicGoals;
+const visibleGoalCount = ref(3);
+const displayedGoals = computed(() => strategicGoals.slice(0, visibleGoalCount.value));
+const hasMoreGoals = computed(() => visibleGoalCount.value < strategicGoals.length);
+
+const showMoreGoals = () => {
+    visibleGoalCount.value = strategicGoals.length;
+};
+
+const goalsHero = props.content.hero || {
+    badge: '2026 - 2030',
+    title: 'Strategic Goals',
+    description: 'Our ambitious roadmap for transforming LiVCCI and advancing business growth in Livingstone.'
+};
 </script>
 
 <template>
@@ -138,13 +160,13 @@ const strategicGoals = [
             
             <div class="relative max-w-7xl mx-auto py-16 px-4 sm:py-24 sm:px-6 lg:px-8 flex flex-col justify-center h-full opacity-0 translate-y-10 transition-all duration-700 animate-in">
                 <span class="px-3 py-1 rounded-full bg-[#1876C3]/40 text-[#F6EED8] text-sm font-semibold tracking-wide border border-[#1876C3] mb-4 inline-block w-fit">
-                    2026 – 2030
+                    {{ goalsHero.badge }}
                 </span>
                 <h1 class="text-4xl font-extrabold tracking-tight text-white sm:text-5xl lg:text-6xl max-w-3xl leading-tight">
-                    Strategic Goals
+                    {{ goalsHero.title }}
                 </h1>
                 <p class="mt-6 text-xl text-blue-100 max-w-2xl">
-                    Our ambitious roadmap for transforming LiVCCI and advancing business growth in Livingstone.
+                    {{ goalsHero.description }}
                 </p>
             </div>
         </div>
@@ -157,7 +179,7 @@ const strategicGoals = [
                     <span class="text-[#1876C3] font-bold uppercase tracking-widest text-sm">2026 - 2030 ROADMAP</span>
                     <h2 class="text-4xl sm:text-5xl font-black text-[#1D2A68] mb-6 mt-4 leading-tight">
                         Strategic Goals For
-                        <span class="bg-[#FF6B35] text-white px-4 py-2 inline-block">Organizational Excellence</span>
+                        <span class="bg-[#F4B223] text-white px-4 py-2 inline-block">Organizational Excellence</span>
                     </h2>
                     <p class="text-lg text-gray-700 max-w-3xl mt-8">
                         Over the next five years, LiVCCI is committed to achieving ambitious strategic goals that will strengthen our organization, enhance member value, and accelerate economic development in Livingstone.
@@ -165,34 +187,33 @@ const strategicGoals = [
                 </div>
 
                 <!-- Strategic Goals Flip Cards -->
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-16">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
                     <div
-                        v-for="(goal, index) in strategicGoals"
+                        v-for="(goal, index) in displayedGoals"
                         :key="index"
                         :style="{ transitionDelay: `${index * 80}ms` }"
                         class="opacity-0 translate-y-10 transition-all duration-700 animate-in"
                     >
-                        <div class="h-64 cursor-pointer group perspective">
+                        <div class="h-[420px] cursor-pointer group perspective">
                             <div class="relative w-full h-full transition-transform duration-500 transform-gpu group-hover:[transform:rotateY(180deg)]" style="transform-style: preserve-3d;">
                                 <!-- Front of card -->
-                                <div :class="['absolute w-full h-full rounded-lg p-8 flex flex-col items-center justify-center text-white font-bold text-center shadow-lg', 
-                                    goal.number === 1 ? 'bg-blue-500' : 
-                                    goal.number === 2 ? 'bg-purple-500' : 
-                                    goal.number === 3 ? 'bg-green-500' : 
-                                    goal.number === 4 ? 'bg-yellow-500' : 
-                                    goal.number === 5 ? 'bg-red-500' : 'bg-gray-500']" style="backface-visibility: hidden;">
-                                    <div class="text-5xl mb-4 opacity-80">{{ goal.number }}</div>
-                                    <div class="text-sm uppercase tracking-wider">Goal {{ goal.number }}</div>
+                                <div class="absolute w-full h-full rounded-xl overflow-hidden shadow-xl" style="backface-visibility: hidden;">
+                                    <img :src="goal.image" :alt="goal.title" class="w-full h-full object-cover">
+                                    <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"></div>
+                                    <div class="absolute bottom-0 left-0 right-0 p-6 text-white">
+                                        <p class="text-sm uppercase tracking-[0.2em] text-[#F4B223] font-bold">Goal {{ goal.number }}</p>
+                                        <h3 class="text-2xl font-extrabold mt-2 leading-snug">{{ goal.title }}</h3>
+                                    </div>
                                 </div>
+
                                 <!-- Back of card -->
-                                <div :class="['absolute w-full h-full rounded-lg p-6 flex flex-col items-center justify-center text-white shadow-lg',
-                                    goal.number === 1 ? 'bg-blue-600' : 
-                                    goal.number === 2 ? 'bg-purple-600' : 
-                                    goal.number === 3 ? 'bg-green-600' : 
-                                    goal.number === 4 ? 'bg-yellow-600' : 
-                                    goal.number === 5 ? 'bg-red-600' : 'bg-gray-600']" style="backface-visibility: hidden; transform: rotateY(180deg);">
-                                    <h3 class="font-bold text-sm mb-3 leading-tight">{{ goal.title }}</h3>
-                                    <p class="text-xs leading-relaxed opacity-90">{{ goal.description }}</p>
+                                <div class="absolute w-full h-full rounded-xl p-7 flex flex-col text-white shadow-xl bg-gradient-to-br from-[#1D2A68] via-[#1b4f8f] to-[#1876C3]" style="backface-visibility: hidden; transform: rotateY(180deg);">
+                                    <p class="text-sm uppercase tracking-[0.2em] text-[#F4B223] font-bold">Goal {{ goal.number }}</p>
+                                    <h3 class="font-extrabold text-2xl mt-3 leading-snug">{{ goal.title }}</h3>
+                                    <p class="text-base leading-relaxed opacity-95 mt-4 flex-1">{{ goal.description }}</p>
+                                    <a :href="goal.detail_link || `/strategic-goals/goal-${goal.number}`" class="inline-flex items-center justify-center bg-[#F4B223] text-[#1D2A68] font-bold text-base py-2.5 px-4 rounded-md hover:bg-[#e6a91f] transition-colors mt-6 w-fit">
+                                        View Details
+                                    </a>
                                 </div>
                             </div>
                         </div>
@@ -200,10 +221,10 @@ const strategicGoals = [
                 </div>
 
                 <!-- More Details Button -->
-                <div class="flex justify-end mb-20">
-                    <a href="#implementation" class="bg-[#FF6B35] text-white font-bold py-3 px-8 rounded-lg hover:bg-[#E85A28] transition-colors uppercase text-sm tracking-wider shadow-lg">
-                        Learn More
-                    </a>
+                <div v-if="hasMoreGoals" class="flex justify-end mb-20">
+                    <button @click="showMoreGoals" class="bg-[#F4B223] text-white font-bold py-3 px-8 rounded-lg hover:bg-[#1460A0] transition-colors uppercase text-sm tracking-wider shadow-lg">
+                        More
+                    </button>
                 </div>
 
                 <!-- Implementation Framework -->
@@ -229,46 +250,67 @@ const strategicGoals = [
 
                 <!-- Key Success Factors -->
                 <div class="mb-20 opacity-0 translate-y-10 transition-all duration-700 animate-in" style="transition-delay: 600ms;">
-                    <h2 class="text-3xl font-bold text-[#1D2A68] mb-12 text-center">Key Success Factors</h2>
+                    <div class="text-center mb-12">
+                        <p class="text-xs font-bold uppercase tracking-[0.2em] text-[#1876C3]">Strategic Enablers</p>
+                        <h2 class="text-3xl sm:text-4xl font-black text-[#1D2A68] mt-3">Key Success Factors</h2>
+                        <p class="text-gray-600 mt-3 max-w-2xl mx-auto">The core institutional capabilities that will determine how effectively LiVCCI delivers its five-year roadmap.</p>
+                    </div>
+
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        <div class="bg-white rounded-lg p-8 shadow-md hover:shadow-lg transition-shadow border-l-4 border-[#1876C3]">
-                            <h3 class="text-xl font-bold text-[#1D2A68] mb-4 flex items-center gap-3">
-                                <svg class="w-6 h-6 text-[#F4B223]" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
-                                </svg>
-                                Member-Centric Approach
-                            </h3>
-                            <p class="text-gray-600">Ensuring member needs and feedback drive our strategic direction and service improvements.</p>
+                        <div class="group bg-white rounded-2xl p-8 shadow-sm border border-gray-200 hover:shadow-lg hover:border-[#1876C3]/40 transition-all">
+                            <div class="flex items-start gap-4">
+                                <div class="w-11 h-11 rounded-xl bg-[#e7f1fc] text-[#1876C3] flex items-center justify-center flex-shrink-0">
+                                    <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h3 class="text-2xl font-bold text-[#1D2A68]">Member-Centric Approach</h3>
+                                    <p class="text-gray-600 mt-3 leading-7">Ensuring member needs and feedback drive our strategic direction and service improvements.</p>
+                                </div>
+                            </div>
                         </div>
 
-                        <div class="bg-white rounded-lg p-8 shadow-md hover:shadow-lg transition-shadow border-l-4 border-[#F4B223]">
-                            <h3 class="text-xl font-bold text-[#1D2A68] mb-4 flex items-center gap-3">
-                                <svg class="w-6 h-6 text-[#F4B223]" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
-                                </svg>
-                                Strategic Partnerships
-                            </h3>
-                            <p class="text-gray-600">Building and maintaining strong relationships with government, development partners, and private sector.</p>
+                        <div class="group bg-white rounded-2xl p-8 shadow-sm border border-gray-200 hover:shadow-lg hover:border-[#F4B223]/50 transition-all">
+                            <div class="flex items-start gap-4">
+                                <div class="w-11 h-11 rounded-xl bg-[#fff5df] text-[#d79a12] flex items-center justify-center flex-shrink-0">
+                                    <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h3 class="text-2xl font-bold text-[#1D2A68]">Strategic Partnerships</h3>
+                                    <p class="text-gray-600 mt-3 leading-7">Building and maintaining strong relationships with government, development partners, and private sector.</p>
+                                </div>
+                            </div>
                         </div>
 
-                        <div class="bg-white rounded-lg p-8 shadow-md hover:shadow-lg transition-shadow border-l-4 border-green-500">
-                            <h3 class="text-xl font-bold text-[#1D2A68] mb-4 flex items-center gap-3">
-                                <svg class="w-6 h-6 text-[#F4B223]" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
-                                </svg>
-                                Innovation & Adaptability
-                            </h3>
-                            <p class="text-gray-600">Embracing new technologies and business models to stay relevant in a dynamic business environment.</p>
+                        <div class="group bg-white rounded-2xl p-8 shadow-sm border border-gray-200 hover:shadow-lg hover:border-green-500/50 transition-all">
+                            <div class="flex items-start gap-4">
+                                <div class="w-11 h-11 rounded-xl bg-green-50 text-green-600 flex items-center justify-center flex-shrink-0">
+                                    <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h3 class="text-2xl font-bold text-[#1D2A68]">Innovation & Adaptability</h3>
+                                    <p class="text-gray-600 mt-3 leading-7">Embracing new technologies and business models to stay relevant in a dynamic business environment.</p>
+                                </div>
+                            </div>
                         </div>
 
-                        <div class="bg-white rounded-lg p-8 shadow-md hover:shadow-lg transition-shadow border-l-4 border-yellow-500">
-                            <h3 class="text-xl font-bold text-[#1D2A68] mb-4 flex items-center gap-3">
-                                <svg class="w-6 h-6 text-[#F4B223]" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
-                                </svg>
-                                Sustainability
-                            </h3>
-                            <p class="text-gray-600">Building a financially sustainable organization with diversified revenue streams and efficient operations.</p>
+                        <div class="group bg-white rounded-2xl p-8 shadow-sm border border-gray-200 hover:shadow-lg hover:border-yellow-500/50 transition-all">
+                            <div class="flex items-start gap-4">
+                                <div class="w-11 h-11 rounded-xl bg-yellow-50 text-yellow-600 flex items-center justify-center flex-shrink-0">
+                                    <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h3 class="text-2xl font-bold text-[#1D2A68]">Sustainability</h3>
+                                    <p class="text-gray-600 mt-3 leading-7">Building a financially sustainable organization with diversified revenue streams and efficient operations.</p>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -347,7 +389,12 @@ const strategicGoals = [
                 
                 <div class="flex flex-col md:flex-row justify-between items-center mt-8 text-sm text-blue-300">
                     <p>&copy; 2026 Livingstone Chamber of Commerce & Industry. All rights reserved.</p>
-                    <p class="mt-4 md:mt-0">Designed & Developed by <span class="font-bold text-[#F4B223]">Ori Studio Limited</span></p>
+                    <p class="mt-4 md:mt-0">
+                        Designed & Developed by
+                        <a href="https://oristudiozm.com/" target="_blank" rel="noopener noreferrer" class="font-bold text-[#F4B223] hover:text-[#f9cb63] transition-colors">
+                            Ori Studio Limited
+                        </a>
+                    </p>
                 </div>
             </div>
         </footer>

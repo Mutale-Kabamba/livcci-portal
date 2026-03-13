@@ -1,6 +1,8 @@
 <script setup>
 import { Head, Link } from '@inertiajs/vue3';
 import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
+import { faLinkedinIn, faFacebookF, faInstagram, faXTwitter, faWhatsapp } from '@fortawesome/free-brands-svg-icons';
 
 const props = defineProps({
     profiles: Array
@@ -17,6 +19,17 @@ const handleScroll = () => {
 // Search and Filter Logic
 const searchQuery = ref('');
 const selectedCategories = ref([]);
+const selectedSectors = ref([]);
+
+const sectors = [
+    'Tourism & Hospitality',
+    'Trade & Commerce',
+    'Financial Services',
+    'Construction & Engineering',
+    'Agriculture & Manufacturing',
+    'Cooperatives & Social Enterprise',
+    'IT & Creative Media'
+];
 
 const filteredProfiles = computed(() => {
     return props.profiles.filter(profile => {
@@ -25,8 +38,9 @@ const filteredProfiles = computed(() => {
                               profile.short_description.toLowerCase().includes(searchQuery.value.toLowerCase());
         
         const matchesCategory = selectedCategories.value.length === 0 || selectedCategories.value.includes(profile.member_category);
+        const matchesSector = selectedSectors.value.length === 0 || selectedSectors.value.includes(profile.industry_sector);
         
-        return matchesSearch && matchesCategory;
+        return matchesSearch && matchesCategory && matchesSector;
     });
 });
 
@@ -45,6 +59,23 @@ const toggleCategory = (category) => {
     }
 };
 
+const toggleSector = (sector) => {
+    const index = selectedSectors.value.indexOf(sector);
+    if (index > -1) {
+        selectedSectors.value.splice(index, 1);
+    } else {
+        selectedSectors.value.push(sector);
+    }
+};
+
+const onLogoError = (event) => {
+    const fallbackSrc = '/images/member.png';
+    if (event?.target && event.target.src !== fallbackSrc) {
+        event.target.onerror = null;
+        event.target.src = fallbackSrc;
+    }
+};
+
 // Get company logo or placeholder
 const getCompanyLogo = (profile) => {
     return profile.logo_url || '/images/logo.png';
@@ -53,6 +84,47 @@ const getCompanyLogo = (profile) => {
 // Get company description
 const getCompanyDescription = (profile) => {
     return profile.short_description || 'Professional ' + profile.member_category + ' services';
+};
+
+const socialConfig = {
+    linkedin: {
+        icon: faLinkedinIn,
+        label: 'LinkedIn',
+        hoverClass: 'hover:bg-[#0A66C2] hover:text-white hover:border-[#0A66C2]',
+    },
+    facebook: {
+        icon: faFacebookF,
+        label: 'Facebook',
+        hoverClass: 'hover:bg-[#1877F2] hover:text-white hover:border-[#1877F2]',
+    },
+    x: {
+        icon: faXTwitter,
+        label: 'X/Twitter',
+        hoverClass: 'hover:bg-black hover:text-white hover:border-black',
+    },
+    instagram: {
+        icon: faInstagram,
+        label: 'Instagram',
+        hoverClass: 'hover:bg-gradient-to-br hover:from-[#F58529] hover:via-[#DD2A7B] hover:to-[#8134AF] hover:text-white hover:border-transparent',
+    },
+    whatsapp: {
+        icon: faWhatsapp,
+        label: 'WhatsApp',
+        hoverClass: 'hover:bg-[#25D366] hover:text-white hover:border-[#25D366]',
+    },
+};
+
+const getSocialLinks = (profile) => {
+    const links = profile?.social_links;
+    if (!links || typeof links !== 'object' || Array.isArray(links)) return [];
+
+    return Object.entries(links)
+        .filter(([platform, url]) => socialConfig[platform] && typeof url === 'string' && url.trim() !== '')
+        .map(([platform, url]) => ({
+            platform,
+            url,
+            ...socialConfig[platform],
+        }));
 };
 
 onMounted(() => {
@@ -178,6 +250,21 @@ onUnmounted(() => {
                                 </label>
                             </div>
                         </div>
+
+                        <div class="mt-6">
+                            <h4 class="font-semibold text-[#1D2A68] mb-3 text-sm">Filter by Sector</h4>
+                            <div class="space-y-2 max-h-80 overflow-y-auto">
+                                <label v-for="sector in sectors" :key="sector" class="flex items-center gap-2 cursor-pointer">
+                                    <input
+                                        type="checkbox"
+                                        :checked="selectedSectors.includes(sector)"
+                                        @change="toggleSector(sector)"
+                                        class="w-4 h-4 text-[#1876C3] rounded focus:ring-[#1876C3]"
+                                    >
+                                    <span class="text-sm text-[#1D2A68]">{{ sector }}</span>
+                                </label>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -211,6 +298,7 @@ onUnmounted(() => {
                                 <img 
                                     :src="getCompanyLogo(profile)" 
                                     :alt="profile.company_name"
+                                    @error="onLogoError"
                                     class="w-full h-full object-contain p-4"
                                 >
                             </div>
@@ -223,6 +311,21 @@ onUnmounted(() => {
                                 <!-- Category Badge -->
                                 <div class="bg-[#F4B223] text-black font-bold py-2 px-3 rounded text-center text-xs">
                                     CATEGORY: {{ profile.member_category }}
+                                </div>
+
+                                <div v-if="getSocialLinks(profile).length" class="mt-3 flex items-center gap-2">
+                                    <a
+                                        v-for="social in getSocialLinks(profile)"
+                                        :key="social.platform"
+                                        :href="social.url"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        :title="social.label"
+                                        class="inline-flex h-8 w-8 items-center justify-center rounded-full border border-gray-300 bg-gray-50 text-[#1D2A68] transition-all duration-300"
+                                        :class="social.hoverClass"
+                                    >
+                                        <FontAwesomeIcon :icon="social.icon" class="h-4 w-4" />
+                                    </a>
                                 </div>
 
                                 <!-- Contact Button -->
@@ -301,7 +404,12 @@ onUnmounted(() => {
                 
                 <div class="flex flex-col md:flex-row justify-between items-center mt-8 text-sm text-blue-300">
                     <p>&copy; 2026 Livingstone Chamber of Commerce & Industry. All rights reserved.</p>
-                    <p class="mt-4 md:mt-0">Designed & Developed by <span class="font-bold text-[#F4B223]">Ori Studio Limited</span></p>
+                    <p class="mt-4 md:mt-0">
+                        Designed & Developed by
+                        <a href="https://oristudiozm.com/" target="_blank" rel="noopener noreferrer" class="font-bold text-[#F4B223] hover:text-[#f9cb63] transition-colors">
+                            Ori Studio Limited
+                        </a>
+                    </p>
                 </div>
             </div>
         </footer>
