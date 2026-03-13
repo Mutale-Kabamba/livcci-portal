@@ -11,17 +11,64 @@ use Inertia\Inertia;
 Route::get('/', [AdminController::class, 'showHome'])->name('home');
 
 Route::get('/dashboard', function () {
+    $businessProfiles = auth()->check()
+        ? \App\Models\BusinessProfile::with(['payments' => fn ($q) => $q->latest('payment_date')->latest('id')])
+            ->where('user_id', auth()->id())
+            ->latest()
+            ->get()
+        : collect();
+
+    $profileIds = $businessProfiles->pluck('id');
+
+    $unpaidInvoices = \App\Models\Invoice::query()
+        ->whereIn('profile_id', $profileIds)
+        ->where('status', 'Unpaid')
+        ->get(['id', 'profile_id', 'amount']);
+
     return Inertia::render('Dashboard', [
-        // This line fetches the profile linked to the logged-in user
-        'businessProfile' => auth()->user()?->businessProfile 
+        'businessProfiles' => $businessProfiles,
+        'totalOutstandingDues' => (float) $unpaidInvoices->sum('amount'),
+        'unpaidProfileIds' => $unpaidInvoices->pluck('profile_id')->unique()->values(),
     ]);
 })->middleware(['auth', 'verified'])->name('dashboard');
+
+Route::post('/dashboard/pay-all', function () {
+    $profiles = \App\Models\BusinessProfile::where('user_id', auth()->id())->get(['id']);
+    $profileIds = $profiles->pluck('id');
+
+    if ($profileIds->isEmpty()) {
+        return back()->with('error', 'No businesses found for this account.');
+    }
+
+    $unpaidInvoices = \App\Models\Invoice::query()
+        ->whereIn('profile_id', $profileIds)
+        ->where('status', 'Unpaid')
+        ->get();
+
+    if ($unpaidInvoices->isEmpty()) {
+        return back()->with('message', 'No outstanding dues to pay.');
+    }
+
+    \App\Models\Invoice::query()
+        ->whereIn('id', $unpaidInvoices->pluck('id'))
+        ->update(['status' => 'Paid']);
+
+    \App\Models\BusinessProfile::query()
+        ->whereIn('id', $unpaidInvoices->pluck('profile_id')->unique())
+        ->update([
+            'last_payment_date' => now()->toDateString(),
+            'subscription_expiry' => now()->addYear()->toDateString(),
+        ]);
+
+    return back()->with('message', 'All outstanding dues have been marked as paid.');
+})->middleware(['auth', 'verified'])->name('dashboard.pay-all');
 
 Route::get('/about', [AdminController::class, 'showAbout'])->name('about');
 Route::get('/sectors', [AdminController::class, 'showSectors'])->name('sectors');
 Route::get('/leadership', [AdminController::class, 'showLeadership'])->name('leadership');
 Route::get('/membership', [AdminController::class, 'showMembership'])->name('membership');
 Route::get('/strategic-goals', [AdminController::class, 'showStrategicGoals'])->name('strategic-goals');
+Route::get('/strategic-goals/{slug}', [AdminController::class, 'showStrategicGoalDetail'])->name('strategic-goals.detail');
 Route::get('/news', [AdminController::class, 'showNews'])->name('news');
 Route::get('/directory', [BusinessProfileController::class, 'index'])->name('directory.index');
 Route::middleware([IsAdminMiddleware::class])->group(function () {
@@ -32,6 +79,7 @@ Route::middleware([IsAdminMiddleware::class])->group(function () {
     
     // Member Management
     Route::patch('/admin/members/{profile}/status', [AdminController::class, 'updateMemberStatus'])->name('admin.members.status');
+    Route::post('/admin/members/{profile}/payments', [AdminController::class, 'recordPayment'])->name('admin.members.payments.store');
     Route::delete('/admin/members/{profile}', [AdminController::class, 'deleteMember'])->name('admin.members.delete');
     Route::get('/admin/members/{profile}/certificate', [AdminController::class, 'downloadCertificate'])->name('admin.members.certificate');
 
@@ -65,6 +113,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/directory/edit', [BusinessProfileController::class, 'edit'])->name('profile.business.edit');
     Route::patch('/directory/edit', [BusinessProfileController::class, 'update'])->name('profile.business.update');
     Route::delete('/directory/{profile}', [BusinessProfileController::class, 'destroy'])->name('profile.business.destroy');
+    Route::get('/dashboard/business/{profile}/invoice', [BusinessProfileController::class, 'downloadInvoice'])->name('profile.business.invoice.download');
+    Route::get('/dashboard/business/receipt/{payment}', [BusinessProfileController::class, 'downloadReceipt'])->name('profile.business.receipt.download');
 });
 
 // Place this after the more specific /directory routes so that

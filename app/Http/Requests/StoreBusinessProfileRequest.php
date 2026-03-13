@@ -32,6 +32,12 @@ class StoreBusinessProfileRequest extends FormRequest
             'phone' => 'required|string|max:20',
             'address' => 'nullable|string|max:500',
             'website_url' => 'nullable|url|max:255',
+            'social_links' => 'nullable|array',
+            'social_links.linkedin' => 'nullable|url|max:255',
+            'social_links.facebook' => 'nullable|url|max:255',
+            'social_links.x' => 'nullable|url|max:255',
+            'social_links.instagram' => 'nullable|url|max:255',
+            'social_links.whatsapp' => 'nullable|url|max:255',
             'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5120',
         ];
     }
@@ -61,6 +67,8 @@ class StoreBusinessProfileRequest extends FormRequest
             'phone.required' => 'Phone number is required.',
             'phone.max' => 'Phone number cannot exceed 20 characters.',
             'website_url.url' => 'Please enter a valid website URL.',
+            'social_links.array' => 'Social links must be a valid list of platform URLs.',
+            'social_links.*.url' => 'Each social link must be a valid URL.',
             'logo.image' => 'The logo must be an image file.',
             'logo.mimes' => 'Logo must be a JPEG, PNG, JPG, or GIF image.',
             'logo.max' => 'Logo file size cannot exceed 5MB.',

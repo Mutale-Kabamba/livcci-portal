@@ -34,7 +34,10 @@ class BusinessProfileFileService
         }
 
         try {
-            $path = str_replace('/storage/', '', $logoUrl);
+            $path = (string) $logoUrl;
+            $path = str_replace('/storage/', '', $path);
+            $path = str_replace('storage/', '', $path);
+            $path = ltrim($path, '/');
             
             if (Storage::disk(self::LOGO_DISK)->exists($path)) {
                 return Storage::disk(self::LOGO_DISK)->delete($path);

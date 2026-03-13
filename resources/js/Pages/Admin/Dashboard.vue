@@ -1,5 +1,6 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import FinanceTicker from '@/Components/FinanceTicker.vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 
@@ -9,7 +10,8 @@ const props = defineProps({
     invoices: Array,
     strategicPlan: Object,
     financialHealth: Object,
-    sectorStats: Array
+    sectorStats: Array,
+    siteContents: Array,
 });
 
 const activeTab = ref('member-management');
@@ -311,6 +313,155 @@ const deleteEvent = (eventId) => {
     }
 };
 
+const showPaymentModal = ref(false);
+const selectedPaymentProfileId = ref(null);
+const paymentRecordForm = useForm({
+    amount: '',
+    payment_method: 'Cash',
+    reference: '',
+    payment_date: new Date().toISOString().slice(0, 10),
+});
+
+const selectedPaymentProfile = computed(() =>
+    (props.profiles || []).find((profile) => profile.id === selectedPaymentProfileId.value) || null
+);
+
+const paymentProgress = (profile) => {
+    const annualFee = Number(profile.annual_fee || 0);
+    const amountPaid = Number(profile.amount_paid || 0);
+    if (annualFee <= 0) return 0;
+    return Math.max(0, Math.min(100, (amountPaid / annualFee) * 100));
+};
+
+const paymentEligibility = (profile) => {
+    return paymentProgress(profile) >= 50;
+};
+
+const openPaymentModal = (profile) => {
+    selectedPaymentProfileId.value = profile.id;
+    paymentRecordForm.reset();
+    paymentRecordForm.clearErrors();
+    paymentRecordForm.payment_method = 'Cash';
+    paymentRecordForm.payment_date = new Date().toISOString().slice(0, 10);
+    showPaymentModal.value = true;
+};
+
+const closePaymentModal = () => {
+    showPaymentModal.value = false;
+    selectedPaymentProfileId.value = null;
+};
+
+const submitPaymentRecord = () => {
+    if (!selectedPaymentProfileId.value) return;
+
+    paymentRecordForm.post(route('admin.members.payments.store', selectedPaymentProfileId.value), {
+        preserveScroll: true,
+        onSuccess: () => {
+            closePaymentModal();
+            alert('Payment saved successfully.');
+            location.reload();
+        },
+        onError: () => {
+            alert('Failed to save payment.');
+        },
+    });
+};
+
+const getSiteContent = (page, section) => {
+    const rows = Array.isArray(props.siteContents) ? props.siteContents : [];
+    return rows.find((item) => item.page === page && item.section === section)?.content || {};
+};
+
+const spotlightDefaults = getSiteContent('home', 'member_spotlight');
+const spotlightForm = useForm({
+    page: 'home',
+    section: 'member_spotlight',
+    content: {
+        title: spotlightDefaults?.title || 'Member (Business Profile) Spotlight',
+        subtitle: spotlightDefaults?.subtitle || 'Featured chamber member of the week',
+        blurb: spotlightDefaults?.blurb || 'Discover outstanding member businesses and connect with trusted companies in our network.',
+        cta_text: spotlightDefaults?.cta_text || 'View Full Profile',
+        profile_id: spotlightDefaults?.profile_id || null,
+    },
+});
+
+const approvedProfiles = computed(() => (props.profiles || []).filter((profile) => profile.status === 'approved'));
+
+const defaultLeadershipMembers = [
+    { position: 'President', name: 'Banwell Mwila', gender: 'male', contact: { phone: '', whatsapp: '', facebook: '', linkedin: '' } },
+    { position: 'Vice President', name: 'Anthony Ranjan', gender: 'male', contact: { phone: '', whatsapp: '', facebook: '', linkedin: '' } },
+    { position: 'Vice President', name: 'Peggy M. Hamukoma', gender: 'female', contact: { phone: '', whatsapp: '', facebook: '', linkedin: '' } },
+    { position: 'Secretary', name: 'Peter Katebe', gender: 'male', contact: { phone: '', whatsapp: '', facebook: '', linkedin: '' } },
+    { position: 'Vice Secretary', name: 'Steven Mwiinga', gender: 'male', contact: { phone: '', whatsapp: '', facebook: '', linkedin: '' } },
+    { position: 'Treasurer', name: 'Kennedy Chaile', gender: 'male', contact: { phone: '', whatsapp: '', facebook: '', linkedin: '' } },
+    { position: 'Marketing Officer', name: 'Petronella Mbesha', gender: 'female', contact: { phone: '', whatsapp: '', facebook: '', linkedin: '' } },
+    { position: 'Membership Officer', name: 'Isaac Kapya', gender: 'male', contact: { phone: '', whatsapp: '', facebook: '', linkedin: '' } },
+    { position: 'Research Officer', name: 'Diana Chipasha', gender: 'female', contact: { phone: '', whatsapp: '', facebook: '', linkedin: '' } },
+    { position: 'Trustee', name: 'Nyambe Mwangala', gender: 'male', contact: { phone: '', whatsapp: '', facebook: '', linkedin: '' } },
+    { position: 'Trustee', name: 'Dickson Mwika', gender: 'male', contact: { phone: '', whatsapp: '', facebook: '', linkedin: '' } },
+    { position: 'Trustee', name: 'Ruth Hansen', gender: 'female', contact: { phone: '', whatsapp: '', facebook: '', linkedin: '' } },
+];
+
+const leadershipDefaults = getSiteContent('leadership', 'board_members');
+const leadershipSeed = Array.isArray(leadershipDefaults) && leadershipDefaults.length > 0
+    ? leadershipDefaults
+    : defaultLeadershipMembers;
+
+const leadershipForm = useForm({
+    page: 'leadership',
+    section: 'board_members',
+    content: leadershipSeed.map((member) => ({
+        name: member?.name || '',
+        position: member?.position || '',
+        gender: member?.gender === 'female' ? 'female' : 'male',
+        contact: {
+            phone: member?.contact?.phone || '',
+            whatsapp: member?.contact?.whatsapp || '',
+            facebook: member?.contact?.facebook || '',
+            linkedin: member?.contact?.linkedin || '',
+        },
+    })),
+});
+
+const addLeadershipMember = () => {
+    leadershipForm.content.push({
+        name: '',
+        position: '',
+        gender: 'male',
+        contact: {
+            phone: '',
+            whatsapp: '',
+            facebook: '',
+            linkedin: '',
+        },
+    });
+};
+
+const removeLeadershipMember = (index) => {
+    leadershipForm.content.splice(index, 1);
+};
+
+const saveLeadershipMembers = () => {
+    if (!Array.isArray(leadershipForm.content) || leadershipForm.content.length === 0) {
+        alert('Please add at least one leadership member.');
+        return;
+    }
+
+    leadershipForm.put(route('admin.content.upsert'), {
+        preserveScroll: true,
+        onSuccess: () => alert('Leadership members updated successfully.'),
+        onError: () => alert('Failed to update leadership members.'),
+    });
+};
+
+const saveMemberSpotlight = () => {
+    spotlightForm.put(route('admin.content.upsert'), {
+        preserveScroll: true,
+        onSuccess: () => alert('Member spotlight updated successfully.'),
+        onError: () => alert('Failed to update member spotlight.'),
+    });
+};
+
 </script>
 
 <template>
@@ -336,6 +487,12 @@ const deleteEvent = (eventId) => {
 
         <div class="py-12">
             <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-8">
+                <FinanceTicker
+                    :revenue-collected-today="Number(financialHealth?.revenueCollectedToday || 0)"
+                    :total-outstanding-receivables="Number(financialHealth?.totalOutstandingReceivables || 0)"
+                    :activation-pipeline="Number(financialHealth?.activationPipeline || 0)"
+                />
+
                 <div class="bg-white shadow sm:rounded-lg p-2">
                     <div class="grid grid-cols-1 sm:grid-cols-5 gap-2">
                         <button
@@ -434,6 +591,7 @@ const deleteEvent = (eventId) => {
                                         <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Type/Category</th>
                                         <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Contact</th>
                                         <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">TPIN/PACRA</th>
+                                        <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Financial</th>
                                         <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Status</th>
                                         <th class="px-6 py-3 text-right text-xs font-bold text-gray-500 uppercase w-72">Actions</th>
                                     </tr>
@@ -458,6 +616,19 @@ const deleteEvent = (eventId) => {
                                         <td class="px-6 py-4">
                                             <div class="text-sm text-gray-900">{{ profile.tpin }}</div>
                                             <div v-if="profile.pacra_reg_no" class="text-xs text-gray-500">{{ profile.pacra_reg_no }}</div>
+                                        </td>
+                                        <td class="px-6 py-4 min-w-[240px]">
+                                            <div class="text-xs text-gray-500 mb-1">
+                                                Paid: ZMW {{ Number(profile.amount_paid || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }} /
+                                                {{ Number(profile.annual_fee || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
+                                            </div>
+                                            <div class="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+                                                <div class="h-full transition-all duration-300" :class="paymentEligibility(profile) ? 'bg-green-500' : 'bg-yellow-500'" :style="{ width: paymentProgress(profile).toFixed(2) + '%' }"></div>
+                                            </div>
+                                            <div class="mt-2">
+                                                <span v-if="paymentEligibility(profile)" class="px-2 py-1 text-[10px] font-bold rounded-full bg-green-100 text-green-700 uppercase">Ready - Eligible for Directory</span>
+                                                <span v-else class="px-2 py-1 text-[10px] font-bold rounded-full bg-yellow-100 text-yellow-700 uppercase">Inactive - Insufficient Payment</span>
+                                            </div>
                                         </td>
                                         <td class="px-6 py-4">
                                             <span class="px-2 py-1 text-[10px] font-bold rounded-full uppercase"
@@ -484,6 +655,12 @@ const deleteEvent = (eventId) => {
                                                         class="block w-full rounded-md px-3 py-2 text-left text-xs font-semibold text-[#1D2A68] hover:bg-[#1D2A68]/10"
                                                     >
                                                         Generate Invoice
+                                                    </button>
+                                                    <button
+                                                        @click="openPaymentModal(profile)"
+                                                        class="block w-full rounded-md px-3 py-2 text-left text-xs font-semibold text-[#1876C3] hover:bg-[#1876C3]/10"
+                                                    >
+                                                        Record Payment
                                                     </button>
                                                     <button
                                                         @click="updateStatus(profile.id, 'approved')"
@@ -638,6 +815,127 @@ const deleteEvent = (eventId) => {
                 </template>
 
                 <template v-if="activeTab === 'settings'">
+                    <div class="bg-white shadow sm:rounded-lg overflow-hidden mb-6">
+                        <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
+                            <h3 class="text-lg font-bold text-[#1D2A68]">Leadership Management</h3>
+                            <p class="text-sm text-gray-500 mt-1">Create, update, and remove elected leadership profiles shown on the public leadership page.</p>
+                        </div>
+                        <div class="p-6 space-y-4">
+                            <div class="flex items-center justify-between">
+                                <h4 class="text-sm font-bold text-gray-600 uppercase">Elected Leadership</h4>
+                                <button
+                                    type="button"
+                                    @click="addLeadershipMember"
+                                    class="inline-flex items-center rounded-full border border-[#1876C3] bg-white px-4 py-2 text-xs font-bold text-[#1876C3] hover:bg-[#1876C3]/10 transition"
+                                >
+                                    + Add Leader
+                                </button>
+                            </div>
+
+                            <div class="space-y-4">
+                                <div v-for="(member, index) in leadershipForm.content" :key="index" class="rounded-xl border border-gray-200 p-4 bg-gray-50/40">
+                                    <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+                                        <div>
+                                            <label class="text-xs font-bold text-gray-500 uppercase">Name</label>
+                                            <input v-model="member.name" type="text" class="w-full border-gray-200 rounded-lg p-2.5 mt-1" placeholder="Full name">
+                                        </div>
+                                        <div>
+                                            <label class="text-xs font-bold text-gray-500 uppercase">Position</label>
+                                            <input v-model="member.position" type="text" class="w-full border-gray-200 rounded-lg p-2.5 mt-1" placeholder="Role or office">
+                                        </div>
+                                        <div>
+                                            <label class="text-xs font-bold text-gray-500 uppercase">Gender</label>
+                                            <select v-model="member.gender" class="w-full border-gray-200 rounded-lg p-2.5 mt-1">
+                                                <option value="male">Male</option>
+                                                <option value="female">Female</option>
+                                            </select>
+                                        </div>
+                                        <div class="flex items-end justify-end">
+                                            <button
+                                                type="button"
+                                                @click="removeLeadershipMember(index)"
+                                                :disabled="leadershipForm.content.length === 1"
+                                                class="inline-flex items-center rounded-full border border-red-200 bg-red-50 px-4 py-2 text-xs font-bold text-red-700 hover:bg-red-600 hover:text-white transition disabled:opacity-50 disabled:cursor-not-allowed"
+                                            >
+                                                Remove
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mt-3">
+                                        <div>
+                                            <label class="text-xs font-bold text-gray-500 uppercase">Phone</label>
+                                            <input v-model="member.contact.phone" type="text" class="w-full border-gray-200 rounded-lg p-2.5 mt-1" placeholder="+260...">
+                                        </div>
+                                        <div>
+                                            <label class="text-xs font-bold text-gray-500 uppercase">WhatsApp</label>
+                                            <input v-model="member.contact.whatsapp" type="text" class="w-full border-gray-200 rounded-lg p-2.5 mt-1" placeholder="260... or wa.me link">
+                                        </div>
+                                        <div>
+                                            <label class="text-xs font-bold text-gray-500 uppercase">Facebook URL</label>
+                                            <input v-model="member.contact.facebook" type="url" class="w-full border-gray-200 rounded-lg p-2.5 mt-1" placeholder="https://facebook.com/...">
+                                        </div>
+                                        <div>
+                                            <label class="text-xs font-bold text-gray-500 uppercase">LinkedIn URL</label>
+                                            <input v-model="member.contact.linkedin" type="url" class="w-full border-gray-200 rounded-lg p-2.5 mt-1" placeholder="https://linkedin.com/...">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="flex justify-end">
+                                <button
+                                    @click="saveLeadershipMembers"
+                                    :disabled="leadershipForm.processing"
+                                    class="bg-[#1D2A68] text-white text-sm font-bold px-6 py-2.5 rounded-lg hover:bg-[#1876C3] transition disabled:opacity-50"
+                                >
+                                    {{ leadershipForm.processing ? 'Saving...' : 'Save Leadership' }}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white shadow sm:rounded-lg overflow-hidden mb-6">
+                        <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
+                            <h3 class="text-lg font-bold text-[#1D2A68]">Home Member Spotlight</h3>
+                            <p class="text-sm text-gray-500 mt-1">Manage the spotlight section shown on the home page.</p>
+                        </div>
+                        <div class="p-6 space-y-4">
+                            <div>
+                                <label class="text-xs font-bold text-gray-500 uppercase">Spotlight Member</label>
+                                <select v-model="spotlightForm.content.profile_id" class="w-full border-gray-200 rounded-lg p-3 mt-1">
+                                    <option :value="null">-- Select Approved Member --</option>
+                                    <option v-for="profile in approvedProfiles" :key="profile.id" :value="profile.id">{{ profile.company_name }}</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="text-xs font-bold text-gray-500 uppercase">Title</label>
+                                <input v-model="spotlightForm.content.title" type="text" class="w-full border-gray-200 rounded-lg p-3 mt-1">
+                            </div>
+                            <div>
+                                <label class="text-xs font-bold text-gray-500 uppercase">Subtitle</label>
+                                <input v-model="spotlightForm.content.subtitle" type="text" class="w-full border-gray-200 rounded-lg p-3 mt-1">
+                            </div>
+                            <div>
+                                <label class="text-xs font-bold text-gray-500 uppercase">Blurb</label>
+                                <textarea v-model="spotlightForm.content.blurb" rows="3" class="w-full border-gray-200 rounded-lg p-3 mt-1"></textarea>
+                            </div>
+                            <div>
+                                <label class="text-xs font-bold text-gray-500 uppercase">Button Text</label>
+                                <input v-model="spotlightForm.content.cta_text" type="text" class="w-full border-gray-200 rounded-lg p-3 mt-1">
+                            </div>
+                            <div class="flex justify-end">
+                                <button
+                                    @click="saveMemberSpotlight"
+                                    :disabled="spotlightForm.processing"
+                                    class="bg-[#1D2A68] text-white text-sm font-bold px-6 py-2.5 rounded-lg hover:bg-[#1876C3] transition disabled:opacity-50"
+                                >
+                                    {{ spotlightForm.processing ? 'Saving...' : 'Save Spotlight' }}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="bg-white shadow sm:rounded-lg overflow-hidden">
                         <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
                             <h3 class="text-lg font-bold text-[#1D2A68]">Published Events</h3>
@@ -755,6 +1053,77 @@ const deleteEvent = (eventId) => {
                         </button>
                     </div>
                 </form>
+            </div>
+        </div>
+
+        <div v-if="showPaymentModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+            <div class="bg-white rounded-xl shadow-2xl max-w-3xl w-full p-8 border border-gray-100 max-h-[92vh] overflow-y-auto">
+                <h3 class="text-2xl font-extrabold text-[#1D2A68] mb-2">Record Payment</h3>
+                <p class="text-sm text-gray-500 mb-6">{{ selectedPaymentProfile?.company_name || 'Business Profile' }}</p>
+
+                <form @submit.prevent="submitPaymentRecord" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-xs font-bold text-gray-500 uppercase">Amount</label>
+                        <input v-model="paymentRecordForm.amount" step="0.01" min="0.01" type="number" class="w-full border-gray-200 rounded-lg p-3 mt-1" required>
+                        <span v-if="paymentRecordForm.errors.amount" class="text-red-500 text-xs mt-1">{{ paymentRecordForm.errors.amount }}</span>
+                    </div>
+
+                    <div>
+                        <label class="text-xs font-bold text-gray-500 uppercase">Payment Method</label>
+                        <select v-model="paymentRecordForm.payment_method" class="w-full border-gray-200 rounded-lg p-3 mt-1" required>
+                            <option>Cash</option>
+                            <option>Airtel Money</option>
+                            <option>Bank Transfer</option>
+                        </select>
+                        <span v-if="paymentRecordForm.errors.payment_method" class="text-red-500 text-xs mt-1">{{ paymentRecordForm.errors.payment_method }}</span>
+                    </div>
+
+                    <div>
+                        <label class="text-xs font-bold text-gray-500 uppercase">Reference Number</label>
+                        <input v-model="paymentRecordForm.reference" type="text" class="w-full border-gray-200 rounded-lg p-3 mt-1" placeholder="Optional receipt/transaction ref">
+                        <span v-if="paymentRecordForm.errors.reference" class="text-red-500 text-xs mt-1">{{ paymentRecordForm.errors.reference }}</span>
+                    </div>
+
+                    <div>
+                        <label class="text-xs font-bold text-gray-500 uppercase">Date</label>
+                        <input v-model="paymentRecordForm.payment_date" type="date" class="w-full border-gray-200 rounded-lg p-3 mt-1" required>
+                        <span v-if="paymentRecordForm.errors.payment_date" class="text-red-500 text-xs mt-1">{{ paymentRecordForm.errors.payment_date }}</span>
+                    </div>
+
+                    <div class="md:col-span-2 flex justify-end items-center gap-3 pt-2">
+                        <button type="button" @click="closePaymentModal" class="text-gray-500 font-bold hover:text-gray-700 transition">Cancel</button>
+                        <button type="submit" :disabled="paymentRecordForm.processing" class="bg-[#1D2A68] text-white px-6 py-2.5 rounded-lg font-bold hover:bg-[#1876C3] transition disabled:opacity-50">
+                            {{ paymentRecordForm.processing ? 'Saving...' : 'Save Payment' }}
+                        </button>
+                    </div>
+                </form>
+
+                <div class="mt-8 border-t border-gray-200 pt-6">
+                    <h4 class="text-lg font-bold text-[#1D2A68] mb-3">Financial Summary</h4>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-4 py-2 text-left text-xs font-bold text-gray-500 uppercase">Date</th>
+                                    <th class="px-4 py-2 text-left text-xs font-bold text-gray-500 uppercase">Method</th>
+                                    <th class="px-4 py-2 text-left text-xs font-bold text-gray-500 uppercase">Reference</th>
+                                    <th class="px-4 py-2 text-left text-xs font-bold text-gray-500 uppercase">Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-100">
+                                <tr v-for="payment in selectedPaymentProfile?.payments || []" :key="payment.id">
+                                    <td class="px-4 py-2 text-sm text-gray-700">{{ payment.payment_date ? new Date(payment.payment_date).toLocaleDateString() : '-' }}</td>
+                                    <td class="px-4 py-2 text-sm text-gray-700">{{ payment.payment_method }}</td>
+                                    <td class="px-4 py-2 text-sm text-gray-700">{{ payment.reference || payment.reference_number || '-' }}</td>
+                                    <td class="px-4 py-2 text-sm font-semibold text-[#1D2A68]">ZMW {{ Number(payment.amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</td>
+                                </tr>
+                                <tr v-if="!selectedPaymentProfile?.payments || selectedPaymentProfile.payments.length === 0">
+                                    <td colspan="4" class="px-4 py-4 text-center text-sm text-gray-500">No payments recorded for this business yet.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
         </div>
     </AuthenticatedLayout>
