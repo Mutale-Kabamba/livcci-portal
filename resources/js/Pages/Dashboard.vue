@@ -1,5 +1,6 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import FinancialHealth from '@/Components/FinancialHealth.vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 
 const props = defineProps({
@@ -221,6 +222,8 @@ const getCompletionBarClass = (score) => {
                             <div><span class="font-semibold">Phone:</span> {{ profile.phone }}</div>
                             <div><span class="font-semibold">TPIN:</span> {{ profile.tpin }}</div>
                         </div>
+
+                        <FinancialHealth :profile="profile" />
 
                         <div v-if="hasUnpaidInvoice(profile.id)" class="mt-4 rounded-lg border border-yellow-200 bg-yellow-50 px-3 py-2 text-xs text-yellow-800 font-semibold flex items-center gap-2">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">

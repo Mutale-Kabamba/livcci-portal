@@ -177,15 +177,21 @@ onUnmounted(() => {
                 </div>
 
                 <!-- Core Values Section -->
-                <div class="mb-20 bg-gradient-to-r from-blue-50 to-blue-100 py-16 px-8 rounded-2xl opacity-0 translate-y-10 transition-all duration-700 animate-in" style="transition-delay: 300ms;">
-                    <h2 class="text-3xl font-bold text-[#1D2A68] mb-12 text-center">Our Core Values</h2>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div class="mb-20 bg-gradient-to-r from-[#1D2A68] to-[#1460A0] py-16 px-6 md:px-8 rounded-2xl border border-[#2a4b93] shadow-xl opacity-0 translate-y-10 transition-all duration-700 animate-in" style="transition-delay: 300ms;">
+                    <div class="text-center mb-12">
+                        <p class="text-xs font-bold uppercase tracking-[0.2em] text-[#F4B223]">What Drives Us</p>
+                        <h2 class="text-3xl md:text-4xl font-black text-white mt-3">Our Core Values</h2>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                         <!-- Integrity Card -->
-                        <div class="bg-white rounded-xl p-8 shadow-md hover:shadow-lg transition-all text-center group">
+                        <div class="bg-[#f8fbff] rounded-xl p-8 shadow-md hover:shadow-xl transition-all text-center group border border-[#c9dcfb] hover:-translate-y-1 duration-300">
                             <div class="flex justify-center mb-6">
-                                <svg class="w-16 h-16 text-[#1876C3] group-hover:text-[#F4B223] transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <div class="w-16 h-16 rounded-full bg-[#e6f0fc] border-2 border-[#1876C3] flex items-center justify-center">
+                                <svg class="w-10 h-10 text-[#1876C3] group-hover:text-[#F4B223] transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                 </svg>
+                                </div>
                             </div>
                             <h3 class="text-xl font-bold text-[#1D2A68] mb-4">Integrity</h3>
                             <p class="text-gray-600 leading-relaxed">
@@ -194,11 +200,13 @@ onUnmounted(() => {
                         </div>
 
                         <!-- Inclusivity Card -->
-                        <div class="bg-white rounded-xl p-8 shadow-md hover:shadow-lg transition-all text-center group">
+                        <div class="bg-[#fffdf6] rounded-xl p-8 shadow-md hover:shadow-xl transition-all text-center group border border-[#f4df9f] hover:-translate-y-1 duration-300">
                             <div class="flex justify-center mb-6">
-                                <svg class="w-16 h-16 text-[#1876C3] group-hover:text-[#F4B223] transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <div class="w-16 h-16 rounded-full bg-[#fff3d6] border-2 border-[#F4B223] flex items-center justify-center">
+                                <svg class="w-10 h-10 text-[#F4B223] group-hover:text-[#1876C3] transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4.354a4 4 0 110 8.646 4 4 0 010-8.646zM9 8a3 3 0 106 0 3 3 0 00-6 0z" clip-rule="evenodd"></path>
                                 </svg>
+                                </div>
                             </div>
                             <h3 class="text-xl font-bold text-[#1D2A68] mb-4">Inclusivity</h3>
                             <p class="text-gray-600 leading-relaxed">
@@ -207,11 +215,13 @@ onUnmounted(() => {
                         </div>
 
                         <!-- Innovation Card -->
-                        <div class="bg-white rounded-xl p-8 shadow-md hover:shadow-lg transition-all text-center group">
+                        <div class="bg-[#f8fbff] rounded-xl p-8 shadow-md hover:shadow-xl transition-all text-center group border border-[#c9dcfb] hover:-translate-y-1 duration-300">
                             <div class="flex justify-center mb-6">
-                                <svg class="w-16 h-16 text-[#1876C3] group-hover:text-[#F4B223] transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <div class="w-16 h-16 rounded-full bg-[#e6f0fc] border-2 border-[#1876C3] flex items-center justify-center">
+                                <svg class="w-10 h-10 text-[#1876C3] group-hover:text-[#F4B223] transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5.657 5.657l-.707.707M9 12a3 3 0 106 0 3 3 0 00-6 0z"></path>
                                 </svg>
+                                </div>
                             </div>
                             <h3 class="text-xl font-bold text-[#1D2A68] mb-4">Innovation</h3>
                             <p class="text-gray-600 leading-relaxed">
@@ -220,11 +230,13 @@ onUnmounted(() => {
                         </div>
 
                         <!-- Excellence Card -->
-                        <div class="bg-white rounded-xl p-8 shadow-md hover:shadow-lg transition-all text-center group">
+                        <div class="bg-[#f8fbff] rounded-xl p-8 shadow-md hover:shadow-xl transition-all text-center group border border-[#c9dcfb] hover:-translate-y-1 duration-300">
                             <div class="flex justify-center mb-6">
-                                <svg class="w-16 h-16 text-[#1876C3] group-hover:text-[#F4B223] transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <div class="w-16 h-16 rounded-full bg-[#e6f0fc] border-2 border-[#1876C3] flex items-center justify-center">
+                                <svg class="w-10 h-10 text-[#1876C3] group-hover:text-[#F4B223] transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
                                 </svg>
+                                </div>
                             </div>
                             <h3 class="text-xl font-bold text-[#1D2A68] mb-4">Excellence</h3>
                             <p class="text-gray-600 leading-relaxed">
@@ -233,11 +245,13 @@ onUnmounted(() => {
                         </div>
 
                         <!-- Collaboration Card -->
-                        <div class="bg-white rounded-xl p-8 shadow-md hover:shadow-lg transition-all text-center group">
+                        <div class="bg-[#f8fbff] rounded-xl p-8 shadow-md hover:shadow-xl transition-all text-center group border border-[#c9dcfb] hover:-translate-y-1 duration-300 md:col-span-2 md:max-w-xl md:mx-auto lg:col-span-1 lg:max-w-none">
                             <div class="flex justify-center mb-6">
-                                <svg class="w-16 h-16 text-[#1876C3] group-hover:text-[#F4B223] transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <div class="w-16 h-16 rounded-full bg-[#e6f0fc] border-2 border-[#1876C3] flex items-center justify-center">
+                                <svg class="w-10 h-10 text-[#1876C3] group-hover:text-[#F4B223] transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.856-1.487M15 10a3 3 0 11-6 0 3 3 0 016 0zM4.318 20H2v-2a3 3 0 015.856-1.487M15 10a3 3 0 11-6 0 3 3 0 016 0z"></path>
                                 </svg>
+                                </div>
                             </div>
                             <h3 class="text-xl font-bold text-[#1D2A68] mb-4">Collaboration</h3>
                             <p class="text-gray-600 leading-relaxed">
@@ -416,7 +430,12 @@ onUnmounted(() => {
                 
                 <div class="flex flex-col md:flex-row justify-between items-center mt-8 text-sm text-blue-300">
                     <p>&copy; 2026 Livingstone Chamber of Commerce & Industry. All rights reserved.</p>
-                    <p class="mt-4 md:mt-0">Designed & Developed by <span class="font-bold text-[#F4B223]">Ori Studio Limited</span></p>
+                    <p class="mt-4 md:mt-0">
+                        Designed & Developed by
+                        <a href="https://oristudiozm.com/" target="_blank" rel="noopener noreferrer" class="font-bold text-[#F4B223] hover:text-[#f9cb63] transition-colors">
+                            Ori Studio Limited
+                        </a>
+                    </p>
                 </div>
             </div>
         </footer>

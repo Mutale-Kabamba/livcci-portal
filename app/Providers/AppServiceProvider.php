@@ -2,7 +2,10 @@
 
 namespace App\Providers;
 
+use App\Events\PaymentThresholdReached;
+use App\Listeners\ActivateBusinessProfileAndNotifyMember;
 use Illuminate\Support\Facades\Vite;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 use App\Models\BusinessProfile;
 use App\Policies\BusinessProfilePolicy;
@@ -30,6 +33,11 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Vite::prefetch(concurrency: 3);
+
+        Event::listen(
+            PaymentThresholdReached::class,
+            ActivateBusinessProfileAndNotifyMember::class,
+        );
         
         // Register policies
         foreach ($this->policies as $model => $policy) {
