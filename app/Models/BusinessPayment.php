@@ -13,7 +13,9 @@ class BusinessPayment extends Model
         'profile_id',
         'amount',
         'payment_method',
+        'reference',
         'reference_number',
+        'receipt_pdf_path',
         'payment_date',
     ];
 

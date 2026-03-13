@@ -1,5 +1,6 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import FinanceTicker from '@/Components/FinanceTicker.vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 
@@ -9,7 +10,8 @@ const props = defineProps({
     invoices: Array,
     strategicPlan: Object,
     financialHealth: Object,
-    sectorStats: Array
+    sectorStats: Array,
+    siteContents: Array,
 });
 
 const activeTab = ref('member-management');
@@ -316,7 +318,7 @@ const selectedPaymentProfileId = ref(null);
 const paymentRecordForm = useForm({
     amount: '',
     payment_method: 'Cash',
-    reference_number: '',
+    reference: '',
     payment_date: new Date().toISOString().slice(0, 10),
 });
 
@@ -365,6 +367,101 @@ const submitPaymentRecord = () => {
     });
 };
 
+const getSiteContent = (page, section) => {
+    const rows = Array.isArray(props.siteContents) ? props.siteContents : [];
+    return rows.find((item) => item.page === page && item.section === section)?.content || {};
+};
+
+const spotlightDefaults = getSiteContent('home', 'member_spotlight');
+const spotlightForm = useForm({
+    page: 'home',
+    section: 'member_spotlight',
+    content: {
+        title: spotlightDefaults?.title || 'Member (Business Profile) Spotlight',
+        subtitle: spotlightDefaults?.subtitle || 'Featured chamber member of the week',
+        blurb: spotlightDefaults?.blurb || 'Discover outstanding member businesses and connect with trusted companies in our network.',
+        cta_text: spotlightDefaults?.cta_text || 'View Full Profile',
+        profile_id: spotlightDefaults?.profile_id || null,
+    },
+});
+
+const approvedProfiles = computed(() => (props.profiles || []).filter((profile) => profile.status === 'approved'));
+
+const defaultLeadershipMembers = [
+    { position: 'President', name: 'Banwell Mwila', gender: 'male', contact: { phone: '', whatsapp: '', facebook: '', linkedin: '' } },
+    { position: 'Vice President', name: 'Anthony Ranjan', gender: 'male', contact: { phone: '', whatsapp: '', facebook: '', linkedin: '' } },
+    { position: 'Vice President', name: 'Peggy M. Hamukoma', gender: 'female', contact: { phone: '', whatsapp: '', facebook: '', linkedin: '' } },
+    { position: 'Secretary', name: 'Peter Katebe', gender: 'male', contact: { phone: '', whatsapp: '', facebook: '', linkedin: '' } },
+    { position: 'Vice Secretary', name: 'Steven Mwiinga', gender: 'male', contact: { phone: '', whatsapp: '', facebook: '', linkedin: '' } },
+    { position: 'Treasurer', name: 'Kennedy Chaile', gender: 'male', contact: { phone: '', whatsapp: '', facebook: '', linkedin: '' } },
+    { position: 'Marketing Officer', name: 'Petronella Mbesha', gender: 'female', contact: { phone: '', whatsapp: '', facebook: '', linkedin: '' } },
+    { position: 'Membership Officer', name: 'Isaac Kapya', gender: 'male', contact: { phone: '', whatsapp: '', facebook: '', linkedin: '' } },
+    { position: 'Research Officer', name: 'Diana Chipasha', gender: 'female', contact: { phone: '', whatsapp: '', facebook: '', linkedin: '' } },
+    { position: 'Trustee', name: 'Nyambe Mwangala', gender: 'male', contact: { phone: '', whatsapp: '', facebook: '', linkedin: '' } },
+    { position: 'Trustee', name: 'Dickson Mwika', gender: 'male', contact: { phone: '', whatsapp: '', facebook: '', linkedin: '' } },
+    { position: 'Trustee', name: 'Ruth Hansen', gender: 'female', contact: { phone: '', whatsapp: '', facebook: '', linkedin: '' } },
+];
+
+const leadershipDefaults = getSiteContent('leadership', 'board_members');
+const leadershipSeed = Array.isArray(leadershipDefaults) && leadershipDefaults.length > 0
+    ? leadershipDefaults
+    : defaultLeadershipMembers;
+
+const leadershipForm = useForm({
+    page: 'leadership',
+    section: 'board_members',
+    content: leadershipSeed.map((member) => ({
+        name: member?.name || '',
+        position: member?.position || '',
+        gender: member?.gender === 'female' ? 'female' : 'male',
+        contact: {
+            phone: member?.contact?.phone || '',
+            whatsapp: member?.contact?.whatsapp || '',
+            facebook: member?.contact?.facebook || '',
+            linkedin: member?.contact?.linkedin || '',
+        },
+    })),
+});
+
+const addLeadershipMember = () => {
+    leadershipForm.content.push({
+        name: '',
+        position: '',
+        gender: 'male',
+        contact: {
+            phone: '',
+            whatsapp: '',
+            facebook: '',
+            linkedin: '',
+        },
+    });
+};
+
+const removeLeadershipMember = (index) => {
+    leadershipForm.content.splice(index, 1);
+};
+
+const saveLeadershipMembers = () => {
+    if (!Array.isArray(leadershipForm.content) || leadershipForm.content.length === 0) {
+        alert('Please add at least one leadership member.');
+        return;
+    }
+
+    leadershipForm.put(route('admin.content.upsert'), {
+        preserveScroll: true,
+        onSuccess: () => alert('Leadership members updated successfully.'),
+        onError: () => alert('Failed to update leadership members.'),
+    });
+};
+
+const saveMemberSpotlight = () => {
+    spotlightForm.put(route('admin.content.upsert'), {
+        preserveScroll: true,
+        onSuccess: () => alert('Member spotlight updated successfully.'),
+        onError: () => alert('Failed to update member spotlight.'),
+    });
+};
+
 </script>
 
 <template>
@@ -390,6 +487,12 @@ const submitPaymentRecord = () => {
 
         <div class="py-12">
             <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-8">
+                <FinanceTicker
+                    :revenue-collected-today="Number(financialHealth?.revenueCollectedToday || 0)"
+                    :total-outstanding-receivables="Number(financialHealth?.totalOutstandingReceivables || 0)"
+                    :activation-pipeline="Number(financialHealth?.activationPipeline || 0)"
+                />
+
                 <div class="bg-white shadow sm:rounded-lg p-2">
                     <div class="grid grid-cols-1 sm:grid-cols-5 gap-2">
                         <button
@@ -712,6 +815,127 @@ const submitPaymentRecord = () => {
                 </template>
 
                 <template v-if="activeTab === 'settings'">
+                    <div class="bg-white shadow sm:rounded-lg overflow-hidden mb-6">
+                        <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
+                            <h3 class="text-lg font-bold text-[#1D2A68]">Leadership Management</h3>
+                            <p class="text-sm text-gray-500 mt-1">Create, update, and remove elected leadership profiles shown on the public leadership page.</p>
+                        </div>
+                        <div class="p-6 space-y-4">
+                            <div class="flex items-center justify-between">
+                                <h4 class="text-sm font-bold text-gray-600 uppercase">Elected Leadership</h4>
+                                <button
+                                    type="button"
+                                    @click="addLeadershipMember"
+                                    class="inline-flex items-center rounded-full border border-[#1876C3] bg-white px-4 py-2 text-xs font-bold text-[#1876C3] hover:bg-[#1876C3]/10 transition"
+                                >
+                                    + Add Leader
+                                </button>
+                            </div>
+
+                            <div class="space-y-4">
+                                <div v-for="(member, index) in leadershipForm.content" :key="index" class="rounded-xl border border-gray-200 p-4 bg-gray-50/40">
+                                    <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+                                        <div>
+                                            <label class="text-xs font-bold text-gray-500 uppercase">Name</label>
+                                            <input v-model="member.name" type="text" class="w-full border-gray-200 rounded-lg p-2.5 mt-1" placeholder="Full name">
+                                        </div>
+                                        <div>
+                                            <label class="text-xs font-bold text-gray-500 uppercase">Position</label>
+                                            <input v-model="member.position" type="text" class="w-full border-gray-200 rounded-lg p-2.5 mt-1" placeholder="Role or office">
+                                        </div>
+                                        <div>
+                                            <label class="text-xs font-bold text-gray-500 uppercase">Gender</label>
+                                            <select v-model="member.gender" class="w-full border-gray-200 rounded-lg p-2.5 mt-1">
+                                                <option value="male">Male</option>
+                                                <option value="female">Female</option>
+                                            </select>
+                                        </div>
+                                        <div class="flex items-end justify-end">
+                                            <button
+                                                type="button"
+                                                @click="removeLeadershipMember(index)"
+                                                :disabled="leadershipForm.content.length === 1"
+                                                class="inline-flex items-center rounded-full border border-red-200 bg-red-50 px-4 py-2 text-xs font-bold text-red-700 hover:bg-red-600 hover:text-white transition disabled:opacity-50 disabled:cursor-not-allowed"
+                                            >
+                                                Remove
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mt-3">
+                                        <div>
+                                            <label class="text-xs font-bold text-gray-500 uppercase">Phone</label>
+                                            <input v-model="member.contact.phone" type="text" class="w-full border-gray-200 rounded-lg p-2.5 mt-1" placeholder="+260...">
+                                        </div>
+                                        <div>
+                                            <label class="text-xs font-bold text-gray-500 uppercase">WhatsApp</label>
+                                            <input v-model="member.contact.whatsapp" type="text" class="w-full border-gray-200 rounded-lg p-2.5 mt-1" placeholder="260... or wa.me link">
+                                        </div>
+                                        <div>
+                                            <label class="text-xs font-bold text-gray-500 uppercase">Facebook URL</label>
+                                            <input v-model="member.contact.facebook" type="url" class="w-full border-gray-200 rounded-lg p-2.5 mt-1" placeholder="https://facebook.com/...">
+                                        </div>
+                                        <div>
+                                            <label class="text-xs font-bold text-gray-500 uppercase">LinkedIn URL</label>
+                                            <input v-model="member.contact.linkedin" type="url" class="w-full border-gray-200 rounded-lg p-2.5 mt-1" placeholder="https://linkedin.com/...">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="flex justify-end">
+                                <button
+                                    @click="saveLeadershipMembers"
+                                    :disabled="leadershipForm.processing"
+                                    class="bg-[#1D2A68] text-white text-sm font-bold px-6 py-2.5 rounded-lg hover:bg-[#1876C3] transition disabled:opacity-50"
+                                >
+                                    {{ leadershipForm.processing ? 'Saving...' : 'Save Leadership' }}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white shadow sm:rounded-lg overflow-hidden mb-6">
+                        <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
+                            <h3 class="text-lg font-bold text-[#1D2A68]">Home Member Spotlight</h3>
+                            <p class="text-sm text-gray-500 mt-1">Manage the spotlight section shown on the home page.</p>
+                        </div>
+                        <div class="p-6 space-y-4">
+                            <div>
+                                <label class="text-xs font-bold text-gray-500 uppercase">Spotlight Member</label>
+                                <select v-model="spotlightForm.content.profile_id" class="w-full border-gray-200 rounded-lg p-3 mt-1">
+                                    <option :value="null">-- Select Approved Member --</option>
+                                    <option v-for="profile in approvedProfiles" :key="profile.id" :value="profile.id">{{ profile.company_name }}</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="text-xs font-bold text-gray-500 uppercase">Title</label>
+                                <input v-model="spotlightForm.content.title" type="text" class="w-full border-gray-200 rounded-lg p-3 mt-1">
+                            </div>
+                            <div>
+                                <label class="text-xs font-bold text-gray-500 uppercase">Subtitle</label>
+                                <input v-model="spotlightForm.content.subtitle" type="text" class="w-full border-gray-200 rounded-lg p-3 mt-1">
+                            </div>
+                            <div>
+                                <label class="text-xs font-bold text-gray-500 uppercase">Blurb</label>
+                                <textarea v-model="spotlightForm.content.blurb" rows="3" class="w-full border-gray-200 rounded-lg p-3 mt-1"></textarea>
+                            </div>
+                            <div>
+                                <label class="text-xs font-bold text-gray-500 uppercase">Button Text</label>
+                                <input v-model="spotlightForm.content.cta_text" type="text" class="w-full border-gray-200 rounded-lg p-3 mt-1">
+                            </div>
+                            <div class="flex justify-end">
+                                <button
+                                    @click="saveMemberSpotlight"
+                                    :disabled="spotlightForm.processing"
+                                    class="bg-[#1D2A68] text-white text-sm font-bold px-6 py-2.5 rounded-lg hover:bg-[#1876C3] transition disabled:opacity-50"
+                                >
+                                    {{ spotlightForm.processing ? 'Saving...' : 'Save Spotlight' }}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="bg-white shadow sm:rounded-lg overflow-hidden">
                         <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
                             <h3 class="text-lg font-bold text-[#1D2A68]">Published Events</h3>
@@ -856,8 +1080,8 @@ const submitPaymentRecord = () => {
 
                     <div>
                         <label class="text-xs font-bold text-gray-500 uppercase">Reference Number</label>
-                        <input v-model="paymentRecordForm.reference_number" type="text" class="w-full border-gray-200 rounded-lg p-3 mt-1" placeholder="Optional receipt/transaction ref">
-                        <span v-if="paymentRecordForm.errors.reference_number" class="text-red-500 text-xs mt-1">{{ paymentRecordForm.errors.reference_number }}</span>
+                        <input v-model="paymentRecordForm.reference" type="text" class="w-full border-gray-200 rounded-lg p-3 mt-1" placeholder="Optional receipt/transaction ref">
+                        <span v-if="paymentRecordForm.errors.reference" class="text-red-500 text-xs mt-1">{{ paymentRecordForm.errors.reference }}</span>
                     </div>
 
                     <div>
@@ -890,7 +1114,7 @@ const submitPaymentRecord = () => {
                                 <tr v-for="payment in selectedPaymentProfile?.payments || []" :key="payment.id">
                                     <td class="px-4 py-2 text-sm text-gray-700">{{ payment.payment_date ? new Date(payment.payment_date).toLocaleDateString() : '-' }}</td>
                                     <td class="px-4 py-2 text-sm text-gray-700">{{ payment.payment_method }}</td>
-                                    <td class="px-4 py-2 text-sm text-gray-700">{{ payment.reference_number || '-' }}</td>
+                                    <td class="px-4 py-2 text-sm text-gray-700">{{ payment.reference || payment.reference_number || '-' }}</td>
                                     <td class="px-4 py-2 text-sm font-semibold text-[#1D2A68]">ZMW {{ Number(payment.amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</td>
                                 </tr>
                                 <tr v-if="!selectedPaymentProfile?.payments || selectedPaymentProfile.payments.length === 0">

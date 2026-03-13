@@ -85,8 +85,14 @@ class AdminController extends Controller
             ->get()
             ->map(function (BusinessProfile $profile) {
                 $effectiveType = $profile->membership_type ?: $profile->member_type;
-                $annualFee = $this->resolveMembershipAmount((string) $effectiveType);
-                $amountPaid = (float) $profile->payments->sum('amount');
+                $annualFee = (float) ($profile->annual_fee ?? 0);
+                if ($annualFee <= 0 && $effectiveType) {
+                    $annualFee = $this->resolveMembershipAmount((string) $effectiveType);
+                }
+                $amountPaid = (float) ($profile->total_paid ?? 0);
+                if ($amountPaid <= 0) {
+                    $amountPaid = (float) $profile->payments->sum('amount');
+                }
                 $percentage = $annualFee > 0 ? round(($amountPaid / $annualFee) * 100, 2) : 0;
 
                 $profile->setAttribute('annual_fee', $annualFee);
@@ -101,11 +107,15 @@ class AdminController extends Controller
         $strategicPlan = $this->getStrategicPlanProgress();
 
         $totalExpectedRevenue = $profiles->sum(function (BusinessProfile $profile): int {
-            if (!$profile->membership_type) {
-                return 0;
+            if ((float) ($profile->annual_fee ?? 0) > 0) {
+                return (float) $profile->annual_fee;
             }
 
-            return $this->resolveMembershipAmount($profile->membership_type);
+            if ($profile->membership_type) {
+                return $this->resolveMembershipAmount($profile->membership_type);
+            }
+
+            return 0;
         });
 
         $totalActualRevenue = (float) Invoice::query()
@@ -115,6 +125,22 @@ class AdminController extends Controller
         $collectionPercentage = $totalExpectedRevenue > 0
             ? round(($totalActualRevenue / $totalExpectedRevenue) * 100, 2)
             : 0;
+
+        $revenueCollectedToday = (float) BusinessPayment::query()
+            ->whereDate('payment_date', now()->toDateString())
+            ->sum('amount');
+
+        $totalOutstandingReceivables = (float) BusinessProfile::query()
+            ->get(['annual_fee', 'total_paid'])
+            ->sum(function (BusinessProfile $profile) {
+                return max(0, (float) ($profile->annual_fee ?? 0) - (float) ($profile->total_paid ?? 0));
+            });
+
+        $activationPipeline = BusinessProfile::query()
+            ->where('total_paid', '>', 0)
+            ->whereRaw('annual_fee > 0')
+            ->whereRaw('(total_paid / annual_fee) < 0.5')
+            ->count();
 
         $sectorStats = BusinessProfile::query()
             ->where('status', 'approved')
@@ -134,6 +160,9 @@ class AdminController extends Controller
                 'totalExpectedRevenue' => $totalExpectedRevenue,
                 'totalActualRevenue' => $totalActualRevenue,
                 'collectionPercentage' => $collectionPercentage,
+                'revenueCollectedToday' => $revenueCollectedToday,
+                'totalOutstandingReceivables' => $totalOutstandingReceivables,
+                'activationPipeline' => $activationPipeline,
             ],
             'sectorStats' => $sectorStats,
             'flash' => [
@@ -169,6 +198,39 @@ class AdminController extends Controller
             'section' => 'required|string|max:100',
             'content' => 'required|array',
         ]);
+
+        if ($validated['page'] === 'leadership' && $validated['section'] === 'board_members') {
+            $leadership = $request->validate([
+                'content' => 'required|array|min:1',
+                'content.*.name' => 'required|string|max:120',
+                'content.*.position' => 'required|string|max:120',
+                'content.*.gender' => 'required|in:male,female',
+                'content.*.contact' => 'nullable|array',
+                'content.*.contact.phone' => 'nullable|string|max:40',
+                'content.*.contact.whatsapp' => 'nullable|string|max:120',
+                'content.*.contact.facebook' => 'nullable|url|max:255',
+                'content.*.contact.linkedin' => 'nullable|url|max:255',
+            ]);
+
+            $validated['content'] = collect($leadership['content'])
+                ->map(function (array $member) {
+                    $contact = $member['contact'] ?? [];
+
+                    return [
+                        'name' => trim((string) ($member['name'] ?? '')),
+                        'position' => trim((string) ($member['position'] ?? '')),
+                        'gender' => ($member['gender'] ?? 'male') === 'female' ? 'female' : 'male',
+                        'contact' => [
+                            'phone' => trim((string) ($contact['phone'] ?? '')),
+                            'whatsapp' => trim((string) ($contact['whatsapp'] ?? '')),
+                            'facebook' => trim((string) ($contact['facebook'] ?? '')),
+                            'linkedin' => trim((string) ($contact['linkedin'] ?? '')),
+                        ],
+                    ];
+                })
+                ->values()
+                ->all();
+        }
 
         SiteContent::updateOrCreate(
             [
@@ -292,6 +354,13 @@ class AdminController extends Controller
             'due_date' => now()->addDays(30)->toDateString(),
         ]);
 
+        // New cycle: reset paid amount against latest annual fee and re-evaluate active status.
+        $profile->update([
+            'annual_fee' => $amount,
+            'total_paid' => 0,
+        ]);
+        $profile->reevaluateFinancialHealth();
+
         return back()->with('message', 'Invoice generated successfully.');
     }
 
@@ -319,21 +388,48 @@ class AdminController extends Controller
             'due_date' => now()->addDays(30)->toDateString(),
         ]);
 
+        // New cycle: reset paid amount against latest annual fee and re-evaluate active status.
+        $profile->update([
+            'annual_fee' => $amount,
+            'total_paid' => 0,
+        ]);
+        $profile->reevaluateFinancialHealth();
+
         return back()->with('message', 'Invoice generated successfully.');
     }
 
     public function markAsPaid(Invoice $invoice)
     {
+        if ($invoice->status === 'Paid') {
+            return back()->with('message', 'Invoice is already marked as paid.');
+        }
+
         $today = now()->toDateString();
+        $profile = $invoice->profile;
+        $wasActive = (bool) $profile->is_active;
 
         $invoice->update([
             'status' => 'Paid',
         ]);
 
-        $invoice->profile()->update([
+        $profile->update([
+            'annual_fee' => $profile->annual_fee > 0 ? $profile->annual_fee : $invoice->amount,
+            'total_paid' => (float) ($profile->total_paid ?? 0) + (float) $invoice->amount,
             'last_payment_date' => $today,
             'subscription_expiry' => now()->addYear()->toDateString(),
         ]);
+
+        $profile->refresh();
+        $profile->reevaluateFinancialHealth();
+
+        if (!$wasActive && $profile->fresh()->is_active) {
+            event(new PaymentThresholdReached(
+                $profile->fresh(),
+                $profile->fresh()->payment_percentage,
+                (float) ($profile->fresh()->total_paid ?? 0),
+                (float) ($profile->fresh()->annual_fee ?? 0),
+            ));
+        }
 
         return back()->with('message', 'Invoice marked as paid and membership updated.');
     }
@@ -343,28 +439,63 @@ class AdminController extends Controller
         $validated = $request->validate([
             'amount' => 'required|numeric|min:0.01',
             'payment_method' => 'required|in:Cash,Airtel Money,Bank Transfer',
-            'reference_number' => 'nullable|string|max:255',
+            'reference' => 'nullable|string|max:255',
             'payment_date' => 'required|date',
         ]);
 
-        BusinessPayment::create([
+        $wasActive = (bool) $profile->is_active;
+
+        $payment = BusinessPayment::create([
             'profile_id' => $profile->id,
             'amount' => $validated['amount'],
             'payment_method' => $validated['payment_method'],
-            'reference_number' => $validated['reference_number'] ?? null,
+            'reference' => $validated['reference'] ?? null,
+            'reference_number' => $validated['reference'] ?? null,
             'payment_date' => $validated['payment_date'],
         ]);
 
-        $effectiveType = $profile->membership_type ?: $profile->member_type;
-        $annualFee = $this->resolveMembershipAmount((string) $effectiveType);
-        $amountPaid = (float) $profile->payments()->sum('amount');
-        $percentage = $annualFee > 0 ? round(($amountPaid / $annualFee) * 100, 2) : 0;
+        $receiptPdfPath = $this->storePaymentReceiptPdf($profile->fresh(), $payment);
+        $payment->update(['receipt_pdf_path' => $receiptPdfPath]);
 
-        if ($percentage >= 50 && !$profile->is_active) {
-            event(new PaymentThresholdReached($profile->fresh(), $percentage, $amountPaid, $annualFee));
+        $effectiveType = $profile->membership_type ?: $profile->member_type;
+        $annualFee = (float) ($profile->annual_fee ?? 0);
+        if ($annualFee <= 0 && $effectiveType) {
+            $annualFee = $this->resolveMembershipAmount((string) $effectiveType);
+        }
+
+        $profile->update([
+            'annual_fee' => $annualFee,
+            'total_paid' => (float) ($profile->total_paid ?? 0) + (float) $validated['amount'],
+            'last_payment_date' => $validated['payment_date'],
+        ]);
+
+        $profile->refresh();
+        $profile->reevaluateFinancialHealth();
+        $profile->refresh();
+
+        if (!$wasActive && $profile->is_active) {
+            event(new PaymentThresholdReached(
+                $profile,
+                $profile->payment_percentage,
+                (float) ($profile->total_paid ?? 0),
+                (float) ($profile->annual_fee ?? 0),
+            ));
         }
 
         return back()->with('message', 'Payment recorded successfully.');
+    }
+
+    private function storePaymentReceiptPdf(BusinessProfile $profile, BusinessPayment $payment): string
+    {
+        $pdf = Pdf::loadView('pdfs.payment-receipt', [
+            'profile' => $profile,
+            'payment' => $payment,
+        ])->setPaper('a4', 'portrait');
+
+        $relativePath = 'receipts/profile-' . $profile->id . '-payment-' . $payment->id . '.pdf';
+        Storage::disk('public')->put($relativePath, $pdf->output());
+
+        return $relativePath;
     }
 
     private function generateInvoiceNumber(): string
@@ -534,6 +665,27 @@ class AdminController extends Controller
         ]);
     }
 
+    public function showStrategicGoalDetail(string $slug)
+    {
+        $goals = $this->getStrategicGoalDetails();
+
+        if (!array_key_exists($slug, $goals)) {
+            abort(404);
+        }
+
+        return Inertia::render('StrategicGoalDetail', [
+            'goal' => $goals[$slug],
+            'allGoals' => collect($goals)
+                ->map(fn (array $goal) => [
+                    'slug' => $goal['slug'],
+                    'number' => $goal['number'],
+                    'title' => $goal['title'],
+                ])
+                ->values()
+                ->all(),
+        ]);
+    }
+
     private function getPageContent(string $page): array
     {
         return SiteContent::where('page', $page)
@@ -572,5 +724,126 @@ class AdminController extends Controller
         }
 
         return $defaults;
+    }
+
+    private function getStrategicGoalDetails(): array
+    {
+        return [
+            'goal-1' => [
+                'slug' => 'goal-1',
+                'number' => 1,
+                'title' => 'Strengthened Governance and Institutional Capacity',
+                'tagline' => 'Building a high-performance chamber institution with robust systems and accountable leadership.',
+                'heroImage' => 'https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=1800&q=80',
+                'overview' => 'This goal focuses on strengthening LiVCCI internal governance, improving organizational systems, and ensuring operational continuity through strong leadership and policy discipline.',
+                'outcomes' => [
+                    'Clear and enforceable governance structures across board and secretariat functions.',
+                    'Improved operational controls, policy compliance, and role accountability.',
+                    'Reliable institutional memory through documented processes and digital records.',
+                ],
+                'initiatives' => [
+                    ['title' => 'Governance Charter Refresh', 'description' => 'Review board charters and governance policies to align with current strategic priorities and legal obligations.'],
+                    ['title' => 'Secretariat Capacity Program', 'description' => 'Develop management and technical competencies through annual training and mentorship.'],
+                    ['title' => 'Digital Operations Backbone', 'description' => 'Standardize documentation, workflows, and reporting on a central digital platform.'],
+                ],
+                'kpis' => [
+                    ['label' => 'Policy Compliance Rate', 'target' => '95%'],
+                    ['label' => 'Internal Process Automation', 'target' => '80%'],
+                    ['label' => 'Annual Governance Reviews', 'target' => '4'],
+                ],
+            ],
+            'goal-2' => [
+                'slug' => 'goal-2',
+                'number' => 2,
+                'title' => 'Enhanced Member Services and Value Proposition',
+                'tagline' => 'Delivering practical, measurable value that helps members grow and remain competitive.',
+                'heroImage' => 'https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=1800&q=80',
+                'overview' => 'LiVCCI will elevate member experience through tailored services, stronger engagement pathways, and evidence-based support programs that respond to real business needs.',
+                'outcomes' => [
+                    'Higher member satisfaction and retention across all categories.',
+                    'Expanded portfolio of high-impact support services and training programs.',
+                    'Improved member participation in chamber events and initiatives.',
+                ],
+                'initiatives' => [
+                    ['title' => 'Member Experience Redesign', 'description' => 'Improve onboarding, service tracking, and response times through structured service standards.'],
+                    ['title' => 'Business Growth Clinics', 'description' => 'Quarterly expert-led sessions on finance, compliance, market access, and operations.'],
+                    ['title' => 'Sector-Specific Networking Series', 'description' => 'Curated networking forums aligned to priority sectors and investment opportunities.'],
+                ],
+                'kpis' => [
+                    ['label' => 'Member Retention Rate', 'target' => '85%'],
+                    ['label' => 'Average Event Participation', 'target' => '300+ / quarter'],
+                    ['label' => 'Service Satisfaction Score', 'target' => '4.5/5'],
+                ],
+            ],
+            'goal-3' => [
+                'slug' => 'goal-3',
+                'number' => 3,
+                'title' => 'Dynamic Advocacy and Strategic Partnerships',
+                'tagline' => 'Positioning LiVCCI as a trusted voice for business and a catalyst for collaborative growth.',
+                'heroImage' => 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=1800&q=80',
+                'overview' => 'This goal advances LiVCCI advocacy influence and strengthens partnerships with public and private stakeholders to shape an enabling business climate in Livingstone and beyond.',
+                'outcomes' => [
+                    'Stronger policy influence through coordinated advocacy with evidence-backed proposals.',
+                    'Formalized partnerships with key institutions and development agencies.',
+                    'Increased visibility of member priorities in public policy dialogue.',
+                ],
+                'initiatives' => [
+                    ['title' => 'Policy Position Papers', 'description' => 'Develop annual policy briefs based on member feedback and sector data.'],
+                    ['title' => 'Public-Private Dialogue Forums', 'description' => 'Host structured roundtables with government and regulatory institutions.'],
+                    ['title' => 'Strategic Partnership Framework', 'description' => 'Define, negotiate, and track partnership outcomes with clear targets and responsibilities.'],
+                ],
+                'kpis' => [
+                    ['label' => 'Policy Submissions per Year', 'target' => '10+'],
+                    ['label' => 'Active Strategic MoUs', 'target' => '12'],
+                    ['label' => 'Advocacy Engagement Sessions', 'target' => '24 / year'],
+                ],
+            ],
+            'goal-4' => [
+                'slug' => 'goal-4',
+                'number' => 4,
+                'title' => 'Financial Sustainability and Resource Mobilization',
+                'tagline' => 'Securing resilient revenue streams to sustain long-term impact and service delivery.',
+                'heroImage' => 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&fit=crop&w=1800&q=80',
+                'overview' => 'LiVCCI will strengthen financial health through diversified income channels, strategic budgeting, and resource mobilization partnerships that reduce dependency risk.',
+                'outcomes' => [
+                    'More predictable and diversified annual revenue mix.',
+                    'Improved budget execution and financial reporting quality.',
+                    'Increased investment in member-facing strategic programs.',
+                ],
+                'initiatives' => [
+                    ['title' => 'Revenue Diversification Plan', 'description' => 'Expand non-dues revenue through events, advisory services, and sponsorship products.'],
+                    ['title' => 'Grant & Donor Pipeline', 'description' => 'Build proposal capacity and maintain an annual calendar for funding opportunities.'],
+                    ['title' => 'Financial Governance Strengthening', 'description' => 'Introduce tighter forecasting, cash-flow controls, and board-level financial dashboards.'],
+                ],
+                'kpis' => [
+                    ['label' => 'Non-Dues Revenue Share', 'target' => '40%'],
+                    ['label' => 'Budget Variance', 'target' => '< 8%'],
+                    ['label' => 'Annual Resource Mobilization Value', 'target' => 'ZMW 5M+'],
+                ],
+            ],
+            'goal-5' => [
+                'slug' => 'goal-5',
+                'number' => 5,
+                'title' => 'Communication, Publicity, and Research',
+                'tagline' => 'Enhancing market visibility and decision-making through strategic communication and intelligence.',
+                'heroImage' => 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?auto=format&fit=crop&w=1800&q=80',
+                'overview' => 'LiVCCI will improve communication reach, strengthen public brand visibility, and institutionalize business intelligence to support informed advocacy and member growth.',
+                'outcomes' => [
+                    'Higher public visibility and stronger chamber brand recognition.',
+                    'Regular publication of business intelligence for members and stakeholders.',
+                    'Improved communication consistency across digital and offline channels.',
+                ],
+                'initiatives' => [
+                    ['title' => 'Integrated Communication Calendar', 'description' => 'Coordinate campaigns, media outreach, and event publicity through annual planning.'],
+                    ['title' => 'Business Insight Reports', 'description' => 'Publish periodic market and policy research briefs focused on member sectors.'],
+                    ['title' => 'Digital Reach Acceleration', 'description' => 'Expand website, newsletter, and social channels for stronger stakeholder engagement.'],
+                ],
+                'kpis' => [
+                    ['label' => 'Research Briefs Published', 'target' => '12 / year'],
+                    ['label' => 'Digital Audience Growth', 'target' => '+50%'],
+                    ['label' => 'Media Mentions', 'target' => '100+ / year'],
+                ],
+            ],
+        ];
     }
 }

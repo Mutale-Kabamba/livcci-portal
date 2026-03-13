@@ -32,6 +32,14 @@ const getStatusDisplay = (status) => {
 };
 
 const statusDisplay = computed(() => getStatusDisplay(profile.value?.status));
+
+const onLogoError = (event) => {
+    const fallbackSrc = '/images/member.png';
+    if (event?.target && event.target.src !== fallbackSrc) {
+        event.target.onerror = null;
+        event.target.src = fallbackSrc;
+    }
+};
 </script>
 
 <template>
@@ -56,8 +64,8 @@ const statusDisplay = computed(() => getStatusDisplay(profile.value?.status));
                             <div class="flex flex-col md:flex-row gap-6">
                                 <!-- Logo -->
                                 <div class="md:w-1/3">
-                                    <div v-if="profile.logo_url" class="w-full bg-gray-100 rounded-lg overflow-hidden">
-                                        <img :src="profile.logo_url" :alt="profile.company_name" class="w-full h-auto object-cover">
+                                    <div v-if="profile.logo_url" class="w-full h-48 bg-gray-100 rounded-lg overflow-hidden border border-gray-200 flex items-center justify-center">
+                                        <img :src="profile.logo_url" :alt="profile.company_name" @error="onLogoError" class="w-full h-full object-contain p-4">
                                     </div>
                                     <div v-else class="w-full h-48 bg-gray-200 rounded-lg flex items-center justify-center">
                                         <span class="text-gray-400">No logo</span>

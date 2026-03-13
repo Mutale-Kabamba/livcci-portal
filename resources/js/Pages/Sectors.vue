@@ -348,7 +348,12 @@ onUnmounted(() => {
                 
                 <div class="flex flex-col md:flex-row justify-between items-center mt-8 text-sm text-blue-300">
                     <p>&copy; 2026 Livingstone Chamber of Commerce & Industry. All rights reserved.</p>
-                    <p class="mt-4 md:mt-0">Designed & Developed by <span class="font-bold text-[#F4B223]">Ori Studio Limited</span></p>
+                    <p class="mt-4 md:mt-0">
+                        Designed & Developed by
+                        <a href="https://oristudiozm.com/" target="_blank" rel="noopener noreferrer" class="font-bold text-[#F4B223] hover:text-[#f9cb63] transition-colors">
+                            Ori Studio Limited
+                        </a>
+                    </p>
                 </div>
             </div>
         </footer>

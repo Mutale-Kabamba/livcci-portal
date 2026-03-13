@@ -12,7 +12,10 @@ Route::get('/', [AdminController::class, 'showHome'])->name('home');
 
 Route::get('/dashboard', function () {
     $businessProfiles = auth()->check()
-        ? \App\Models\BusinessProfile::where('user_id', auth()->id())->latest()->get()
+        ? \App\Models\BusinessProfile::with(['payments' => fn ($q) => $q->latest('payment_date')->latest('id')])
+            ->where('user_id', auth()->id())
+            ->latest()
+            ->get()
         : collect();
 
     $profileIds = $businessProfiles->pluck('id');
@@ -65,6 +68,7 @@ Route::get('/sectors', [AdminController::class, 'showSectors'])->name('sectors')
 Route::get('/leadership', [AdminController::class, 'showLeadership'])->name('leadership');
 Route::get('/membership', [AdminController::class, 'showMembership'])->name('membership');
 Route::get('/strategic-goals', [AdminController::class, 'showStrategicGoals'])->name('strategic-goals');
+Route::get('/strategic-goals/{slug}', [AdminController::class, 'showStrategicGoalDetail'])->name('strategic-goals.detail');
 Route::get('/news', [AdminController::class, 'showNews'])->name('news');
 Route::get('/directory', [BusinessProfileController::class, 'index'])->name('directory.index');
 Route::middleware([IsAdminMiddleware::class])->group(function () {
@@ -109,6 +113,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/directory/edit', [BusinessProfileController::class, 'edit'])->name('profile.business.edit');
     Route::patch('/directory/edit', [BusinessProfileController::class, 'update'])->name('profile.business.update');
     Route::delete('/directory/{profile}', [BusinessProfileController::class, 'destroy'])->name('profile.business.destroy');
+    Route::get('/dashboard/business/{profile}/invoice', [BusinessProfileController::class, 'downloadInvoice'])->name('profile.business.invoice.download');
+    Route::get('/dashboard/business/receipt/{payment}', [BusinessProfileController::class, 'downloadReceipt'])->name('profile.business.receipt.download');
 });
 
 // Place this after the more specific /directory routes so that

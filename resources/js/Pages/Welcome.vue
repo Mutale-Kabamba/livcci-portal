@@ -83,10 +83,61 @@ const defaultHomeSectors = [
     { title: 'Tech & Digital Media' },
 ];
 
+const sectorVisualCatalog = [
+    {
+        title: 'Tourism & Hospitality',
+        subtitle: 'Hotels, travel services, and destination experiences',
+        image: 'https://images.unsplash.com/photo-1439130490301-25e322d88054?auto=format&fit=crop&w=1200&q=80',
+    },
+    {
+        title: 'Transport & Logistics',
+        subtitle: 'Freight mobility, supply chains, and distribution',
+        image: 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=1200&q=80',
+    },
+    {
+        title: 'Agriculture & Export',
+        subtitle: 'Agri-value chains, processing, and market access',
+        image: 'https://images.unsplash.com/photo-1523741543316-beb7fc7023d8?auto=format&fit=crop&w=1200&q=80',
+    },
+    {
+        title: 'Tech & Digital Media',
+        subtitle: 'Digital services, innovation, and creative tech',
+        image: 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1200&q=80',
+    },
+];
+
 const heroContent = computed(() => props.content.hero || defaultHeroContent);
 const chairperson = computed(() => props.content.chairperson || defaultChairperson);
 const coreValues = computed(() => props.content.core_values || defaultCoreValues);
 const homeSectors = computed(() => props.content.home_sectors || defaultHomeSectors);
+const homeSectorCards = computed(() => {
+    const sectors = Array.isArray(homeSectors.value) ? homeSectors.value : [];
+
+    return sectors.map((sector, index) => {
+        const fallback = sectorVisualCatalog[index % sectorVisualCatalog.length];
+
+        return {
+            title: sector?.title || fallback.title,
+            subtitle: sector?.subtitle || fallback.subtitle,
+            image: sector?.image || fallback.image,
+        };
+    });
+});
+const spotlightContent = computed(() => props.content.member_spotlight || {});
+
+const spotlightProfile = computed(() => {
+    const profileId = Number(spotlightContent.value?.profile_id || 0);
+    const members = Array.isArray(props.approvedMembers) ? props.approvedMembers : [];
+    if (profileId > 0) {
+        return members.find((member) => Number(member.id) === profileId) || members[0] || null;
+    }
+    return members[0] || null;
+});
+
+const spotlightTitle = computed(() => spotlightContent.value?.title || 'Member (Business Profile) Spotlight');
+const spotlightSubtitle = computed(() => spotlightContent.value?.subtitle || 'Featured chamber member of the week');
+const spotlightBlurb = computed(() => spotlightContent.value?.blurb || 'Discover outstanding member businesses and connect with trusted companies in our network.');
+const spotlightCta = computed(() => spotlightContent.value?.cta_text || 'View Full Profile');
 
 // Handle scroll events
 const handleScroll = () => {
@@ -131,20 +182,10 @@ onUnmounted(() => {
     }
 });
 
-// Members Carousel
-const membersScrollPosition = ref(0);
-const scrollMembersLeft = () => {
-    const container = document.getElementById('members-carousel');
-    if (container) {
-        container.scrollBy({ left: -300, behavior: 'smooth' });
-    }
-};
-const scrollMembersRight = () => {
-    const container = document.getElementById('members-carousel');
-    if (container) {
-        container.scrollBy({ left: 300, behavior: 'smooth' });
-    }
-};
+const marqueeMembers = computed(() => {
+    const members = Array.isArray(props.approvedMembers) ? props.approvedMembers : [];
+    return members.length > 1 ? [...members, ...members] : members;
+});
 
 // Get event type color
 const getTypeColor = (type) => {
@@ -157,6 +198,26 @@ const getTypeColor = (type) => {
     return colors[type] || 'bg-gray-100 text-gray-700';
 };
 
+const getEventCardClass = (type) => {
+    const styles = {
+        Meeting: 'border-blue-200 hover:border-blue-400 hover:shadow-blue-100/60',
+        Workshop: 'border-purple-200 hover:border-purple-400 hover:shadow-purple-100/60',
+        Expo: 'border-green-200 hover:border-green-400 hover:shadow-green-100/60',
+        News: 'border-orange-200 hover:border-orange-400 hover:shadow-orange-100/60',
+    };
+    return styles[type] || 'border-gray-200 hover:border-gray-300';
+};
+
+const getEventDateBarClass = (type) => {
+    const styles = {
+        Meeting: 'bg-blue-600 text-white',
+        Workshop: 'bg-purple-600 text-white',
+        Expo: 'bg-green-600 text-white',
+        News: 'bg-orange-500 text-white',
+    };
+    return styles[type] || 'bg-[#F4B223] text-[#1D2A68]';
+};
+
 const formatDate = (date) => {
     if (!date) return '';
     return new Date(date).toLocaleDateString('en-US', { 
@@ -164,6 +225,14 @@ const formatDate = (date) => {
         month: 'short', 
         day: 'numeric' 
     });
+};
+
+const onMemberLogoError = (event) => {
+    const fallbackSrc = '/images/member.png';
+    if (event?.target && event.target.src !== fallbackSrc) {
+        event.target.onerror = null;
+        event.target.src = fallbackSrc;
+    }
 };
 </script>
 
@@ -272,46 +341,66 @@ const formatDate = (date) => {
         <div class="py-10 bg-white border-b border-gray-200" data-scroll>
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <Link :href="route('register')" class="rounded-xl border border-gray-200 p-5 hover:border-[#1876C3] hover:shadow-md transition-all duration-300">
+                    <Link :href="route('register')" class="group rounded-xl border border-gray-200 bg-white p-5 hover:border-[#1876C3] hover:shadow-md transition-all duration-300 h-full flex flex-col">
                         <p class="text-xs font-bold uppercase tracking-wide text-[#1876C3]">New Member</p>
                         <h3 class="mt-2 text-lg font-extrabold text-[#1D2A68]">Start Membership Application</h3>
                         <p class="mt-1 text-sm text-gray-600">Apply online and join the chamber network.</p>
+                        <span class="mt-5 inline-flex items-center gap-2 text-sm font-bold text-[#1876C3] group-hover:text-[#1460A0]">
+                            Apply Now
+                            <span class="transform transition-transform duration-300 group-hover:translate-x-1">→</span>
+                        </span>
                     </Link>
-                    <Link :href="route('directory.index')" class="rounded-xl border border-gray-200 p-5 hover:border-[#1876C3] hover:shadow-md transition-all duration-300">
+                    <Link :href="route('directory.index')" class="group rounded-xl border border-gray-200 bg-white p-5 hover:border-[#1876C3] hover:shadow-md transition-all duration-300 h-full flex flex-col">
                         <p class="text-xs font-bold uppercase tracking-wide text-[#1876C3]">Find Partners</p>
                         <h3 class="mt-2 text-lg font-extrabold text-[#1D2A68]">Browse Member Directory</h3>
                         <p class="mt-1 text-sm text-gray-600">Discover verified local businesses by sector.</p>
+                        <span class="mt-5 inline-flex items-center gap-2 text-sm font-bold text-[#1876C3] group-hover:text-[#1460A0]">
+                            View Directory
+                            <span class="transform transition-transform duration-300 group-hover:translate-x-1">→</span>
+                        </span>
                     </Link>
-                    <Link :href="route('news')" class="rounded-xl border border-gray-200 p-5 hover:border-[#1876C3] hover:shadow-md transition-all duration-300">
+                    <Link :href="route('news')" class="group rounded-xl border border-gray-200 bg-white p-5 hover:border-[#1876C3] hover:shadow-md transition-all duration-300 h-full flex flex-col">
                         <p class="text-xs font-bold uppercase tracking-wide text-[#1876C3]">Stay Current</p>
                         <h3 class="mt-2 text-lg font-extrabold text-[#1D2A68]">See News & Events</h3>
                         <p class="mt-1 text-sm text-gray-600">Track chamber updates, workshops, and expos.</p>
+                        <span class="mt-5 inline-flex items-center gap-2 text-sm font-bold text-[#1876C3] group-hover:text-[#1460A0]">
+                            Read Updates
+                            <span class="transform transition-transform duration-300 group-hover:translate-x-1">→</span>
+                        </span>
                     </Link>
                 </div>
             </div>
         </div>
 
         <!-- CHAIRPERSON MESSAGE -->
-        <div class="py-16 bg-white" data-scroll>
+        <div class="py-20 bg-gradient-to-b from-white to-[#f8fafc] border-y border-gray-100" data-scroll>
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
-                    <div class="opacity-0 -translate-x-10 transition-all duration-700 animate-in">
-                        <img src="images/leader/man2.png" alt="Chairperson" >
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-14 items-center">
+                    <div class="opacity-0 -translate-x-10 transition-all duration-700 animate-in rounded-2xl bg-[#eef4ff] border border-[#dbe7ff] p-6 lg:p-8">
+                        <img src="images/leader/man2.png" alt="Chairperson" class="w-full max-h-[520px] object-contain drop-shadow-xl" >
                     </div>
-                    <div class="opacity-0 translate-x-10 transition-all duration-700 animate-in">
-                        <h2 class="text-3xl font-extrabold text-[#1D2A68] mb-4">{{ chairperson.title }}</h2>
-                        <p class="text-lg text-gray-700 mb-4">
+
+                    <div class="opacity-0 translate-x-10 transition-all duration-700 animate-in bg-white rounded-2xl border border-gray-200 shadow-sm p-7 lg:p-9">
+                        <p class="text-xs font-bold uppercase tracking-[0.18em] text-[#1876C3]">Leadership Message</p>
+                        <h2 class="text-3xl lg:text-4xl font-extrabold text-[#1D2A68] mt-3 mb-5 leading-tight">{{ chairperson.title }}</h2>
+
+                        <p class="text-xl text-gray-700 font-medium mb-5">
                             {{ chairperson.greeting }}
                         </p>
-                        <p class="text-gray-600 mb-4 leading-relaxed">
+
+                        <p class="text-gray-600 mb-5 leading-8 text-[1.05rem]">
                             {{ chairperson.paragraph_one }}
                         </p>
-                        <p class="text-gray-600 mb-6 leading-relaxed">
+
+                        <p class="text-gray-600 mb-7 leading-8 text-[1.05rem]">
                             {{ chairperson.paragraph_two }}
                         </p>
-                        <p class="text-lg font-semibold text-[#1D2A68]">
-                            {{ chairperson.signature }}
-                        </p>
+
+                        <div class="pt-5 border-t border-gray-200">
+                            <p class="text-xl font-bold text-[#1D2A68] tracking-tight">
+                                {{ chairperson.signature }}
+                            </p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -329,7 +418,7 @@ const formatDate = (date) => {
                 </div>
 
                 <div v-if="events && events.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                    <div v-for="(event, index) in events" :key="event.id" class="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300 group opacity-0 translate-y-10 animate-in" :style="{ transitionDelay: `${index * 100}ms` }">
+                    <div v-for="(event, index) in events" :key="event.id" :class="['bg-white rounded-lg border shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300 group opacity-0 translate-y-10 animate-in', getEventCardClass(event.type)]" :style="{ transitionDelay: `${index * 100}ms` }">
                         <!-- Image Container -->
                         <div class="relative h-64 bg-gray-200 overflow-hidden">
                             <img 
@@ -342,7 +431,7 @@ const formatDate = (date) => {
                                 <svg class="w-20 h-20 text-white opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                             </div>
                             <!-- Date Bar Overlay -->
-                            <div class="absolute bottom-0 left-0 right-0 bg-[#F4B223] text-[#1D2A68] py-2 px-4 text-center font-bold text-sm">
+                            <div :class="['absolute bottom-0 left-0 right-0 py-2 px-4 text-center font-bold text-sm', getEventDateBarClass(event.type)]">
                                 {{ formatDate(event.event_date) }}
                             </div>
                         </div>
@@ -400,15 +489,36 @@ const formatDate = (date) => {
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex justify-between items-end mb-10">
                     <div class="opacity-0 translate-y-10 transition-all duration-700 animate-in">
-                        <h2 class="text-3xl font-extrabold text-[#1D2A68]">Key Economic Sectors</h2>
-                        <p class="mt-2 text-gray-600">Connecting industries for sustainable regional development</p>
+                        <p class="text-xs font-bold uppercase tracking-[0.2em] text-[#1876C3]">Sector Intelligence</p>
+                        <h2 class="text-3xl md:text-4xl font-extrabold text-[#1D2A68] mt-2">Key Economic Sectors</h2>
+                        <p class="mt-3 text-gray-600 max-w-2xl">Connecting industries for sustainable regional development through stronger partnerships, visibility, and investment readiness.</p>
                     </div>
                     <Link :href="route('sectors')" class="text-[#1876C3] font-semibold hover:underline">Explore More →</Link>
                 </div>
 
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <Link v-for="(sector, index) in homeSectors" :key="index" :href="route('sectors')" class="bg-white p-6 rounded-lg shadow-sm border border-gray-100 text-center hover:border-[#F4B223] transition-all opacity-0 translate-y-10 animate-in" :style="{ transitionDelay: `${index * 100}ms` }">
-                        <h4 class="font-bold text-[#1D2A68] hover:text-[#1876C3] transition-colors">{{ sector.title }}</h4>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <Link
+                        v-for="(sector, index) in homeSectorCards"
+                        :key="index"
+                        :href="route('sectors')"
+                        class="group relative rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-500 opacity-0 translate-y-10 animate-in min-h-[280px]"
+                        :style="{ transitionDelay: `${index * 100}ms` }"
+                    >
+                        <img
+                            :src="sector.image"
+                            :alt="sector.title"
+                            class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                        >
+                        <div class="absolute inset-0 bg-gradient-to-t from-[#121a42]/95 via-[#1d2a68]/70 to-[#1d2a68]/20"></div>
+
+                        <div class="relative h-full p-5 flex flex-col justify-end">
+                            <h4 class="text-white text-lg font-extrabold leading-tight">{{ sector.title }}</h4>
+                            <p class="text-blue-100 text-sm mt-2 leading-relaxed">{{ sector.subtitle }}</p>
+                            <span class="mt-4 inline-flex items-center text-[#F4B223] text-sm font-bold tracking-wide">
+                                View Sector
+                                <span class="ml-2 transform transition-transform duration-300 group-hover:translate-x-1">→</span>
+                            </span>
+                        </div>
                     </Link>
                 </div>
             </div>
@@ -425,29 +535,25 @@ const formatDate = (date) => {
                     <Link :href="route('directory.index')" class="text-[#1876C3] font-semibold hover:underline">View All Members →</Link>
                 </div>
 
-                <div v-if="approvedMembers && approvedMembers.length > 0" class="relative">
-                    <!-- Carousel Container -->
-                    <div id="members-carousel" class="flex overflow-x-auto scroll-smooth gap-6 pb-4">
+                <div v-if="approvedMembers && approvedMembers.length > 0" class="relative overflow-hidden py-2">
+                    <div class="pointer-events-none absolute inset-y-0 left-0 w-16 bg-gradient-to-r from-white to-transparent z-10"></div>
+                    <div class="pointer-events-none absolute inset-y-0 right-0 w-16 bg-gradient-to-l from-white to-transparent z-10"></div>
+
+                    <div class="member-marquee-track">
                         <div
-                            v-for="member in approvedMembers"
-                            :key="member.id"
-                            class="flex-shrink-0 w-48 h-40 bg-white rounded-lg transition-all hover:scale-105 flex items-center justify-center overflow-hidden"
+                            v-for="(member, index) in marqueeMembers"
+                            :key="`${member.id}-${index}`"
+                            :aria-hidden="index >= approvedMembers.length"
+                            class="flex-shrink-0 w-48 h-32 bg-white rounded-lg transition-all hover:scale-105 flex items-center justify-center overflow-hidden mx-3"
                         >
                             <img
                                 :src="member.logo_url || '/images/member.png'"
                                 :alt="member.company_name"
+                                @error="onMemberLogoError"
                                 class="w-full h-full object-contain p-4 transition-transform duration-300"
                             >
                         </div>
                     </div>
-
-                    <!-- Carousel Controls -->
-                    <button @click="scrollMembersLeft" class="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 bg-[#1876C3] text-white p-2 rounded-full hover:bg-[#1460A0] shadow-lg transition-all hover:scale-110">
-                        ← 
-                    </button>
-                    <button @click="scrollMembersRight" class="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 bg-[#1876C3] text-white p-2 rounded-full hover:bg-[#1460A0] shadow-lg transition-all hover:scale-110">
-                        →
-                    </button>
                 </div>
                 <div v-else class="text-center py-12 bg-gray-50 rounded-lg">
                     <p class="text-gray-500">No approved members yet.</p>
@@ -455,17 +561,75 @@ const formatDate = (date) => {
             </div>
         </div>
 
-        <!-- LEADERSHIP SECTION -->
+        <!-- MEMBER SPOTLIGHT SECTION -->
         <div class="py-16 bg-gray-50" data-scroll>
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <h2 class="text-3xl font-extrabold text-[#1D2A68] mb-12 text-center opacity-0 translate-y-10 transition-all duration-700 animate-in">Our Leadership</h2>
-                
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-                    <div v-for="(leader, index) in 3" :key="index" class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-all opacity-0 -translate-y-10 animate-in" :style="{ transitionDelay: `${index * 150}ms` }">
-                        <img :src="['https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&q=60', 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&q=60', 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&q=60'][index]" :alt="['Chairperson', 'Vice Chairperson', 'Executive Director'][index]" class="w-full h-64 object-cover">
-                        <div class="p-6 text-center">
-                            <h3 class="text-xl font-bold text-[#1D2A68]">{{ ['Chairperson', 'Vice Chairperson', 'Executive Director'][index] }}</h3>
-                            <p class="text-gray-600 text-sm mt-2">{{ ['Leading our organization with vision and integrity', 'Supporting strategic initiatives and member advocacy', 'Managing operations and member services'][index] }}</p>
+                <div class="bg-[#eef4ff] rounded-sm p-8 md:p-10 border border-[#dbeafe] opacity-0 translate-y-10 transition-all duration-700 animate-in">
+                    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
+                        <div>
+                            <p class="text-[#1876C3] text-3xl font-bold uppercase tracking-wide">Member Spotlight</p>
+                            <div class="mt-3 flex items-center gap-3 flex-wrap">
+                                <span class="text-[#1D2A68] text-3xl md:text-5xl font-black tracking-tight">LiVCCI</span>
+                                <span class="bg-[#1D2A68] text-[#F6EED8] text-2xl md:text-4xl font-black px-4 py-1 leading-none">Member Spotlight</span>
+                            </div>
+                        </div>
+
+                        <div class="flex gap-3 text-[#F4B223]">
+                            <svg v-for="star in 5" :key="star" class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M12 2l2.938 6.017 6.639.974-4.807 4.73 1.134 6.7L12 17.29l-5.904 3.131 1.134-6.7L2.423 8.99l6.639-.974L12 2z"/>
+                            </svg>
+                        </div>
+                    </div>
+
+                    <div class="bg-gradient-to-br from-[#1D2A68] to-[#1876C3] rounded-sm shadow-xl p-6 md:p-8">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 items-stretch">
+                            <div class="bg-white rounded-md overflow-hidden min-h-[260px] flex items-center justify-center">
+                                <img
+                                    v-if="spotlightProfile?.logo_url"
+                                    :src="spotlightProfile.logo_url"
+                                    :alt="spotlightProfile.company_name"
+                                    @error="onMemberLogoError"
+                                    class="w-full h-full object-contain p-6"
+                                >
+                                <img v-else src="/images/member.png" alt="Member" class="w-full h-full object-contain p-6">
+                            </div>
+
+                            <div class="text-white">
+                                <div class="bg-white rounded-md inline-flex items-center justify-center px-4 py-2 mb-5">
+                                    <img
+                                        v-if="spotlightProfile?.logo_url"
+                                        :src="spotlightProfile.logo_url"
+                                        :alt="`${spotlightProfile.company_name} logo`"
+                                        @error="onMemberLogoError"
+                                        class="h-16 w-auto object-contain"
+                                    >
+                                    <img v-else src="/images/member.png" alt="Member" class="h-16 w-auto object-contain">
+                                </div>
+
+                                <h3 class="text-2xl font-extrabold leading-tight">{{ spotlightProfile?.company_name || 'No Spotlight Selected' }}</h3>
+                                <p class="text-blue-100 mt-1 text-sm">{{ spotlightProfile?.industry_sector || 'Industry not specified' }}</p>
+                                <p class="text-blue-100 mt-4 leading-relaxed">{{ spotlightBlurb }}</p>
+                                <p class="text-blue-100 mt-2 leading-relaxed" v-if="spotlightProfile?.short_description">{{ spotlightProfile.short_description }}</p>
+
+                                <div class="mt-6 flex gap-3 flex-wrap">
+                                    <Link
+                                        v-if="spotlightProfile"
+                                        :href="route('directory.show', spotlightProfile.id)"
+                                        class="inline-flex items-center bg-[#F4B223] hover:bg-[#E0A11B] text-[#1D2A68] font-bold py-2.5 px-5 rounded-sm transition"
+                                    >
+                                        {{ spotlightCta }}
+                                    </Link>
+                                    <a
+                                        v-if="spotlightProfile?.website_url"
+                                        :href="spotlightProfile.website_url"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        class="inline-flex items-center bg-white/20 hover:bg-white/30 text-white font-bold py-2.5 px-5 rounded-sm transition"
+                                    >
+                                        Visit Website
+                                    </a>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -570,7 +734,12 @@ const formatDate = (date) => {
                 
                 <div class="flex flex-col md:flex-row justify-between items-center mt-8 text-sm text-blue-300">
                     <p>&copy; 2026 Livingstone Chamber of Commerce & Industry. All rights reserved.</p>
-                    <p class="mt-4 md:mt-0">Designed & Developed by <span class="font-bold text-[#F4B223]">Ori Studio Limited</span></p>
+                    <p class="mt-4 md:mt-0">
+                        Designed & Developed by
+                        <a href="https://oristudiozm.com/" target="_blank" rel="noopener noreferrer" class="font-bold text-[#F4B223] hover:text-[#f9cb63] transition-colors">
+                            Ori Studio Limited
+                        </a>
+                    </p>
                 </div>
             </div>
         </footer>
@@ -625,5 +794,25 @@ const formatDate = (date) => {
 
 .animate-in {
     animation: slideInUp 0.6s ease-out forwards;
+}
+
+@keyframes membersMarquee {
+    0% {
+        transform: translateX(0);
+    }
+    100% {
+        transform: translateX(-50%);
+    }
+}
+
+.member-marquee-track {
+    display: flex;
+    width: max-content;
+    animation: membersMarquee 18s linear infinite;
+    will-change: transform;
+}
+
+.member-marquee-track:hover {
+    animation-play-state: paused;
 }
 </style>

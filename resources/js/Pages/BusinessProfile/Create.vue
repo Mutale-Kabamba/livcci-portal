@@ -21,8 +21,54 @@ const form = useForm({
     phone: '',
     address: '',
     website_url: '',
+    social_links: {},
     logo: null,
 });
+
+const socialPlatformOptions = [
+    { key: 'linkedin', label: 'LinkedIn' },
+    { key: 'facebook', label: 'Facebook' },
+    { key: 'x', label: 'X / Twitter' },
+    { key: 'instagram', label: 'Instagram' },
+    { key: 'whatsapp', label: 'WhatsApp' },
+];
+const selectedSocialPlatform = ref('linkedin');
+const socialLinkInput = ref('');
+const socialLinkError = ref('');
+
+const normalizeUrl = (value) => {
+    const trimmed = String(value || '').trim();
+    if (!trimmed) return '';
+    return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+};
+
+const addSocialLink = () => {
+    socialLinkError.value = '';
+    const normalized = normalizeUrl(socialLinkInput.value);
+
+    try {
+        if (!normalized) {
+            socialLinkError.value = 'Please enter a URL.';
+            return;
+        }
+
+        // Throws if invalid
+        new URL(normalized);
+        form.social_links = {
+            ...(form.social_links || {}),
+            [selectedSocialPlatform.value]: normalized,
+        };
+        socialLinkInput.value = '';
+    } catch {
+        socialLinkError.value = 'Please enter a valid URL.';
+    }
+};
+
+const removeSocialLink = (platform) => {
+    const next = { ...(form.social_links || {}) };
+    delete next[platform];
+    form.social_links = next;
+};
 
 const handleLogoUpload = (event) => {
     const file = event.target.files[0];
@@ -278,6 +324,40 @@ const submit = () => {
                                 :class="inputClasses('website_url')"
                             >
                             <p v-if="getError('website_url')" class="text-red-600 text-xs mt-1">{{ getError('website_url') }}</p>
+                        </div>
+
+                        <!-- Social Connectivity -->
+                        <div>
+                            <label class="block text-xs font-bold tracking-wide text-gray-500 uppercase mb-2">Social Connectivity (Optional)</label>
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                                <select v-model="selectedSocialPlatform" :class="inputClasses('social_links')">
+                                    <option v-for="option in socialPlatformOptions" :key="option.key" :value="option.key">{{ option.label }}</option>
+                                </select>
+                                <input
+                                    v-model="socialLinkInput"
+                                    type="url"
+                                    placeholder="https://..."
+                                    class="sm:col-span-2 w-full rounded-xl border-2 bg-white px-4 py-3 text-sm text-gray-900 outline-none transition-all duration-300 placeholder:text-gray-400 hover:border-[#1876C3]/50 focus:border-[#1876C3] focus:ring-4 focus:ring-[#1876C3]/15 border-gray-200"
+                                >
+                            </div>
+                            <div class="mt-2">
+                                <button type="button" @click="addSocialLink" class="inline-flex px-4 py-2 rounded-lg bg-[#1876C3] text-white text-xs font-bold hover:bg-[#1460A0] transition-all duration-300">Add Social Link</button>
+                            </div>
+                            <p v-if="socialLinkError" class="text-red-600 text-xs mt-1">{{ socialLinkError }}</p>
+
+                            <div v-if="Object.keys(form.social_links || {}).length" class="mt-3 space-y-2">
+                                <div v-for="(url, platform) in form.social_links" :key="platform" class="flex items-center justify-between rounded-lg border border-gray-200 bg-gray-50 px-3 py-2">
+                                    <div>
+                                        <p class="text-xs font-bold text-[#1D2A68] uppercase">{{ platform }}</p>
+                                        <p class="text-xs text-gray-600 truncate max-w-[240px]">{{ url }}</p>
+                                    </div>
+                                    <button type="button" @click="removeSocialLink(platform)" class="text-xs font-bold text-red-600 hover:text-red-700">Remove</button>
+                                </div>
+                            </div>
+                            <p v-if="getError('social_links')" class="text-red-600 text-xs mt-1">{{ getError('social_links') }}</p>
+                            <p v-if="getError('social_links.linkedin') || getError('social_links.facebook') || getError('social_links.x') || getError('social_links.instagram') || getError('social_links.whatsapp')" class="text-red-600 text-xs mt-1">
+                                One or more social links are invalid.
+                            </p>
                         </div>
 
                         <!-- Logo Upload -->
