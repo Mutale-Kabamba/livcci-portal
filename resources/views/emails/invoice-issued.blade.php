@@ -18,7 +18,7 @@
 <p style="margin:0 0 12px 0;font-size:15px;line-height:1.6;"><strong>Due Date:</strong> {{ optional($invoice->due_date)->format('M d, Y') }}</p>
 <p style="margin:0 0 12px 0;font-size:15px;line-height:1.6;">Please arrange payment before the due date to keep your membership services active and uninterrupted.</p>
 <p style="margin:20px 0 0 0;font-size:15px;line-height:1.6;">Regards,<br><strong>LiVCCI Secretariat</strong></p>
-<p style="margin:16px 0 0 0;font-size:12px;line-height:1.6;color:#6b7280;">Livingstone Chamber of Commerce, [Your Address], Livingstone, Zambia.</p>
+<p style="margin:16px 0 0 0;font-size:12px;line-height:1.6;color:#6b7280;">Address: PO Box 4037, Livingstone | Email: livcci@yahoo.com | Tel: +260 977 105068 / +260 977 885959</p>
 <p style="margin:8px 0 0 0;font-size:12px;line-height:1.6;color:#6b7280;">You are receiving this because you registered for the LiVCCI Member Portal. To manage notifications, login to your dashboard.</p>
 </td></tr>
 </table>

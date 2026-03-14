@@ -70,6 +70,12 @@ class BusinessProfileController extends Controller
                     $validated['logo_url'] = $this->fileService->storeLogo($request->file('logo'));
                 }
 
+                if ($request->hasFile('proof_of_payment')) {
+                    $validated['proof_of_payment_path'] = $request->file('proof_of_payment')->store('proof-payments', 'public');
+                }
+
+                unset($validated['logo'], $validated['proof_of_payment']);
+
                 $annualFee = $this->resolveAnnualFee($validated['member_category'] ?? null, $validated['member_type'] ?? null);
                 $validated['annual_fee'] = $annualFee;
                 $validated['total_paid'] = 0;
@@ -165,6 +171,16 @@ class BusinessProfileController extends Controller
                         $profile->logo_url
                     );
                 }
+
+                if ($request->hasFile('proof_of_payment')) {
+                    if (!empty($profile->proof_of_payment_path)) {
+                        Storage::disk('public')->delete($profile->proof_of_payment_path);
+                    }
+
+                    $validated['proof_of_payment_path'] = $request->file('proof_of_payment')->store('proof-payments', 'public');
+                }
+
+                unset($validated['logo'], $validated['proof_of_payment']);
 
                 $validated['social_links'] = $this->sanitizeSocialLinks(
                     $validated['social_links'] ?? $request->input('social_links', [])

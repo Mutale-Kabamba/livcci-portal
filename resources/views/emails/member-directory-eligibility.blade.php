@@ -22,7 +22,7 @@
                             <p style="margin:0 0 12px 0;font-size:15px;line-height:1.6;">Amount Paid: ZMW {{ number_format($amountPaid, 2) }}<br>Annual Fee: ZMW {{ number_format($annualFee, 2) }}</p>
                             <p style="margin:0 0 12px 0;font-size:15px;line-height:1.6;">Our team is excited to continue supporting your organization through chamber opportunities, partnerships, and visibility.</p>
                             <p style="margin:20px 0 0 0;font-size:15px;line-height:1.6;">Regards,<br><strong>LiVCCI Secretariat</strong></p>
-                            <p style="margin:16px 0 0 0;font-size:12px;line-height:1.6;color:#6b7280;">Livingstone Chamber of Commerce, [Your Address], Livingstone, Zambia.</p>
+                            <p style="margin:16px 0 0 0;font-size:12px;line-height:1.6;color:#6b7280;">Address: PO Box 4037, Livingstone | Email: livcci@yahoo.com | Tel: +260 977 105068 / +260 977 885959</p>
                             <p style="margin:8px 0 0 0;font-size:12px;line-height:1.6;color:#6b7280;">You are receiving this because you registered for the LiVCCI Member Portal. To manage notifications, login to your dashboard.</p>
                         </td>
                     </tr>

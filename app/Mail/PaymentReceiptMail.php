@@ -28,7 +28,7 @@ class PaymentReceiptMail extends Mailable
     {
         return new Envelope(
             subject: 'LiVCCI Payment Receipt - ' . $this->profile->company_name,
-            from: new Address((string) config('mail.from.address'), 'LiVCCI Secretariat'),
+            from: new Address('livcci@oristudiozm.com', 'LiVCCI Secretariat'),
         );
     }
 

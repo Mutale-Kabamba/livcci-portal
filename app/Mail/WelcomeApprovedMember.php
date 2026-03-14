@@ -22,7 +22,7 @@ class WelcomeApprovedMember extends Mailable
     {
         return new Envelope(
             subject: 'Welcome to LiVCCI - Membership Approved',
-            from: new Address((string) config('mail.from.address'), 'LiVCCI Secretariat'),
+            from: new Address('livcci@oristudiozm.com', 'LiVCCI Secretariat'),
         );
     }
 

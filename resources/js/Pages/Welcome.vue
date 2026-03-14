@@ -614,7 +614,7 @@ const onMemberLogoError = (event) => {
                                 <div class="mt-6 flex gap-3 flex-wrap">
                                     <Link
                                         v-if="spotlightProfile"
-                                        :href="route('directory.show', spotlightProfile.id)"
+                                        :href="route('directory.show', spotlightProfile.slug || spotlightProfile.id)"
                                         class="inline-flex items-center bg-[#F4B223] hover:bg-[#E0A11B] text-[#1D2A68] font-bold py-2.5 px-5 rounded-sm transition"
                                     >
                                         {{ spotlightCta }}
@@ -711,10 +711,10 @@ const onMemberLogoError = (event) => {
                     <div>
                         <h4 class="text-[#F4B223] font-bold mb-4">Contact</h4>
                         <ul class="space-y-2 text-blue-200 text-sm">
-                            <li>PO Box 4037, Livingstone</li>
-                            <li>livcci@yahoo.com</li>
-                            <li>+260 977 105068</li>
-                            <li>+260 977 885959</li>
+                            <li><strong>Address:</strong> PO Box 4037, Livingstone</li>
+                            <li><strong>Email:</strong> livcci@yahoo.com</li>
+                            <li><strong>Tel:</strong> +260 977 105068</li>
+                            <li><strong>Tel:</strong> +260 977 885959</li>
                         </ul>
                         <!-- Social Media Icons -->
                         <div class="flex gap-4 mt-6">

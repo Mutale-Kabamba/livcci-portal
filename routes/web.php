@@ -119,6 +119,6 @@ Route::middleware('auth')->group(function () {
 
 // Place this after the more specific /directory routes so that
 // /directory/join and /directory/edit are not shadowed by it.
-Route::get('/directory/{profile}', [BusinessProfileController::class, 'show'])->name('directory.show');
+Route::get('/directory/{profile:slug}', [BusinessProfileController::class, 'show'])->name('directory.show');
 
 require __DIR__.'/auth.php';

@@ -22,7 +22,7 @@ class RenewalReminderMail extends Mailable
     {
         return new Envelope(
             subject: 'LiVCCI Membership Renewal Reminder',
-            from: new Address((string) config('mail.from.address'), 'LiVCCI Secretariat'),
+            from: new Address('livcci@oristudiozm.com', 'LiVCCI Secretariat'),
         );
     }
 

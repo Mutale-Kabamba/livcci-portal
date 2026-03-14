@@ -4,12 +4,16 @@ namespace App\Providers;
 
 use App\Events\PaymentThresholdReached;
 use App\Listeners\ActivateBusinessProfileAndNotifyMember;
+use App\Mail\WelcomeMember;
+use App\Models\BusinessProfile;
 use App\Models\User;
+use Illuminate\Auth\Events\Verified;
+use Illuminate\Validation\Rules\Password;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
-use App\Models\BusinessProfile;
 use App\Policies\BusinessProfilePolicy;
 
 class AppServiceProvider extends ServiceProvider
@@ -36,6 +40,13 @@ class AppServiceProvider extends ServiceProvider
     {
         Vite::prefetch(concurrency: 3);
 
+        Password::defaults(function () {
+            return Password::min(8)
+                ->mixedCase()
+                ->numbers()
+                ->symbols();
+        });
+
         Gate::define('manage_finance', function (User $user): bool {
             return $user->isSuperAdmin() || $user->hasAnyRole(['finance', 'finance_officer']);
         });
@@ -60,6 +71,27 @@ class AppServiceProvider extends ServiceProvider
             PaymentThresholdReached::class,
             ActivateBusinessProfileAndNotifyMember::class,
         );
+
+        Event::listen(Verified::class, function (Verified $event): void {
+            $user = $event->user;
+            if (!$user instanceof User) {
+                return;
+            }
+
+            $profile = BusinessProfile::query()
+                ->where('user_id', $user->id)
+                ->latest('id')
+                ->first();
+
+            try {
+                Mail::to($user->email)->send(new WelcomeMember($user, $profile));
+            } catch (\Throwable $exception) {
+                \Log::warning('Failed to send post-verification welcome email', [
+                    'user_id' => $user->id,
+                    'error' => $exception->getMessage(),
+                ]);
+            }
+        });
         
         // Register policies
         foreach ($this->policies as $model => $policy) {

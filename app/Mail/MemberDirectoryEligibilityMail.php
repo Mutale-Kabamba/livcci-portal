@@ -26,7 +26,7 @@ class MemberDirectoryEligibilityMail extends Mailable
     {
         return new Envelope(
             subject: 'LiVCCI Update - Eligible for Directory Listing',
-            from: new Address((string) config('mail.from.address'), 'LiVCCI Secretariat'),
+            from: new Address('livcci@oristudiozm.com', 'LiVCCI Secretariat'),
         );
     }
 

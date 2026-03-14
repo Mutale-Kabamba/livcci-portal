@@ -14,7 +14,7 @@ class NotificationAutomationService
     /**
      * Send reminders at specific day offsets before expiry.
      */
-    public function sendRenewalReminders(array $offsets = [30, 14, 7, 3, 1]): int
+    public function sendRenewalReminders(array $offsets = [30]): int
     {
         $today = now()->startOfDay();
         $count = 0;
@@ -77,6 +77,7 @@ class NotificationAutomationService
     {
         $users = User::query()
             ->whereNull('email_verified_at')
+            ->whereNull('google_id')
             ->whereDate('created_at', '<=', now()->subDay())
             ->get();
 

@@ -21,7 +21,7 @@ class NewsUpdateDigestMail extends Mailable
     {
         return new Envelope(
             subject: 'LiVCCI Updates - News & Events Digest',
-            from: new Address((string) config('mail.from.address'), 'LiVCCI Secretariat'),
+            from: new Address('livcci@oristudiozm.com', 'LiVCCI Secretariat'),
         );
     }
 
