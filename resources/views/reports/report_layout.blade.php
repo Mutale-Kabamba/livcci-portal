@@ -37,7 +37,9 @@
                 </td>
                 <td class="title-cell">
                     <div class="org">Livingstone Chamber of Commerce and Industry (LiVCCI)</div>
-                    <div class="addr">PO Box 4037, Livingstone</div>
+                    <div class="addr">Address: PO Box 4037, Livingstone</div>
+                    <div class="addr">Email: livcci@yahoo.com</div>
+                    <div class="addr">Tel: +260 977 105068 / +260 977 885959</div>
                     <div class="report-title">@yield('report_title')</div>
                     <div class="meta">Generated On: {{ $generatedAt->format('Y-m-d H:i:s') }}</div>
                 </td>

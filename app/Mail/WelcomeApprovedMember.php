@@ -5,6 +5,7 @@ namespace App\Mail;
 use App\Models\BusinessProfile;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
+use Illuminate\Mail\Mailables\Address;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
@@ -21,6 +22,7 @@ class WelcomeApprovedMember extends Mailable
     {
         return new Envelope(
             subject: 'Welcome to LiVCCI - Membership Approved',
+            from: new Address('livcci@oristudiozm.com', 'LiVCCI Secretariat'),
         );
     }
 

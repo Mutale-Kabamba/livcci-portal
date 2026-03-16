@@ -20,7 +20,10 @@
                             <p style="margin:0 0 12px 0;font-size:15px;line-height:1.6;">Dear {{ $profile->company_name }},</p>
                             <p style="margin:0 0 12px 0;font-size:15px;line-height:1.6;">Your membership application has been approved. We are pleased to welcome you as an official member of the Livingstone Chamber of Commerce and Industry.</p>
                             <p style="margin:0 0 12px 0;font-size:15px;line-height:1.6;">You can now access chamber opportunities, events, and member support programs.</p>
+                            <p style="margin:0 0 12px 0;font-size:15px;line-height:1.6;">Thank you for joining our network of businesses committed to growth, collaboration, and excellence in Livingstone and beyond.</p>
                             <p style="margin:20px 0 0 0;font-size:15px;line-height:1.6;">Regards,<br><strong>LiVCCI Secretariat</strong></p>
+                            <p style="margin:16px 0 0 0;font-size:12px;line-height:1.6;color:#6b7280;">Address: PO Box 4037, Livingstone | Email: livcci@yahoo.com | Tel: +260 977 105068 / +260 977 885959</p>
+                            <p style="margin:8px 0 0 0;font-size:12px;line-height:1.6;color:#6b7280;">You are receiving this because you registered for the LiVCCI Member Portal. To manage notifications, login to your dashboard.</p>
                         </td>
                     </tr>
                 </table>

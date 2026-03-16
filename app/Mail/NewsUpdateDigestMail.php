@@ -2,7 +2,6 @@
 
 namespace App\Mail;
 
-use App\Models\BusinessProfile;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Address;
@@ -10,22 +9,18 @@ use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
-class MemberDirectoryEligibilityMail extends Mailable
+class NewsUpdateDigestMail extends Mailable
 {
     use Queueable, SerializesModels;
 
-    public function __construct(
-        public BusinessProfile $profile,
-        public float $percentage,
-        public float $amountPaid,
-        public float $annualFee,
-    ) {
+    public function __construct(public array $events)
+    {
     }
 
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'LiVCCI Update - Eligible for Directory Listing',
+            subject: 'LiVCCI Updates - News & Events Digest',
             from: new Address('livcci@oristudiozm.com', 'LiVCCI Secretariat'),
         );
     }
@@ -33,12 +28,9 @@ class MemberDirectoryEligibilityMail extends Mailable
     public function content(): Content
     {
         return new Content(
-            view: 'emails.member-directory-eligibility',
+            view: 'emails.news-update-digest',
             with: [
-                'profile' => $this->profile,
-                'percentage' => $this->percentage,
-                'amountPaid' => $this->amountPaid,
-                'annualFee' => $this->annualFee,
+                'events' => $this->events,
             ],
         );
     }

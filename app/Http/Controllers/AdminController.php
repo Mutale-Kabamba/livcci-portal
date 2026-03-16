@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Events\PaymentThresholdReached;
+use App\Mail\InvoiceIssuedMail;
+use App\Mail\PaymentReceiptMail;
 use App\Mail\WelcomeApprovedMember;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
@@ -114,9 +116,11 @@ class AdminController extends Controller
                 return $profile;
             });
 
+        $profilesForView = $profiles;
+
         if (!$canManageMembers && !$canManageFinance) {
             // Content-focused roles should not receive TPIN/PACRA or payment-sensitive fields.
-            $profiles = $profiles->map(function (BusinessProfile $profile) {
+            $profilesForView = $profiles->map(function (BusinessProfile $profile) {
                 return [
                     'id' => $profile->id,
                     'company_name' => $profile->company_name,
@@ -199,7 +203,7 @@ class AdminController extends Controller
         }
 
         return Inertia::render('Admin/Dashboard', [
-            'profiles' => $profiles,
+            'profiles' => $profilesForView,
             'events' => $events,
             'invoices' => $invoices,
             'siteContents' => $siteContents,
@@ -387,7 +391,7 @@ class AdminController extends Controller
 
         $amount = $this->resolveMembershipAmount($profile->membership_type);
 
-        Invoice::create([
+        $invoice = Invoice::create([
             'profile_id' => $profile->id,
             'amount' => $amount,
             'status' => 'Unpaid',
@@ -401,6 +405,8 @@ class AdminController extends Controller
             'total_paid' => 0,
         ]);
         $profile->reevaluateFinancialHealth();
+
+        $this->sendInvoiceEmail($profile, $invoice);
 
         return back()->with('message', 'Invoice generated successfully.');
     }
@@ -421,7 +427,7 @@ class AdminController extends Controller
 
         $amount = $this->resolveMembershipAmount($profile->membership_type);
 
-        Invoice::create([
+        $invoice = Invoice::create([
             'profile_id' => $profile->id,
             'amount' => $amount,
             'status' => 'Unpaid',
@@ -435,6 +441,8 @@ class AdminController extends Controller
             'total_paid' => 0,
         ]);
         $profile->reevaluateFinancialHealth();
+
+        $this->sendInvoiceEmail($profile, $invoice);
 
         return back()->with('message', 'Invoice generated successfully.');
     }
@@ -471,6 +479,15 @@ class AdminController extends Controller
                 (float) ($profile->fresh()->annual_fee ?? 0),
             ));
         }
+
+        $this->sendPaymentReceiptEmail(
+            $profile->fresh(),
+            (float) $invoice->amount,
+            $today,
+            'Invoice Settlement',
+            (string) $invoice->invoice_number,
+            null,
+        );
 
         return back()->with('message', 'Invoice marked as paid and membership updated.');
     }
@@ -523,7 +540,62 @@ class AdminController extends Controller
             ));
         }
 
+        $this->sendPaymentReceiptEmail(
+            $profile,
+            (float) $validated['amount'],
+            (string) $validated['payment_date'],
+            (string) $validated['payment_method'],
+            $validated['reference'] ?? null,
+            $receiptPdfPath,
+        );
+
         return back()->with('message', 'Payment recorded successfully.');
+    }
+
+    private function sendInvoiceEmail(BusinessProfile $profile, Invoice $invoice): void
+    {
+        if (blank($profile->contact_email)) {
+            return;
+        }
+
+        try {
+            Mail::to($profile->contact_email)->send(new InvoiceIssuedMail($profile, $invoice));
+        } catch (\Throwable $exception) {
+            \Log::warning('Failed to send invoice email', [
+                'profile_id' => $profile->id,
+                'invoice_id' => $invoice->id,
+                'error' => $exception->getMessage(),
+            ]);
+        }
+    }
+
+    private function sendPaymentReceiptEmail(
+        BusinessProfile $profile,
+        float $amount,
+        string $paymentDate,
+        string $paymentMethod,
+        ?string $reference,
+        ?string $receiptPdfPath,
+    ): void {
+        if (blank($profile->contact_email)) {
+            return;
+        }
+
+        try {
+            Mail::to($profile->contact_email)->send(new PaymentReceiptMail(
+                profile: $profile,
+                amount: $amount,
+                paymentDate: $paymentDate,
+                paymentMethod: $paymentMethod,
+                reference: $reference,
+                receiptPdfPath: $receiptPdfPath,
+            ));
+        } catch (\Throwable $exception) {
+            \Log::warning('Failed to send payment receipt email', [
+                'profile_id' => $profile->id,
+                'error' => $exception->getMessage(),
+            ]);
+        }
     }
 
     private function storePaymentReceiptPdf(BusinessProfile $profile, BusinessPayment $payment): string

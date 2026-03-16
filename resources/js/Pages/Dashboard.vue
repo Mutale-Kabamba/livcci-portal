@@ -161,7 +161,7 @@ const getCompletionBarClass = (score) => {
                                         <Link :href="route('profile.business.edit')" class="block rounded-md px-3 py-2 text-xs font-semibold text-[#1D2A68] hover:bg-[#1D2A68]/10">
                                             Edit Profile
                                         </Link>
-                                        <Link :href="route('directory.show', profile.id)" class="block rounded-md px-3 py-2 text-xs font-semibold text-[#1876C3] hover:bg-[#1876C3]/10">
+                                        <Link :href="route('directory.show', profile.slug || profile.id)" class="block rounded-md px-3 py-2 text-xs font-semibold text-[#1876C3] hover:bg-[#1876C3]/10">
                                             View Public Page
                                         </Link>
                                         <a

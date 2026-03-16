@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class BusinessProfile extends Model
 {
@@ -16,9 +17,9 @@ class BusinessProfile extends Model
     ];
 
     protected $fillable = [
-        'user_id', 'company_name', 'industry_sector', 'member_type', 'member_category', 'tpin', 'pacra_reg_no', 
+        'user_id', 'company_name', 'slug', 'industry_sector', 'member_type', 'member_category', 'tpin', 'pacra_reg_no', 
         'business_activities', 'short_description', 'contact_email', 'phone', 'address', 'website_url', 'social_links', 'logo_url', 'status',
-        'is_active', 'membership_type', 'annual_fee', 'total_paid', 'invoice_pdf_path', 'last_payment_date', 'subscription_expiry', 'membership_id'
+        'is_active', 'membership_type', 'annual_fee', 'total_paid', 'invoice_pdf_path', 'proof_of_payment_path', 'last_payment_date', 'subscription_expiry', 'membership_id'
     ];
 
     protected function casts(): array
@@ -32,6 +33,30 @@ class BusinessProfile extends Model
             'last_payment_date' => 'date',
             'subscription_expiry' => 'date',
         ];
+    }
+
+    protected static function booted(): void
+    {
+        static::saving(function (BusinessProfile $profile): void {
+            if (!$profile->isDirty('company_name') && !blank($profile->slug)) {
+                return;
+            }
+
+            $base = Str::slug((string) $profile->company_name);
+            $base = $base !== '' ? $base : 'business-profile';
+            $slug = $base;
+            $counter = 1;
+
+            while (static::query()
+                ->where('slug', $slug)
+                ->when($profile->exists, fn ($query) => $query->where('id', '!=', $profile->id))
+                ->exists()) {
+                $slug = $base . '-' . $counter;
+                $counter++;
+            }
+
+            $profile->slug = $slug;
+        });
     }
 
     public function getLogoUrlAttribute($value): ?string
