@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreBusinessProfileRequest;
 use App\Http\Requests\UpdateBusinessProfileRequest;
+use App\Mail\InvoiceIssuedMail;
 use App\Models\BusinessPayment;
 use App\Models\BusinessProfile;
 use App\Models\Invoice;
@@ -11,6 +12,7 @@ use App\Services\BusinessProfileFileService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -68,6 +70,12 @@ class BusinessProfileController extends Controller
                     $validated['logo_url'] = $this->fileService->storeLogo($request->file('logo'));
                 }
 
+                if ($request->hasFile('proof_of_payment')) {
+                    $validated['proof_of_payment_path'] = $request->file('proof_of_payment')->store('proof-payments', 'public');
+                }
+
+                unset($validated['logo'], $validated['proof_of_payment']);
+
                 $annualFee = $this->resolveAnnualFee($validated['member_category'] ?? null, $validated['member_type'] ?? null);
                 $validated['annual_fee'] = $annualFee;
                 $validated['total_paid'] = 0;
@@ -82,7 +90,7 @@ class BusinessProfileController extends Controller
                 ]));
 
                 $invoiceNumber = $this->generateInvoiceNumber();
-                Invoice::create([
+                $invoice = Invoice::create([
                     'profile_id' => $profile->id,
                     'amount' => $annualFee,
                     'status' => 'Unpaid',
@@ -94,6 +102,18 @@ class BusinessProfileController extends Controller
                 $profile->update([
                     'invoice_pdf_path' => $invoicePdfPath,
                 ]);
+
+                if (!blank($profile->contact_email)) {
+                    try {
+                        Mail::to($profile->contact_email)->send(new InvoiceIssuedMail($profile->fresh(), $invoice));
+                    } catch (\Throwable $exception) {
+                        \Log::warning('Failed to send initial invoice email', [
+                            'profile_id' => $profile->id,
+                            'invoice_id' => $invoice->id,
+                            'error' => $exception->getMessage(),
+                        ]);
+                    }
+                }
             });
 
             return redirect()->route('dashboard')
@@ -151,6 +171,16 @@ class BusinessProfileController extends Controller
                         $profile->logo_url
                     );
                 }
+
+                if ($request->hasFile('proof_of_payment')) {
+                    if (!empty($profile->proof_of_payment_path)) {
+                        Storage::disk('public')->delete($profile->proof_of_payment_path);
+                    }
+
+                    $validated['proof_of_payment_path'] = $request->file('proof_of_payment')->store('proof-payments', 'public');
+                }
+
+                unset($validated['logo'], $validated['proof_of_payment']);
 
                 $validated['social_links'] = $this->sanitizeSocialLinks(
                     $validated['social_links'] ?? $request->input('social_links', [])

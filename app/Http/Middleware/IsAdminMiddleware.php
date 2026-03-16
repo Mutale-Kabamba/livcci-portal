@@ -10,9 +10,18 @@ class IsAdminMiddleware
 {
     public function handle(Request $request, Closure $next): Response
     {
-        // Check if the user is logged in AND has admin privileges
-        if (!auth()->check() || !auth()->user()->is_admin) {
-            abort(403, 'Unauthorized access. Secretariat Admins only.');
+        if (!auth()->check()) {
+            return redirect()->route('login');
+        }
+
+        if (!auth()->user()->is_admin) {
+            return redirect()->route('dashboard')
+                ->with('error', 'Admin access is restricted to authorized Secretariat users.');
+        }
+
+        if ($request->session()->get('portal_mode') !== 'admin') {
+            return redirect()->route('portal.mode.choose')
+                ->with('error', 'Select Admin mode to access the admin portal.');
         }
 
         return $next($request);

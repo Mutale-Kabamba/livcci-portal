@@ -10,22 +10,18 @@ use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
-class MemberDirectoryEligibilityMail extends Mailable
+class RenewalReminderMail extends Mailable
 {
     use Queueable, SerializesModels;
 
-    public function __construct(
-        public BusinessProfile $profile,
-        public float $percentage,
-        public float $amountPaid,
-        public float $annualFee,
-    ) {
+    public function __construct(public BusinessProfile $profile, public int $daysRemaining)
+    {
     }
 
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'LiVCCI Update - Eligible for Directory Listing',
+            subject: 'LiVCCI Membership Renewal Reminder',
             from: new Address('livcci@oristudiozm.com', 'LiVCCI Secretariat'),
         );
     }
@@ -33,12 +29,10 @@ class MemberDirectoryEligibilityMail extends Mailable
     public function content(): Content
     {
         return new Content(
-            view: 'emails.member-directory-eligibility',
+            view: 'emails.renewal-reminder',
             with: [
                 'profile' => $this->profile,
-                'percentage' => $this->percentage,
-                'amountPaid' => $this->amountPaid,
-                'annualFee' => $this->annualFee,
+                'daysRemaining' => $this->daysRemaining,
             ],
         );
     }

@@ -56,6 +56,7 @@ const form = useForm({
     website_url: props.businessProfile.website_url || '',
     social_links: parseSocialLinks(props.businessProfile.social_links),
     logo: null,
+    proof_of_payment: null,
 });
 
 const socialPlatformOptions = [
@@ -112,6 +113,11 @@ const handleLogoUpload = (event) => {
         };
         reader.readAsDataURL(file);
     }
+};
+
+const handleProofUpload = (event) => {
+    const file = event.target.files[0] || null;
+    form.proof_of_payment = file;
 };
 
 // Industry Sectors
@@ -287,11 +293,14 @@ const submit = () => {
 
                         <!-- PACRA Reg No -->
                         <div>
-                            <label class="block text-xs font-bold tracking-wide text-gray-500 uppercase mb-2">PACRA Reg No. (Optional)</label>
+                            <label class="block text-xs font-bold tracking-wide text-gray-500 uppercase mb-2">
+                                PACRA Reg No. {{ form.member_type === 'Associate' ? '(Optional)' : '*' }}
+                            </label>
                             <input 
                                 v-model="form.pacra_reg_no" 
                                 type="text"
                                 :class="inputClasses('pacra_reg_no')"
+                                :required="form.member_type !== 'Associate'"
                             >
                             <p v-if="getError('pacra_reg_no')" class="text-red-600 text-xs mt-1">{{ getError('pacra_reg_no') }}</p>
                         </div>
@@ -398,9 +407,21 @@ const submit = () => {
                                 accept="image/*"
                                 :class="inputClasses('logo')"
                             >
-                            <p class="text-xs text-gray-500 mt-1">JPG, PNG, GIF (Max 5MB)</p>
+                            <p class="text-xs text-gray-500 mt-1">JPG or PNG (Max 2MB)</p>
                             <p v-if="getError('logo')" class="text-red-600 text-xs mt-1">{{ getError('logo') }}</p>
                             <img v-if="logoPreview" :src="logoPreview" class="h-20 w-auto rounded mt-2 border border-gray-300 p-1" alt="Preview">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold tracking-wide text-gray-500 uppercase mb-2">Proof of Payment (Optional)</label>
+                            <input
+                                @change="handleProofUpload"
+                                type="file"
+                                accept=".pdf,.jpg,.jpeg,.png"
+                                :class="inputClasses('proof_of_payment')"
+                            >
+                            <p class="text-xs text-gray-500 mt-1">PDF or JPG/PNG (Max 5MB)</p>
+                            <p v-if="getError('proof_of_payment')" class="text-red-600 text-xs mt-1">{{ getError('proof_of_payment') }}</p>
                         </div>
 
                         <!-- Submit -->

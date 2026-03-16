@@ -20,6 +20,9 @@ class AuthenticatedSessionController extends Controller
     {
         return Inertia::render('Auth/Login', [
             'canResetPassword' => Route::has('password.request'),
+            'canGoogleAuth' => filled(config('services.google.client_id'))
+                && filled(config('services.google.client_secret'))
+                && filled(config('services.google.redirect')),
             'status' => session('status'),
         ]);
     }
@@ -33,7 +36,47 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
+        $user = $request->user();
+        if ($user?->is_admin) {
+            return redirect()->route('portal.mode.choose');
+        }
+
+        $request->session()->put('portal_mode', 'ordinary');
+
         return redirect()->intended(route('dashboard', absolute: false));
+    }
+
+    public function choosePortalMode(Request $request): Response|RedirectResponse
+    {
+        $user = $request->user();
+        if (!$user || !$user->is_admin) {
+            return redirect()->route('dashboard');
+        }
+
+        return Inertia::render('Auth/PortalMode', [
+            'role' => $user->role,
+        ]);
+    }
+
+    public function setPortalMode(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'mode' => 'required|in:admin,ordinary',
+        ]);
+
+        $user = $request->user();
+        if (!$user || !$user->is_admin) {
+            $request->session()->put('portal_mode', 'ordinary');
+            return redirect()->route('dashboard');
+        }
+
+        $request->session()->put('portal_mode', $validated['mode']);
+
+        if ($validated['mode'] === 'admin') {
+            return redirect()->route('admin.dashboard');
+        }
+
+        return redirect()->route('dashboard');
     }
 
     /**
