@@ -3,29 +3,29 @@
 namespace App\Mail;
 
 use App\Models\BusinessProfile;
+use App\Models\User;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Address;
+use Illuminate\Mail\Mailables\Attachment;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
-class MemberDirectoryEligibilityMail extends Mailable
+class WelcomeMember extends Mailable
 {
     use Queueable, SerializesModels;
 
     public function __construct(
-        public BusinessProfile $profile,
-        public float $percentage,
-        public float $amountPaid,
-        public float $annualFee,
+        public User $user,
+        public ?BusinessProfile $profile = null,
     ) {
     }
 
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'LiVCCI Update - Eligible for Directory Listing',
+            subject: 'Welcome to LiVCCI Member Portal',
             from: new Address('livcci@oristudiozm.com', 'LiVCCI Secretariat'),
         );
     }
@@ -33,18 +33,24 @@ class MemberDirectoryEligibilityMail extends Mailable
     public function content(): Content
     {
         return new Content(
-            view: 'emails.member-directory-eligibility',
+            view: 'emails.welcome-member',
             with: [
+                'user' => $this->user,
                 'profile' => $this->profile,
-                'percentage' => $this->percentage,
-                'amountPaid' => $this->amountPaid,
-                'annualFee' => $this->annualFee,
             ],
         );
     }
 
     public function attachments(): array
     {
-        return [];
+        if (!$this->profile?->invoice_pdf_path) {
+            return [];
+        }
+
+        return [
+            Attachment::fromStorageDisk('public', ltrim(str_replace('/storage/', '', $this->profile->invoice_pdf_path), '/'))
+                ->as('Invoice.pdf')
+                ->withMime('application/pdf'),
+        ];
     }
 }

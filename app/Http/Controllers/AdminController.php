@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Events\PaymentThresholdReached;
+use App\Mail\InvoiceIssuedMail;
+use App\Mail\PaymentReceiptMail;
 use App\Mail\WelcomeApprovedMember;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
@@ -24,7 +26,7 @@ class AdminController extends Controller
     public function accounts()
     {
         $users = User::query()
-            ->select(['id', 'name', 'email', 'is_admin', 'email_verified_at', 'created_at'])
+            ->select(['id', 'name', 'email', 'is_admin', 'role', 'email_verified_at', 'created_at'])
             ->latest()
             ->get();
 
@@ -37,6 +39,7 @@ class AdminController extends Controller
     {
         $validated = $request->validate([
             'is_admin' => 'required|boolean',
+            'role' => 'nullable|in:super_admin,finance,finance_officer,media,media_officer,media_communication,secretariat',
         ]);
 
         if ((int) $user->id === (int) auth()->id() && !$validated['is_admin']) {
@@ -50,8 +53,15 @@ class AdminController extends Controller
             }
         }
 
+        $role = $validated['role'] ?? $user->role;
+
+        if ($validated['is_admin'] && blank($role)) {
+            $role = 'secretariat';
+        }
+
         User::whereKey($user->id)->update([
             'is_admin' => $validated['is_admin'],
+            'role' => $role,
         ]);
 
         return back()->with('message', 'Account role updated successfully.');
@@ -77,6 +87,10 @@ class AdminController extends Controller
 
     public function dashboard()
     {
+        $user = auth()->user();
+        $canManageFinance = $user?->can('manage_finance') ?? false;
+        $canManageMembers = $user?->can('manage_members') ?? false;
+
         $profiles = BusinessProfile::with([
                 'user',
                 'payments' => fn ($query) => $query->latest('payment_date')->latest('id'),
@@ -101,8 +115,26 @@ class AdminController extends Controller
 
                 return $profile;
             });
+
+        $profilesForView = $profiles;
+
+        if (!$canManageMembers && !$canManageFinance) {
+            // Content-focused roles should not receive TPIN/PACRA or payment-sensitive fields.
+            $profilesForView = $profiles->map(function (BusinessProfile $profile) {
+                return [
+                    'id' => $profile->id,
+                    'company_name' => $profile->company_name,
+                    'status' => $profile->status,
+                    'member_category' => $profile->member_category,
+                    'industry_sector' => $profile->industry_sector,
+                ];
+            });
+        }
+
         $events = ChamberEvent::latest()->get();
-        $invoices = Invoice::with('businessProfile:id,company_name,membership_id,membership_type')->latest()->get();
+        $invoices = $canManageFinance
+            ? Invoice::with('businessProfile:id,company_name,membership_id,membership_type')->latest()->get()
+            : collect();
         $siteContents = SiteContent::orderBy('page')->orderBy('section')->get();
         $strategicPlan = $this->getStrategicPlanProgress();
 
@@ -150,20 +182,33 @@ class AdminController extends Controller
             ->orderByDesc('count')
             ->get();
 
+        $financialHealth = [
+            'totalExpectedRevenue' => $totalExpectedRevenue,
+            'totalActualRevenue' => $totalActualRevenue,
+            'collectionPercentage' => $collectionPercentage,
+            'revenueCollectedToday' => $revenueCollectedToday,
+            'totalOutstandingReceivables' => $totalOutstandingReceivables,
+            'activationPipeline' => $activationPipeline,
+        ];
+
+        if (!$canManageFinance) {
+            $financialHealth = [
+                'totalExpectedRevenue' => 0,
+                'totalActualRevenue' => 0,
+                'collectionPercentage' => 0,
+                'revenueCollectedToday' => 0,
+                'totalOutstandingReceivables' => 0,
+                'activationPipeline' => 0,
+            ];
+        }
+
         return Inertia::render('Admin/Dashboard', [
-            'profiles' => $profiles,
+            'profiles' => $profilesForView,
             'events' => $events,
             'invoices' => $invoices,
             'siteContents' => $siteContents,
             'strategicPlan' => $strategicPlan,
-            'financialHealth' => [
-                'totalExpectedRevenue' => $totalExpectedRevenue,
-                'totalActualRevenue' => $totalActualRevenue,
-                'collectionPercentage' => $collectionPercentage,
-                'revenueCollectedToday' => $revenueCollectedToday,
-                'totalOutstandingReceivables' => $totalOutstandingReceivables,
-                'activationPipeline' => $activationPipeline,
-            ],
+            'financialHealth' => $financialHealth,
             'sectorStats' => $sectorStats,
             'flash' => [
                 'message' => session('message')
@@ -346,7 +391,7 @@ class AdminController extends Controller
 
         $amount = $this->resolveMembershipAmount($profile->membership_type);
 
-        Invoice::create([
+        $invoice = Invoice::create([
             'profile_id' => $profile->id,
             'amount' => $amount,
             'status' => 'Unpaid',
@@ -360,6 +405,8 @@ class AdminController extends Controller
             'total_paid' => 0,
         ]);
         $profile->reevaluateFinancialHealth();
+
+        $this->sendInvoiceEmail($profile, $invoice);
 
         return back()->with('message', 'Invoice generated successfully.');
     }
@@ -380,7 +427,7 @@ class AdminController extends Controller
 
         $amount = $this->resolveMembershipAmount($profile->membership_type);
 
-        Invoice::create([
+        $invoice = Invoice::create([
             'profile_id' => $profile->id,
             'amount' => $amount,
             'status' => 'Unpaid',
@@ -394,6 +441,8 @@ class AdminController extends Controller
             'total_paid' => 0,
         ]);
         $profile->reevaluateFinancialHealth();
+
+        $this->sendInvoiceEmail($profile, $invoice);
 
         return back()->with('message', 'Invoice generated successfully.');
     }
@@ -430,6 +479,15 @@ class AdminController extends Controller
                 (float) ($profile->fresh()->annual_fee ?? 0),
             ));
         }
+
+        $this->sendPaymentReceiptEmail(
+            $profile->fresh(),
+            (float) $invoice->amount,
+            $today,
+            'Invoice Settlement',
+            (string) $invoice->invoice_number,
+            null,
+        );
 
         return back()->with('message', 'Invoice marked as paid and membership updated.');
     }
@@ -482,7 +540,62 @@ class AdminController extends Controller
             ));
         }
 
+        $this->sendPaymentReceiptEmail(
+            $profile,
+            (float) $validated['amount'],
+            (string) $validated['payment_date'],
+            (string) $validated['payment_method'],
+            $validated['reference'] ?? null,
+            $receiptPdfPath,
+        );
+
         return back()->with('message', 'Payment recorded successfully.');
+    }
+
+    private function sendInvoiceEmail(BusinessProfile $profile, Invoice $invoice): void
+    {
+        if (blank($profile->contact_email)) {
+            return;
+        }
+
+        try {
+            Mail::to($profile->contact_email)->send(new InvoiceIssuedMail($profile, $invoice));
+        } catch (\Throwable $exception) {
+            \Log::warning('Failed to send invoice email', [
+                'profile_id' => $profile->id,
+                'invoice_id' => $invoice->id,
+                'error' => $exception->getMessage(),
+            ]);
+        }
+    }
+
+    private function sendPaymentReceiptEmail(
+        BusinessProfile $profile,
+        float $amount,
+        string $paymentDate,
+        string $paymentMethod,
+        ?string $reference,
+        ?string $receiptPdfPath,
+    ): void {
+        if (blank($profile->contact_email)) {
+            return;
+        }
+
+        try {
+            Mail::to($profile->contact_email)->send(new PaymentReceiptMail(
+                profile: $profile,
+                amount: $amount,
+                paymentDate: $paymentDate,
+                paymentMethod: $paymentMethod,
+                reference: $reference,
+                receiptPdfPath: $receiptPdfPath,
+            ));
+        } catch (\Throwable $exception) {
+            \Log::warning('Failed to send payment receipt email', [
+                'profile_id' => $profile->id,
+                'error' => $exception->getMessage(),
+            ]);
+        }
     }
 
     private function storePaymentReceiptPdf(BusinessProfile $profile, BusinessPayment $payment): string

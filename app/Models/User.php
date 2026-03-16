@@ -2,12 +2,12 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-class User extends Authenticatable
+class User extends Authenticatable implements MustVerifyEmail
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable;
@@ -21,6 +21,10 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'google_id',
+        'avatar_url',
+        'is_admin',
+        'role',
     ];
 
     /**
@@ -43,7 +47,31 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_admin' => 'boolean',
         ];
+    }
+
+    public function roleKey(): string
+    {
+        return strtolower((string) ($this->role ?? ''));
+    }
+
+    public function isSuperAdmin(): bool
+    {
+        return $this->is_admin && in_array($this->roleKey(), ['super_admin', 'super admin', ''], true)
+            || $this->roleKey() === 'super_admin';
+    }
+
+    public function hasRole(string $role): bool
+    {
+        return $this->roleKey() === strtolower($role);
+    }
+
+    public function hasAnyRole(array $roles): bool
+    {
+        $role = $this->roleKey();
+        $normalized = array_map(static fn ($value) => strtolower((string) $value), $roles);
+        return in_array($role, $normalized, true);
     }
 
     public function businessProfile()

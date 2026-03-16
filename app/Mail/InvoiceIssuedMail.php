@@ -3,6 +3,7 @@
 namespace App\Mail;
 
 use App\Models\BusinessProfile;
+use App\Models\Invoice;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Address;
@@ -10,22 +11,18 @@ use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
-class MemberDirectoryEligibilityMail extends Mailable
+class InvoiceIssuedMail extends Mailable
 {
     use Queueable, SerializesModels;
 
-    public function __construct(
-        public BusinessProfile $profile,
-        public float $percentage,
-        public float $amountPaid,
-        public float $annualFee,
-    ) {
+    public function __construct(public BusinessProfile $profile, public Invoice $invoice)
+    {
     }
 
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'LiVCCI Update - Eligible for Directory Listing',
+            subject: 'LiVCCI Invoice Issued - ' . $this->invoice->invoice_number,
             from: new Address('livcci@oristudiozm.com', 'LiVCCI Secretariat'),
         );
     }
@@ -33,12 +30,10 @@ class MemberDirectoryEligibilityMail extends Mailable
     public function content(): Content
     {
         return new Content(
-            view: 'emails.member-directory-eligibility',
+            view: 'emails.invoice-issued',
             with: [
                 'profile' => $this->profile,
-                'percentage' => $this->percentage,
-                'amountPaid' => $this->amountPaid,
-                'annualFee' => $this->annualFee,
+                'invoice' => $this->invoice,
             ],
         );
     }
