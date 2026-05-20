@@ -848,7 +848,7 @@ class AdminController extends Controller
                 'title' => 'Strengthened Governance and Institutional Capacity',
                 'tagline' => 'Building a high-performance chamber institution with robust systems and accountable leadership.',
                 'heroImage' => 'https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=1800&q=80',
-                'overview' => 'This goal focuses on strengthening LiVCCI internal governance, improving organizational systems, and ensuring operational continuity through strong leadership and policy discipline.',
+                'overview' => 'This goal focuses on strengthening LivCCI internal governance, improving organizational systems, and ensuring operational continuity through strong leadership and policy discipline.',
                 'outcomes' => [
                     'Clear and enforceable governance structures across board and secretariat functions.',
                     'Improved operational controls, policy compliance, and role accountability.',
@@ -871,7 +871,7 @@ class AdminController extends Controller
                 'title' => 'Enhanced Member Services and Value Proposition',
                 'tagline' => 'Delivering practical, measurable value that helps members grow and remain competitive.',
                 'heroImage' => 'https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=1800&q=80',
-                'overview' => 'LiVCCI will elevate member experience through tailored services, stronger engagement pathways, and evidence-based support programs that respond to real business needs.',
+                'overview' => 'LivCCI will elevate member experience through tailored services, stronger engagement pathways, and evidence-based support programs that respond to real business needs.',
                 'outcomes' => [
                     'Higher member satisfaction and retention across all categories.',
                     'Expanded portfolio of high-impact support services and training programs.',
@@ -892,9 +892,9 @@ class AdminController extends Controller
                 'slug' => 'goal-3',
                 'number' => 3,
                 'title' => 'Dynamic Advocacy and Strategic Partnerships',
-                'tagline' => 'Positioning LiVCCI as a trusted voice for business and a catalyst for collaborative growth.',
+                'tagline' => 'Positioning LivCCI as a trusted voice for business and a catalyst for collaborative growth.',
                 'heroImage' => 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=1800&q=80',
-                'overview' => 'This goal advances LiVCCI advocacy influence and strengthens partnerships with public and private stakeholders to shape an enabling business climate in Livingstone and beyond.',
+                'overview' => 'This goal advances LivCCI advocacy influence and strengthens partnerships with public and private stakeholders to shape an enabling business climate in Livingstone and beyond.',
                 'outcomes' => [
                     'Stronger policy influence through coordinated advocacy with evidence-backed proposals.',
                     'Formalized partnerships with key institutions and development agencies.',
@@ -917,7 +917,7 @@ class AdminController extends Controller
                 'title' => 'Financial Sustainability and Resource Mobilization',
                 'tagline' => 'Securing resilient revenue streams to sustain long-term impact and service delivery.',
                 'heroImage' => 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&fit=crop&w=1800&q=80',
-                'overview' => 'LiVCCI will strengthen financial health through diversified income channels, strategic budgeting, and resource mobilization partnerships that reduce dependency risk.',
+                'overview' => 'LivCCI will strengthen financial health through diversified income channels, strategic budgeting, and resource mobilization partnerships that reduce dependency risk.',
                 'outcomes' => [
                     'More predictable and diversified annual revenue mix.',
                     'Improved budget execution and financial reporting quality.',
@@ -940,7 +940,7 @@ class AdminController extends Controller
                 'title' => 'Communication, Publicity, and Research',
                 'tagline' => 'Enhancing market visibility and decision-making through strategic communication and intelligence.',
                 'heroImage' => 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?auto=format&fit=crop&w=1800&q=80',
-                'overview' => 'LiVCCI will improve communication reach, strengthen public brand visibility, and institutionalize business intelligence to support informed advocacy and member growth.',
+                'overview' => 'LivCCI will improve communication reach, strengthen public brand visibility, and institutionalize business intelligence to support informed advocacy and member growth.',
                 'outcomes' => [
                     'Higher public visibility and stronger chamber brand recognition.',
                     'Regular publication of business intelligence for members and stakeholders.',

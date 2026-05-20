@@ -96,12 +96,12 @@ const showMoreGoals = () => {
 const goalsHero = props.content.hero || {
     badge: '2026 - 2030',
     title: 'Strategic Goals',
-    description: 'Our ambitious roadmap for transforming LiVCCI and advancing business growth in Livingstone.'
+    description: 'Our ambitious roadmap for transforming LivCCI and advancing business growth in Livingstone.'
 };
 </script>
 
 <template>
-    <Head title="Strategic Goals - LiVCCI" />
+    <Head title="Strategic Goals - LivCCI" />
 
     <div class="min-h-screen bg-gray-50 font-sans text-gray-900">
         <!-- Navigation -->
@@ -110,7 +110,7 @@ const goalsHero = props.content.hero || {
                 <div class="flex justify-between h-20 items-center">
                     <div class="flex-shrink-0 flex items-center gap-3">
                         <Link href="/">
-                            <img src="/images/logo.png" alt="LiVCCI Logo" class="h-16 w-auto object-contain">
+                            <img src="/images/logo.png" alt="LivCCI Logo" class="h-16 w-auto object-contain">
                         </Link>
                     </div>
 
@@ -182,7 +182,7 @@ const goalsHero = props.content.hero || {
                         <span class="bg-[#F4B223] text-white px-4 py-2 inline-block">Organizational Excellence</span>
                     </h2>
                     <p class="text-lg text-gray-700 max-w-3xl mt-8">
-                        Over the next five years, LiVCCI is committed to achieving ambitious strategic goals that will strengthen our organization, enhance member value, and accelerate economic development in Livingstone.
+                        Over the next five years, LivCCI is committed to achieving ambitious strategic goals that will strengthen our organization, enhance member value, and accelerate economic development in Livingstone.
                     </p>
                 </div>
 
@@ -253,7 +253,7 @@ const goalsHero = props.content.hero || {
                     <div class="text-center mb-12">
                         <p class="text-xs font-bold uppercase tracking-[0.2em] text-[#1876C3]">Strategic Enablers</p>
                         <h2 class="text-3xl sm:text-4xl font-black text-[#1D2A68] mt-3">Key Success Factors</h2>
-                        <p class="text-gray-600 mt-3 max-w-2xl mx-auto">The core institutional capabilities that will determine how effectively LiVCCI delivers its five-year roadmap.</p>
+                        <p class="text-gray-600 mt-3 max-w-2xl mx-auto">The core institutional capabilities that will determine how effectively LivCCI delivers its five-year roadmap.</p>
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -334,8 +334,8 @@ const goalsHero = props.content.hero || {
                 <div class="grid grid-cols-1 md:grid-cols-5 gap-8 md:gap-12 border-b border-[#1D2A68] pb-12">
                     <div class="col-span-1 md:col-span-2">
                         <div class="flex items-center gap-3 mb-6 text-white">
-                            <img src="/images/logo-white.png" alt="LiVCCI Logo" class="h-12 w-auto">
-                            <span class="text-xl font-black tracking-tight text-[#F6EED8]">LiVCCI</span>
+                            <img src="/images/logo-white.png" alt="LivCCI Logo" class="h-12 w-auto">
+                            <span class="text-xl font-black tracking-tight text-[#F6EED8]">LivCCI</span>
                         </div>
                         <p class="text-blue-200 max-w-sm mb-6">The Livingstone Chamber of Commerce and Industry is committed to promoting an enabling multi-sectoral business environment.</p>
                         <Link :href="route('admin.dashboard')" class="text-[#F4B223] hover:text-[#E8A01A] font-semibold transition-colors">Admin Login</Link>
@@ -373,12 +373,12 @@ const goalsHero = props.content.hero || {
                         </ul>
                         <!-- Social Media Icons -->
                         <div class="flex gap-4 mt-6">
-                            <a href="https://www.facebook.com/livcci" target="_blank" rel="noopener noreferrer" class="text-blue-200 hover:text-[#F4B223] transition-colors" title="Follow us on Facebook">
+                            <a href="https://www.facebook.com/livcciportal" target="_blank" rel="noopener noreferrer" class="text-blue-200 hover:text-[#F4B223] transition-colors" title="Follow us on Facebook">
                                 <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                     <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
                                 </svg>
                             </a>
-                            <a href="https://www.linkedin.com/company/livcci" target="_blank" rel="noopener noreferrer" class="text-blue-200 hover:text-[#F4B223] transition-colors" title="Follow us on LinkedIn">
+                            <a href="https://www.linkedin.com/company/livcciportal" target="_blank" rel="noopener noreferrer" class="text-blue-200 hover:text-[#F4B223] transition-colors" title="Follow us on LinkedIn">
                                 <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                     <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.475-2.236-1.986-2.236-1.081 0-1.722.722-2.004 1.418-.103.249-.129.597-.129.946v5.441h-3.554s.047-8.733 0-9.652h3.554v1.366c.43-.664 1.199-1.61 2.920-1.61 2.135 0 3.733 1.39 3.733 4.38v5.516zM5.337 8.855c-1.144 0-1.915-.762-1.915-1.715 0-.953.77-1.715 1.958-1.715 1.188 0 1.915.762 1.915 1.715 0 .953-.726 1.715-1.958 1.715zm1.608 11.597H3.73V9.097h3.215v11.355zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.225 0z"/>
                                 </svg>

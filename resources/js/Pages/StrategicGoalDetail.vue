@@ -33,7 +33,7 @@ const otherGoals = computed(() => {
 </script>
 
 <template>
-    <Head :title="`Strategic Goal ${goal.number} - LiVCCI`" />
+    <Head :title="`Strategic Goal ${goal.number} - LivCCI`" />
 
     <div class="min-h-screen bg-gray-50 font-sans text-gray-900">
         <nav :class="['bg-white border-b border-gray-100 sticky top-0 z-50 transition-all duration-300', scrollY > 10 ? 'shadow-lg' : 'shadow-sm']">
@@ -41,7 +41,7 @@ const otherGoals = computed(() => {
                 <div class="flex justify-between h-20 items-center">
                     <div class="flex-shrink-0 flex items-center gap-3">
                         <Link href="/">
-                            <img src="/images/logo.png" alt="LiVCCI Logo" class="h-16 w-auto object-contain">
+                            <img src="/images/logo.png" alt="LivCCI Logo" class="h-16 w-auto object-contain">
                         </Link>
                     </div>
 

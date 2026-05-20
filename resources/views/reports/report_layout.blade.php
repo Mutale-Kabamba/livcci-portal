@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>@yield('title', 'LiVCCI Report')</title>
+    <title>@yield('title', 'LivCCI Report')</title>
     <style>
         @page { margin: 24px 28px; }
         body { font-family: DejaVu Sans, sans-serif; font-size: 11px; color: #111827; }

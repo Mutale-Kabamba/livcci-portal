@@ -22,8 +22,8 @@ class InvoiceIssuedMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'LiVCCI Invoice Issued - ' . $this->invoice->invoice_number,
-            from: new Address('livcci@oristudiozm.com', 'LiVCCI Secretariat'),
+            subject: 'LivCCI Invoice Issued - ' . $this->invoice->invoice_number,
+            from: new Address('livcci@oristudiozm.com', 'LivCCI Secretariat'),
         );
     }
 

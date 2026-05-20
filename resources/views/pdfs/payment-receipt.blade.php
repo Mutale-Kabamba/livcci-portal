@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>LiVCCI Payment Receipt</title>
+    <title>LivCCI Payment Receipt</title>
     <style>
         body { font-family: DejaVu Sans, Arial, sans-serif; color: #1f2937; margin: 0; padding: 24px; }
         .card { border: 1px solid #e5e7eb; }

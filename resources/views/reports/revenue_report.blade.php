@@ -1,6 +1,6 @@
 @extends('reports.report_layout')
 
-@section('title', 'LiVCCI Revenue Report')
+@section('title', 'LivCCI Revenue Report')
 @section('report_title', 'Revenue Report')
 
 @section('content')

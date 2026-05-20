@@ -21,8 +21,8 @@ class WelcomeApprovedMember extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Welcome to LiVCCI - Membership Approved',
-            from: new Address('livcci@oristudiozm.com', 'LiVCCI Secretariat'),
+            subject: 'Welcome to LivCCI - Membership Approved',
+            from: new Address('livcci@oristudiozm.com', 'LivCCI Secretariat'),
         );
     }
 

@@ -20,8 +20,8 @@ class NewsUpdateDigestMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'LiVCCI Updates - News & Events Digest',
-            from: new Address('livcci@oristudiozm.com', 'LiVCCI Secretariat'),
+            subject: 'LivCCI Updates - News & Events Digest',
+            from: new Address('livcci@oristudiozm.com', 'LivCCI Secretariat'),
         );
     }
 

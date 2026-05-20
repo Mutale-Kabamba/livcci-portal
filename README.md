@@ -1,6 +1,6 @@
-# LiVCCI Member Portal
+# LivCCI Member Portal
 
-LiVCCI Member Portal is a role-aware business membership platform for the Livingstone Chamber of Commerce and Industry. It supports member onboarding, directory visibility, invoicing, payment/receipt workflows, admin operations, reporting, and scheduled communications.
+LivCCI Member Portal is a role-aware business membership platform for the Livingstone Chamber of Commerce and Industry. It supports member onboarding, directory visibility, invoicing, payment/receipt workflows, admin operations, reporting, and scheduled communications.
 
 ## System Overview
 
@@ -144,7 +144,7 @@ Login UI includes show/hide password and a real-time requirement checklist.
 
 System emails are configured to:
 
-1. Use `LiVCCI Secretariat` as sender name
+1. Use `LivCCI Secretariat` as sender name
 2. Send from configured mail address (`MAIL_FROM_ADDRESS`)
 3. Include physical footer address line
 4. Include notification management line
@@ -242,7 +242,7 @@ MAIL_USERNAME=livcci@oristudiozm.com
 MAIL_PASSWORD="<your-password>"
 MAIL_ENCRYPTION=ssl
 MAIL_FROM_ADDRESS="livcci@oristudiozm.com"
-MAIL_FROM_NAME="LiVCCI Secretariat"
+MAIL_FROM_NAME="LivCCI Secretariat"
 ```
 
 Recommended after env changes:

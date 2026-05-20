@@ -21,8 +21,8 @@ class RenewalReminderMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'LiVCCI Membership Renewal Reminder',
-            from: new Address('livcci@oristudiozm.com', 'LiVCCI Secretariat'),
+            subject: 'LivCCI Membership Renewal Reminder',
+            from: new Address('livcci@oristudiozm.com', 'LivCCI Secretariat'),
         );
     }
 

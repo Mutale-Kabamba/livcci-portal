@@ -54,7 +54,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-    <Head title="Economic Sectors - LiVCCI" />
+    <Head title="Economic Sectors - LivCCI" />
 
     <div class="min-h-screen bg-gray-50 font-sans text-gray-900 flex flex-col">
         

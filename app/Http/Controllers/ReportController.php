@@ -59,7 +59,7 @@ class ReportController extends Controller
                 'generatedAt' => now(),
             ])->setPaper('a4', 'portrait');
 
-            return $pdf->download('livcci-' . $reportType . '-' . now()->format('Ymd-His') . '.pdf');
+            return $pdf->download('livcciportal-' . $reportType . '-' . now()->format('Ymd-His') . '.pdf');
         }
 
         return Inertia::render('Admin/Reports/Index', [

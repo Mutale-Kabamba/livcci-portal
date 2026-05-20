@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LiVCCI Membership Certificate</title>
+    <title>LivCCI Membership Certificate</title>
     <style>
         body {
             margin: 0;
@@ -115,7 +115,7 @@
         <div class="inner-border">
             <div class="top-row">
                 <div class="logo-box">
-                    <div class="logo-placeholder">LiVCCI Logo Placeholder</div>
+                    <div class="logo-placeholder">LivCCI Logo Placeholder</div>
                 </div>
                 <div class="title-box">
                     <h1 class="title">Membership Certificate</h1>
@@ -126,7 +126,7 @@
             <div class="main-text">
                 <p>This is to certify that</p>
                 <div class="company-name">{{ $profile->company_name }}</div>
-                <p>is a recognized member in good standing with LiVCCI.</p>
+                <p>is a recognized member in good standing with LivCCI.</p>
             </div>
 
             <div class="meta">

@@ -15,7 +15,7 @@
 </head>
 <body>
     <div class="header">
-        <div class="title">LiVCCI Report</div>
+        <div class="title">LivCCI Report</div>
         <div>{{ strtoupper(str_replace('_', ' ', $reportType)) }}</div>
     </div>
 

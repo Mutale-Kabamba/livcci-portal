@@ -25,8 +25,8 @@ class WelcomeMember extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Welcome to LiVCCI Member Portal',
-            from: new Address('livcci@oristudiozm.com', 'LiVCCI Secretariat'),
+            subject: 'Welcome to LivCCI Member Portal',
+            from: new Address('livcci@oristudiozm.com', 'LivCCI Secretariat'),
         );
     }
 

@@ -25,8 +25,8 @@ class MemberDirectoryEligibilityMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'LiVCCI Update - Eligible for Directory Listing',
-            from: new Address('livcci@oristudiozm.com', 'LiVCCI Secretariat'),
+            subject: 'LivCCI Update - Eligible for Directory Listing',
+            from: new Address('livcci@oristudiozm.com', 'LivCCI Secretariat'),
         );
     }
 

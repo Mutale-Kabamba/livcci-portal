@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>LiVCCI Premium Invoice</title>
+    <title>LivCCI Premium Invoice</title>
     <style>
         body { font-family: DejaVu Sans, Arial, sans-serif; color: #1f2937; margin: 0; padding: 28px; }
         .invoice { border: 1px solid #e5e7eb; }
@@ -32,7 +32,7 @@
                 <div class="brand-cell">
                     @php $logo = public_path('images/logo-white.png'); @endphp
                     @if(file_exists($logo))
-                        <img src="{{ $logo }}" alt="LiVCCI" style="height:42px; width:auto;">
+                        <img src="{{ $logo }}" alt="LivCCI" style="height:42px; width:auto;">
                     @endif
                 </div>
                 <div class="brand-cell brand-right">
