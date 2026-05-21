@@ -42,7 +42,6 @@ class AddSuperUser extends Command
                 'name' => $name,
                 'email' => $email,
                 'password' => Hash::make($password),
-                'email_verified_at' => now(),
                 'is_admin' => true,
                 'role' => 'super_admin',
             ]);
