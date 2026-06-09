@@ -55,7 +55,7 @@ const otherGoals = computed(() => {
 
                     <div class="flex items-center space-x-4">
                         <Link :href="route('strategic-goals')" class="text-sm font-semibold text-[#1D2A68] hover:text-[#1876C3]">Back to Goals</Link>
-                        <Link :href="route('register')" class="bg-[#1876C3] text-white text-sm font-bold py-2.5 px-5 rounded-md hover:bg-[#1460A0] shadow-md transition-colors">
+                        <Link :href="route('application.create')" class="bg-[#1876C3] text-white text-sm font-bold py-2.5 px-5 rounded-md hover:bg-[#1460A0] shadow-md transition-colors">
                             Join Chamber
                         </Link>
                     </div>

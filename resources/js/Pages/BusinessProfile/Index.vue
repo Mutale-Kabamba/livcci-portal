@@ -197,7 +197,7 @@ onUnmounted(() => {
 
                     <div class="flex items-center space-x-4">
                         <Link :href="route('login')" class="text-sm font-semibold text-[#1D2A68] hover:text-[#1876C3] hidden sm:block">Member Login</Link>
-                        <Link :href="route('register')" class="bg-[#1876C3] text-white text-sm font-bold py-2.5 px-5 rounded-md hover:bg-[#1460A0] shadow-md transition-colors">
+                        <Link :href="route('application.create')" class="bg-[#1876C3] text-white text-sm font-bold py-2.5 px-5 rounded-md hover:bg-[#1460A0] shadow-md transition-colors">
                             Join Chamber
                         </Link>
                     </div>
@@ -363,7 +363,7 @@ onUnmounted(() => {
                             <li><Link :href="route('about')" class="hover:text-white transition-colors">About Us</Link></li>
                             <li><Link :href="route('sectors')" class="hover:text-white transition-colors">Sectors</Link></li>
                             <li><Link :href="route('news')" class="hover:text-white transition-colors">News & Events</Link></li>
-                            <li><Link :href="route('register')" class="hover:text-white transition-colors">Join the Chamber</Link></li>
+                            <li><Link :href="route('application.create')" class="hover:text-white transition-colors">Join the Chamber</Link></li>
                         </ul>
                     </div>
 

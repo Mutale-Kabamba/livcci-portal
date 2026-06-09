@@ -186,7 +186,7 @@ const onRegistrationImageError = () => {
 
                     <div class="flex items-center space-x-4">
                         <Link :href="route('login')" class="text-sm font-semibold text-[#1D2A68] hover:text-[#1876C3] hidden sm:block">Member Login</Link>
-                        <Link :href="route('register')" class="bg-[#1876C3] text-white text-sm font-bold py-2.5 px-5 rounded-md hover:bg-[#1460A0] shadow-md transition-colors">
+                        <Link :href="route('application.create')" class="bg-[#1876C3] text-white text-sm font-bold py-2.5 px-5 rounded-md hover:bg-[#1460A0] shadow-md transition-colors">
                             Join Chamber
                         </Link>
                     </div>
@@ -272,7 +272,7 @@ const onRegistrationImageError = () => {
                                 </div>
 
                                 <Link
-                                    :href="route('register')"
+                                    :href="route('application.create')"
                                     :class="[
                                         'w-full block text-center text-white font-bold py-3 rounded-md transition-colors',
                                         index === 0
@@ -297,7 +297,7 @@ const onRegistrationImageError = () => {
                             <h3 class="text-4xl md:text-5xl font-black text-white mb-4">{{ registrationFee.amount }}</h3>
                             <p class="text-blue-100 text-lg mb-6">{{ registrationFee.subtitle }}</p>
                             <p class="text-blue-50 mb-8 max-w-xl">{{ registrationFee.description }}</p>
-                            <Link :href="route('register')" class="inline-block bg-[#F4B223] text-[#1D2A68] font-bold py-3 px-8 rounded-lg hover:bg-[#f8cb58] transition-colors shadow-lg">
+                            <Link :href="route('application.create')" class="inline-block bg-[#F4B223] text-[#1D2A68] font-bold py-3 px-8 rounded-lg hover:bg-[#f8cb58] transition-colors shadow-lg">
                                 Start Registration →
                             </Link>
                         </div>
@@ -349,7 +349,7 @@ const onRegistrationImageError = () => {
                     <p class="text-lg text-blue-100 mb-8 max-w-2xl mx-auto">
                         Start your membership today and become part of Livingstone's most dynamic and influential business community.
                     </p>
-                    <Link :href="route('register')" class="inline-block bg-[#F4B223] text-[#1D2A68] font-bold py-3 px-10 rounded-md hover:bg-[#E8A01A] transition-colors text-lg">
+                    <Link :href="route('application.create')" class="inline-block bg-[#F4B223] text-[#1D2A68] font-bold py-3 px-10 rounded-md hover:bg-[#E8A01A] transition-colors text-lg">
                         Become a Member Today
                     </Link>
                 </div>

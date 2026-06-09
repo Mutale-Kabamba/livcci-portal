@@ -278,7 +278,7 @@ const onMemberLogoError = (event) => {
                         </Link>
                         <template v-else>
                             <Link :href="route('login')" class="text-sm font-semibold text-[#1D2A68] hover:text-[#1876C3]">Login</Link>
-                            <Link v-if="canRegister" :href="route('register')" class="bg-[#1876C3] text-white text-sm font-bold py-2.5 px-5 rounded-md hover:bg-[#1460A0] shadow-md transition-colors">
+                            <Link v-if="canRegister" :href="route('application.create')" class="bg-[#1876C3] text-white text-sm font-bold py-2.5 px-5 rounded-md hover:bg-[#1460A0] shadow-md transition-colors">
                                 Apply for Membership
                             </Link>
                         </template>
@@ -311,7 +311,7 @@ const onMemberLogoError = (event) => {
                     {{ heroContent.description }}
                 </p>
                 <div class="mt-10 flex space-x-4">
-                    <Link :href="route('register')" class="bg-[#F4B223] text-[#1D2A68] font-black py-3 px-8 rounded-md hover:bg-[#E0A11B] shadow-lg text-lg transition-all">
+                    <Link :href="route('application.create')" class="bg-[#F4B223] text-[#1D2A68] font-black py-3 px-8 rounded-md hover:bg-[#E0A11B] shadow-lg text-lg transition-all">
                         Join the Chamber
                     </Link>
                     <Link :href="route('directory.index')" class="bg-transparent border-2 border-[#F6EED8] text-[#F6EED8] font-bold py-3 px-8 rounded-md hover:bg-white/10 transition-all text-lg">
@@ -342,7 +342,7 @@ const onMemberLogoError = (event) => {
         <div class="py-10 bg-white border-b border-gray-200" data-scroll>
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <Link :href="route('register')" class="group rounded-xl border border-gray-200 bg-white p-5 hover:border-[#1876C3] hover:shadow-md transition-all duration-300 h-full flex flex-col">
+                    <Link :href="route('application.create')" class="group rounded-xl border border-gray-200 bg-white p-5 hover:border-[#1876C3] hover:shadow-md transition-all duration-300 h-full flex flex-col">
                         <p class="text-xs font-bold uppercase tracking-wide text-[#1876C3]">New Member</p>
                         <h3 class="mt-2 text-lg font-extrabold text-[#1D2A68]">Start Membership Application</h3>
                         <p class="mt-1 text-sm text-gray-600">Apply online and join the chamber network.</p>
@@ -647,7 +647,7 @@ const onMemberLogoError = (event) => {
                         <p class="text-blue-200 mb-8 text-lg">
                             Become part of Livingstone's most dynamic business community. Access exclusive resources, networking opportunities, and business growth support.
                         </p>
-                        <Link :href="route('register')" class="inline-block bg-[#F4B223] hover:bg-[#E0A11B] text-[#1D2A68] font-bold py-3 px-8 rounded-md shadow-lg transition-all hover:scale-105">
+                        <Link :href="route('application.create')" class="inline-block bg-[#F4B223] hover:bg-[#E0A11B] text-[#1D2A68] font-bold py-3 px-8 rounded-md shadow-lg transition-all hover:scale-105">
                             Start Your Membership
                         </Link>
                     </div>
@@ -694,7 +694,7 @@ const onMemberLogoError = (event) => {
                             <li><Link :href="route('sectors')" class="hover:text-white transition-colors">Sectors</Link></li>
                             <li><Link :href="route('news')" class="hover:text-white transition-colors">News & Events</Link></li>
                             <li><Link :href="route('directory.index')" class="hover:text-white transition-colors">Member Directory</Link></li>
-                            <li><Link :href="route('register')" class="hover:text-white transition-colors">Join the Chamber</Link></li>
+                            <li><Link :href="route('application.create')" class="hover:text-white transition-colors">Join the Chamber</Link></li>
                         </ul>
                     </div>
 

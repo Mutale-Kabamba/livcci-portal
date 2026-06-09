@@ -108,7 +108,7 @@ onUnmounted(() => {
 
                     <div class="flex items-center space-x-4">
                         <Link :href="route('login')" class="text-sm font-semibold text-[#1D2A68] hover:text-[#1876C3] hidden sm:block">Member Login</Link>
-                        <Link :href="route('register')" class="bg-[#1876C3] text-white text-sm font-bold py-2.5 px-5 rounded-md hover:bg-[#1460A0] shadow-md transition-colors">
+                        <Link :href="route('application.create')" class="bg-[#1876C3] text-white text-sm font-bold py-2.5 px-5 rounded-md hover:bg-[#1460A0] shadow-md transition-colors">
                             Join Chamber
                         </Link>
                     </div>
@@ -362,7 +362,7 @@ onUnmounted(() => {
                     <p class="text-lg text-gray-600 mb-8 max-w-2xl mx-auto">
                         Become part of Livingstone's most dynamic business community and unlock opportunities for growth, networking, and success.
                     </p>
-                    <Link :href="route('register')" class="inline-block bg-[#1876C3] text-white font-bold py-3 px-10 rounded-md hover:bg-[#1460A0] shadow-lg transition-colors text-lg">
+                    <Link :href="route('application.create')" class="inline-block bg-[#1876C3] text-white font-bold py-3 px-10 rounded-md hover:bg-[#1460A0] shadow-lg transition-colors text-lg">
                         Become a Member Today
                     </Link>
                 </div>

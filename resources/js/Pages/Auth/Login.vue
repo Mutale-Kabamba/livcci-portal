@@ -166,6 +166,18 @@ const submit = () => {
                         Log in
                     </PrimaryButton>
                 </form>
+
+                <div class="mt-6 border-t border-gray-200 pt-6 text-center">
+                    <p class="text-sm text-gray-600">
+                        Don't have an account?
+                        <Link
+                            :href="route('application.create')"
+                            class="font-semibold text-[#1D2A68] hover:text-[#1876C3]"
+                        >
+                            Apply now
+                        </Link>
+                    </p>
+                </div>
             </div>
         </div>
     </GuestLayout>

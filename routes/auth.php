@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ApplicationController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\ConfirmablePasswordController;
 use App\Http\Controllers\Auth\EmailVerificationNotificationController;
@@ -13,6 +14,12 @@ use App\Http\Controllers\Auth\VerifyEmailController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('guest')->group(function () {
+    Route::get('apply', [ApplicationController::class, 'create'])
+        ->name('application.create');
+
+    Route::post('apply', [ApplicationController::class, 'store'])
+        ->name('application.store');
+
     Route::get('register', [RegisteredUserController::class, 'create'])
         ->name('register');
 

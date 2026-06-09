@@ -30,7 +30,7 @@ Route::get('/dashboard', function () {
         'totalOutstandingDues' => (float) $unpaidInvoices->sum('amount'),
         'unpaidProfileIds' => $unpaidInvoices->pluck('profile_id')->unique()->values(),
     ]);
-})->middleware(['auth', 'verified'])->name('dashboard');
+})->middleware(['auth'])->name('dashboard');
 
 Route::post('/dashboard/pay-all', function () {
     $profiles = \App\Models\BusinessProfile::where('user_id', auth()->id())->get(['id']);
@@ -61,7 +61,7 @@ Route::post('/dashboard/pay-all', function () {
         ]);
 
     return back()->with('message', 'All outstanding dues have been marked as paid.');
-})->middleware(['auth', 'verified'])->name('dashboard.pay-all');
+})->middleware(['auth'])->name('dashboard.pay-all');
 
 Route::get('/about', [AdminController::class, 'showAbout'])->name('about');
 Route::get('/sectors', [AdminController::class, 'showSectors'])->name('sectors');
