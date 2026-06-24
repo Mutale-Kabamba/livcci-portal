@@ -258,6 +258,14 @@
             gap: 10px;
         }
 
+        @media (max-width: 600px) {
+            footer {
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+            }
+        }
+
         footer .copy {
             font-size: 12px;
             color: rgba(255,255,255,0.28);
