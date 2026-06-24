@@ -17,9 +17,13 @@ class BusinessProfile extends Model
     ];
 
     protected $fillable = [
-        'user_id', 'company_name', 'slug', 'industry_sector', 'member_type', 'member_category', 'tpin', 'pacra_reg_no', 
+        'user_id', 'company_name', 'slug', 'industry_sector', 'member_type', 'member_category', 'tpin', 'pacra_reg_no',
         'business_activities', 'short_description', 'contact_email', 'phone', 'address', 'website_url', 'social_links', 'logo_url', 'status',
-        'is_active', 'membership_type', 'annual_fee', 'total_paid', 'invoice_pdf_path', 'proof_of_payment_path', 'last_payment_date', 'subscription_expiry', 'membership_id'
+        'is_active', 'membership_type', 'annual_fee', 'total_paid', 'invoice_pdf_path', 'proof_of_payment_path', 'document_paths',
+        'last_payment_date', 'subscription_expiry', 'membership_id',
+        // Application-specific fields
+        'owner_director_name', 'owner_director_phone', 'contact_person_name', 'contact_person_phone',
+        'business_reg_number', 'napsa_reg_number', 'wcfcb_number', 'number_of_employees', 'annual_turnover',
     ];
 
     protected function casts(): array

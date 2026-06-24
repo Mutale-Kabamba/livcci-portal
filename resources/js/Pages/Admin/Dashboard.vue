@@ -362,6 +362,36 @@ const deleteEvent = (eventId) => {
     });
 };
 
+// Review Application Modal
+const selectedProfile = ref(null);
+const showReviewModal = ref(false);
+const openReviewModal = (profile) => {
+    selectedProfile.value = profile;
+    showReviewModal.value = true;
+};
+const closeReviewModal = () => {
+    showReviewModal.value = false;
+    selectedProfile.value = null;
+};
+const parsedDocuments = computed(() => {
+    if (!selectedProfile.value?.document_paths) return {};
+    try {
+        const docs = typeof selectedProfile.value.document_paths === 'string'
+            ? JSON.parse(selectedProfile.value.document_paths)
+            : selectedProfile.value.document_paths;
+        return docs || {};
+    } catch { return {}; }
+});
+const documentLabels = {
+    certificate_of_incorporation: 'Certificate of Incorporation',
+    tpin_certificate: 'TPIN Certificate',
+    zra_tax_clearance: 'ZRA Tax Clearance',
+    napsa_certificate: 'NAPSA Certificate',
+    wcfcb_certificate: 'WCFCB Certificate',
+    company_profile: 'Company Profile',
+};
+const getDocUrl = (path) => path ? '/storage/' + path : null;
+
 const showPaymentModal = ref(false);
 const selectedPaymentProfileId = ref(null);
 const paymentRecordForm = useForm({
@@ -754,6 +784,12 @@ const saveMemberSpotlight = () => {
                                                     <span class="text-[10px]">▼</span>
                                                 </summary>
                                                 <div class="absolute right-0 mt-2 w-44 rounded-lg border border-gray-200 bg-white shadow-lg z-20 p-1">
+                                                    <button
+                                                        @click="openReviewModal(profile)"
+                                                        class="block w-full rounded-md px-3 py-2 text-left text-xs font-semibold text-[#1D2A68] hover:bg-[#1D2A68]/10"
+                                                    >
+                                                        📋 Review Application
+                                                    </button>
                                                     <a
                                                         v-if="profile.status === 'approved'"
                                                         :href="route('admin.members.certificate', profile.id)"
@@ -1238,6 +1274,137 @@ const saveMemberSpotlight = () => {
                                 </tr>
                             </tbody>
                         </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Review Application Modal -->
+        <div v-if="showReviewModal && selectedProfile" class="fixed inset-0 bg-black/60 flex items-start justify-center z-50 p-4 backdrop-blur-sm overflow-y-auto">
+            <div class="bg-white rounded-xl shadow-2xl w-full max-w-3xl my-6">
+                <!-- Header -->
+                <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-[#1D2A68] to-[#1876C3] rounded-t-xl">
+                    <div>
+                        <h3 class="text-lg font-bold text-white">📋 Application Review</h3>
+                        <p class="text-blue-100 text-sm">{{ selectedProfile.company_name }}</p>
+                    </div>
+                    <button @click="closeReviewModal" class="text-white hover:text-blue-200 text-2xl font-bold leading-none">×</button>
+                </div>
+
+                <div class="p-6 space-y-6 max-h-[75vh] overflow-y-auto">
+
+                    <!-- Status badge -->
+                    <div class="flex items-center gap-3">
+                        <span :class="{
+                            'bg-yellow-100 text-yellow-800': selectedProfile.status === 'pending',
+                            'bg-green-100 text-green-800': selectedProfile.status === 'approved',
+                            'bg-red-100 text-red-800': selectedProfile.status === 'suspended' || selectedProfile.status === 'deactivated',
+                        }" class="px-3 py-1 rounded-full text-xs font-bold uppercase">
+                            {{ selectedProfile.status }}
+                        </span>
+                        <span class="text-xs text-gray-500">Applied: {{ selectedProfile.created_at ? new Date(selectedProfile.created_at).toLocaleDateString() : '-' }}</span>
+                    </div>
+
+                    <!-- Business Info -->
+                    <div>
+                        <h4 class="text-sm font-bold text-[#1D2A68] uppercase tracking-wide mb-3 border-b pb-1">🏢 Business Information</h4>
+                        <div class="grid grid-cols-2 gap-3 text-sm">
+                            <div><span class="text-gray-500">Company:</span> <span class="font-medium">{{ selectedProfile.company_name }}</span></div>
+                            <div><span class="text-gray-500">Sector:</span> <span class="font-medium">{{ selectedProfile.industry_sector }}</span></div>
+                            <div><span class="text-gray-500">Member Type:</span> <span class="font-medium">{{ selectedProfile.member_type }}</span></div>
+                            <div><span class="text-gray-500">Category:</span> <span class="font-medium">{{ selectedProfile.member_category }}</span></div>
+                            <div><span class="text-gray-500">Employees:</span> <span class="font-medium">{{ selectedProfile.number_of_employees ?? '-' }}</span></div>
+                            <div><span class="text-gray-500">Annual Turnover:</span> <span class="font-medium">{{ selectedProfile.annual_turnover ? 'ZMW ' + Number(selectedProfile.annual_turnover).toLocaleString() : '-' }}</span></div>
+                            <div class="col-span-2"><span class="text-gray-500">Description:</span> <span class="font-medium">{{ selectedProfile.short_description }}</span></div>
+                        </div>
+                    </div>
+
+                    <!-- Contact Info -->
+                    <div>
+                        <h4 class="text-sm font-bold text-[#1D2A68] uppercase tracking-wide mb-3 border-b pb-1">📞 Contact Information</h4>
+                        <div class="grid grid-cols-2 gap-3 text-sm">
+                            <div><span class="text-gray-500">Contact Email:</span> <span class="font-medium">{{ selectedProfile.contact_email }}</span></div>
+                            <div><span class="text-gray-500">Phone:</span> <span class="font-medium">{{ selectedProfile.phone }}</span></div>
+                            <div class="col-span-2"><span class="text-gray-500">Address:</span> <span class="font-medium">{{ selectedProfile.address ?? '-' }}</span></div>
+                            <div><span class="text-gray-500">Website:</span> <span class="font-medium">{{ selectedProfile.website_url ?? '-' }}</span></div>
+                        </div>
+                    </div>
+
+                    <!-- Contact Persons -->
+                    <div>
+                        <h4 class="text-sm font-bold text-[#1D2A68] uppercase tracking-wide mb-3 border-b pb-1">👥 Contact Persons</h4>
+                        <div class="grid grid-cols-2 gap-3 text-sm">
+                            <div><span class="text-gray-500">Owner/Director:</span> <span class="font-medium">{{ selectedProfile.owner_director_name ?? '-' }}</span></div>
+                            <div><span class="text-gray-500">Owner Phone:</span> <span class="font-medium">{{ selectedProfile.owner_director_phone ?? '-' }}</span></div>
+                            <div><span class="text-gray-500">Contact Person:</span> <span class="font-medium">{{ selectedProfile.contact_person_name ?? '-' }}</span></div>
+                            <div><span class="text-gray-500">Contact Phone:</span> <span class="font-medium">{{ selectedProfile.contact_person_phone ?? '-' }}</span></div>
+                        </div>
+                    </div>
+
+                    <!-- Registration Numbers -->
+                    <div>
+                        <h4 class="text-sm font-bold text-[#1D2A68] uppercase tracking-wide mb-3 border-b pb-1">🔢 Registration Numbers</h4>
+                        <div class="grid grid-cols-2 gap-3 text-sm">
+                            <div><span class="text-gray-500">TPIN:</span> <span class="font-medium font-mono">{{ selectedProfile.tpin ?? '-' }}</span></div>
+                            <div><span class="text-gray-500">PACRA Reg No:</span> <span class="font-medium font-mono">{{ selectedProfile.pacra_reg_no ?? '-' }}</span></div>
+                            <div><span class="text-gray-500">Business Reg No:</span> <span class="font-medium font-mono">{{ selectedProfile.business_reg_number ?? '-' }}</span></div>
+                            <div><span class="text-gray-500">NAPSA Reg No:</span> <span class="font-medium font-mono">{{ selectedProfile.napsa_reg_number ?? '-' }}</span></div>
+                            <div><span class="text-gray-500">WCFCB No:</span> <span class="font-medium font-mono">{{ selectedProfile.wcfcb_number ?? '-' }}</span></div>
+                        </div>
+                    </div>
+
+                    <!-- Documents -->
+                    <div>
+                        <h4 class="text-sm font-bold text-[#1D2A68] uppercase tracking-wide mb-3 border-b pb-1">📄 Submitted Documents</h4>
+                        <div v-if="Object.keys(parsedDocuments).length === 0" class="text-sm text-gray-400 italic">No documents uploaded.</div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            <a
+                                v-for="(path, key) in parsedDocuments"
+                                :key="key"
+                                :href="getDocUrl(path)"
+                                target="_blank"
+                                class="flex items-center gap-2 p-3 border border-gray-200 rounded-lg hover:border-[#1876C3] hover:bg-blue-50 transition group"
+                            >
+                                <span class="text-2xl">📎</span>
+                                <div class="min-w-0">
+                                    <div class="text-xs font-semibold text-[#1D2A68] group-hover:text-[#1876C3] truncate">{{ documentLabels[key] ?? key }}</div>
+                                    <div class="text-xs text-gray-400 truncate">{{ path.split('/').pop() }}</div>
+                                </div>
+                                <span class="ml-auto text-xs text-[#1876C3] font-bold">View →</span>
+                            </a>
+                        </div>
+                        <!-- Proof of Payment -->
+                        <div v-if="selectedProfile.proof_of_payment_path" class="mt-2">
+                            <a
+                                :href="getDocUrl(selectedProfile.proof_of_payment_path)"
+                                target="_blank"
+                                class="flex items-center gap-2 p-3 border border-yellow-200 rounded-lg hover:border-yellow-400 hover:bg-yellow-50 transition group"
+                            >
+                                <span class="text-2xl">💳</span>
+                                <div class="min-w-0">
+                                    <div class="text-xs font-semibold text-yellow-700 group-hover:text-yellow-800">Proof of Payment</div>
+                                    <div class="text-xs text-gray-400 truncate">{{ selectedProfile.proof_of_payment_path.split('/').pop() }}</div>
+                                </div>
+                                <span class="ml-auto text-xs text-yellow-700 font-bold">View →</span>
+                            </a>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Footer Actions -->
+                <div class="flex items-center justify-between px-6 py-4 border-t border-gray-200 bg-gray-50 rounded-b-xl">
+                    <button @click="closeReviewModal" class="text-gray-500 font-semibold hover:text-gray-700 transition text-sm">Close</button>
+                    <div class="flex gap-2" v-if="canManageMembers">
+                        <button
+                            v-if="selectedProfile.status !== 'approved'"
+                            @click="updateStatus(selectedProfile.id, 'approved'); closeReviewModal()"
+                            class="bg-green-600 hover:bg-green-700 text-white text-sm font-bold px-4 py-2 rounded-lg transition"
+                        >✓ Approve</button>
+                        <button
+                            v-if="selectedProfile.status !== 'suspended'"
+                            @click="updateStatus(selectedProfile.id, 'suspended'); closeReviewModal()"
+                            class="bg-orange-500 hover:bg-orange-600 text-white text-sm font-bold px-4 py-2 rounded-lg transition"
+                        >Suspend</button>
                     </div>
                 </div>
             </div>

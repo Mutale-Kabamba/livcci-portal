@@ -4,7 +4,8 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\BusinessProfileController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\ReportController;
-use App\Http\Middleware\IsAdminMiddleware; 
+use App\Http\Middleware\IsAdminMiddleware;
+use App\Models\Invoice;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -20,8 +21,7 @@ Route::get('/dashboard', function () {
 
     $profileIds = $businessProfiles->pluck('id');
 
-    $unpaidInvoices = \App\Models\Invoice::query()
-        ->whereIn('profile_id', $profileIds)
+    $unpaidInvoices = Invoice::whereIn('profile_id', $profileIds)
         ->where('status', 'Unpaid')
         ->get(['id', 'profile_id', 'amount']);
 
@@ -40,8 +40,7 @@ Route::post('/dashboard/pay-all', function () {
         return back()->with('error', 'No businesses found for this account.');
     }
 
-    $unpaidInvoices = \App\Models\Invoice::query()
-        ->whereIn('profile_id', $profileIds)
+    $unpaidInvoices = Invoice::whereIn('profile_id', $profileIds)
         ->where('status', 'Unpaid')
         ->get();
 

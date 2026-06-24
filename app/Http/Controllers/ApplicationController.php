@@ -68,7 +68,21 @@ class ApplicationController extends Controller
                     }
                 }
 
-                unset($validated['logo'], $validated['proof_of_payment'], $validated['password'], $validated['password_confirmation'], $validated['full_name']);
+                unset(
+                    $validated['logo'],
+                    $validated['proof_of_payment'],
+                    $validated['password'],
+                    $validated['password_confirmation'],
+                    $validated['full_name'],
+                    $validated['declaration_agreed'],
+                    $validated['terms_agreed']
+                );
+
+                // Ensure business_activities is stored as an array
+                if (isset($validated['business_activities']) && is_string($validated['business_activities'])) {
+                    $decoded = json_decode($validated['business_activities'], true);
+                    $validated['business_activities'] = is_array($decoded) ? $decoded : [$validated['business_activities']];
+                }
 
                 $annualFee = $this->resolveAnnualFee($validated['member_category'] ?? null, $validated['member_type'] ?? null);
                 $validated['annual_fee'] = $annualFee;
@@ -118,12 +132,16 @@ class ApplicationController extends Controller
 
             return redirect()->route('login')
                 ->with('success', 'Application submitted successfully! Please log in with your credentials. Your profile will be reviewed shortly.');
-        } catch (\Exception $e) {
-            \Log::error('Error creating unified application: ' . $e->getMessage(), ['exception' => $e]);
+        } catch (\Throwable $e) {
+            \Log::error('Error creating unified application: ' . $e->getMessage(), [
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+            ]);
 
             return back()
                 ->withInput($request->except(['password', 'password_confirmation']))
-                ->with('error', 'Failed to submit application. Please try again.');
+                ->with('error', 'Failed to submit application: ' . $e->getMessage());
         }
     }
 
@@ -133,11 +151,17 @@ class ApplicationController extends Controller
     private function resolveAnnualFee(?string $memberCategory, ?string $memberType): float
     {
         $category = strtolower((string) $memberCategory);
-        if (str_contains($category, 'corporate') || $memberType === 'Corporate') return 2000;
-        if (str_contains($category, 'ordinary') || $memberType === 'Ordinary') return 1000;
-        if (str_contains($category, 'associate') || str_contains($category, 'cooperative')) return 500;
+        if (str_contains($category, 'category a')) return 1800;
+        if (str_contains($category, 'category b')) return 3000;
+        if (str_contains($category, 'category c')) return 3600;
+        if (str_contains($category, 'category d')) return 6000;
 
-        return 1000;
+        // Fallback by member type
+        if ($memberType === 'Corporate') return 3000;
+        if ($memberType === 'Ordinary') return 1800;
+        if (in_array($memberType, ['Associate', 'Cooperative'])) return 1800;
+
+        return 1800;
     }
 
     /**

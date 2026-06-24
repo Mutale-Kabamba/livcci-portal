@@ -7,6 +7,14 @@
         <p class="text-lg text-blue-100">Join the Livci Chamber of Commerce and Industry - Your Gateway to Business Excellence</p>
       </div>
 
+      <!-- Flash messages -->
+      <div v-if="flash.error" class="mb-4 bg-red-50 border border-red-300 text-red-800 rounded-lg p-4 text-sm">
+        <strong>Error:</strong> {{ flash.error }}
+      </div>
+      <div v-if="flash.success" class="mb-4 bg-green-50 border border-green-300 text-green-800 rounded-lg p-4 text-sm">
+        <strong>Success:</strong> {{ flash.success }}
+      </div>
+
       <!-- Form -->
       <form @submit.prevent="submitForm" enctype="multipart/form-data" class="bg-white rounded-b-lg shadow-lg p-8 border-t-4 border-[#F4B223]">
         <!-- Account Creation Section -->
@@ -247,6 +255,38 @@
               </select>
               <p v-if="errors.member_type" class="text-[#DC2626] text-sm mt-1">{{ errors.member_type }}</p>
             </div>
+          </div>
+
+          <!-- Business Activities -->
+          <div class="mt-6">
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              Business Activities <span class="text-[#DC2626]">*</span>
+            </label>
+            <p class="text-gray-500 text-xs mb-3">Select up to 6 activities that best describe your business (select a sector first).</p>
+
+            <div v-if="!form.industry_sector" class="border border-dashed border-gray-300 rounded-lg p-4 text-center text-gray-400 text-sm">
+              Select a business sector above to see available activities.
+            </div>
+
+            <div v-else class="flex flex-wrap gap-2">
+              <button
+                v-for="activity in filteredActivities"
+                :key="activity"
+                type="button"
+                @click="toggleActivity(activity)"
+                :class="[
+                  'px-3 py-1.5 rounded-full text-sm font-medium border transition-colors',
+                  form.selectedActivities.includes(activity)
+                    ? 'bg-[#1876C3] text-white border-[#1876C3]'
+                    : 'bg-white text-gray-700 border-gray-300 hover:border-[#1876C3]'
+                ]"
+              >{{ activity }}</button>
+            </div>
+            <p v-if="activitiesWarning" class="text-yellow-600 text-sm mt-2">{{ activitiesWarning }}</p>
+            <p v-if="form.selectedActivities.length > 0" class="text-gray-500 text-xs mt-2">
+              Selected ({{ form.selectedActivities.length }}/{{ MAX_ACTIVITIES }}): {{ form.selectedActivities.join(', ') }}
+            </p>
+            <p v-if="errors.business_activities" class="text-[#DC2626] text-sm mt-1">{{ errors.business_activities }}</p>
           </div>
         </div>
 
@@ -597,8 +637,12 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import { useForm } from '@inertiajs/vue3'
+import { ref, computed, watch } from 'vue'
+import { useForm, usePage } from '@inertiajs/vue3'
+
+const page = usePage()
+const flash = computed(() => page.props.flash ?? {})
+import { INDUSTRY_ACTIVITIES } from '@/constants/industryActivities'
 
 const today = new Date().toLocaleDateString('en-US', { 
   year: 'numeric', 
@@ -608,6 +652,8 @@ const today = new Date().toLocaleDateString('en-US', {
 
 const loading = ref(false)
 const errors = ref({})
+const activitiesWarning = ref('')
+const MAX_ACTIVITIES = 6
 
 const form = useForm({
   // Account fields
@@ -628,7 +674,11 @@ const form = useForm({
   annual_turnover: '',
   member_type: '',
   member_category: '',
-  
+
+  // Business Activities
+  selectedActivities: [],
+  business_activities: '',
+
   // Contact Persons
   owner_director_name: '',
   owner_director_phone: '',
@@ -666,6 +716,56 @@ const form = useForm({
   }
 })
 
+// Business activities helpers
+const filteredActivities = computed(() => INDUSTRY_ACTIVITIES[form.industry_sector] || [])
+
+const toggleActivity = (activity) => {
+  const current = [...form.selectedActivities]
+  const exists = current.includes(activity)
+  if (exists) {
+    form.selectedActivities = current.filter(a => a !== activity)
+    activitiesWarning.value = ''
+    return
+  }
+  if (current.length >= MAX_ACTIVITIES) {
+    activitiesWarning.value = 'You can select up to 6 activities only.'
+    return
+  }
+  form.selectedActivities = [...current, activity]
+  activitiesWarning.value = ''
+}
+
+// Keep business_activities in sync as JSON array string
+watch(
+  () => form.selectedActivities,
+  (activities) => {
+    form.business_activities = JSON.stringify(activities || [])
+  },
+  { deep: true, immediate: true }
+)
+
+// Reset activities when sector changes
+watch(
+  () => form.industry_sector,
+  () => {
+    form.selectedActivities = []
+    activitiesWarning.value = ''
+  }
+)
+
+// Auto-suggest member category based on employee count
+watch(
+  () => form.number_of_employees,
+  (count) => {
+    const n = parseInt(count)
+    if (!n || n < 1) return
+    if (n <= 10) form.member_category = 'Category A: Up to 10 employees'
+    else if (n <= 30) form.member_category = 'Category B: 11-30 Employees'
+    else if (n <= 50) form.member_category = 'Category C: 31-50 Employees'
+    else form.member_category = 'Category D: Above 50 Employees'
+  }
+)
+
 const handleLogoUpload = (e) => {
   form.logo = e.target.files[0]
   clearError('logo')
@@ -692,6 +792,7 @@ const submitForm = () => {
     },
     onSuccess: () => {
       loading.value = false
+      window.scrollTo(0, 0)
     }
   })
 }
