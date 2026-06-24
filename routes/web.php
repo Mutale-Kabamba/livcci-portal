@@ -9,7 +9,7 @@ use App\Models\Invoice;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
-Route::get('/', [AdminController::class, 'showHome'])->name('home');
+Route::get('/', fn () => view('coming-soon'))->name('home');
 
 Route::get('/dashboard', function () {
     $businessProfiles = auth()->check()
