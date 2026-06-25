@@ -10,8 +10,14 @@ class ChamberEvent extends Model
         'title',
         'type',
         'event_date',
+        'event_end_date',
         'description',
         'image_url',
         'external_link',
+    ];
+
+    protected $casts = [
+        'event_date' => 'date',
+        'event_end_date' => 'date',
     ];
 }

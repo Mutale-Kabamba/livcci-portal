@@ -59,6 +59,20 @@ const switchModeLabel = computed(() => (portalMode.value === 'admin' ? 'Switch t
                                 >
                                     Dashboard
                                 </NavLink>
+                                <template v-if="!isAdminPortalUser">
+                                    <NavLink
+                                        :href="route('directory.index')"
+                                        :active="route().current('directory.*')"
+                                    >
+                                        Member Directory
+                                    </NavLink>
+                                    <NavLink
+                                        :href="route('profile.edit')"
+                                        :active="route().current('profile.edit')"
+                                    >
+                                        My Account
+                                    </NavLink>
+                                </template>
                             </div>
                         </div>
 
@@ -175,6 +189,20 @@ const switchModeLabel = computed(() => (portalMode.value === 'admin' ? 'Switch t
                         >
                             Dashboard
                         </ResponsiveNavLink>
+                        <template v-if="!isAdminPortalUser">
+                            <ResponsiveNavLink
+                                :href="route('directory.index')"
+                                :active="route().current('directory.*')"
+                            >
+                                Member Directory
+                            </ResponsiveNavLink>
+                            <ResponsiveNavLink
+                                :href="route('profile.edit')"
+                                :active="route().current('profile.edit')"
+                            >
+                                My Account
+                            </ResponsiveNavLink>
+                        </template>
                     </div>
 
                     <!-- Responsive Settings Options -->

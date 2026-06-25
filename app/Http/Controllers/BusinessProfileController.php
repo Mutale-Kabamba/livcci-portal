@@ -74,7 +74,23 @@ class BusinessProfileController extends Controller
                     $validated['proof_of_payment_path'] = $request->file('proof_of_payment')->store('proof-payments', 'public');
                 }
 
-                unset($validated['logo'], $validated['proof_of_payment']);
+                // Handle document uploads (same as unified application)
+                $documentPaths = [];
+                foreach (['certificate_of_incorporation', 'tpin_certificate', 'zra_tax_clearance', 'napsa_certificate', 'wcfcb_certificate', 'company_profile'] as $doc) {
+                    if ($request->hasFile($doc)) {
+                        $documentPaths[$doc] = $request->file($doc)->store('documents', 'public');
+                    }
+                }
+                if (!empty($documentPaths)) {
+                    $validated['document_paths'] = json_encode($documentPaths);
+                }
+
+                unset(
+                    $validated['logo'],
+                    $validated['proof_of_payment'],
+                    $validated['declaration_agreed'],
+                    $validated['terms_agreed'],
+                );
 
                 $annualFee = $this->resolveAnnualFee($validated['member_category'] ?? null, $validated['member_type'] ?? null);
                 $validated['annual_fee'] = $annualFee;
@@ -241,6 +257,27 @@ class BusinessProfileController extends Controller
             return back()
                 ->with('error', 'Failed to delete business profile. Please try again.');
         }
+    }
+
+    public function downloadMemberCertificate(BusinessProfile $profile)
+    {
+        if (auth()->id() !== $profile->user_id) {
+            abort(403);
+        }
+
+        if ($profile->status !== 'approved') {
+            return back()->with('error', 'Certificates can only be downloaded for approved members.');
+        }
+
+        $validUntil = $profile->subscription_expiry ?? now()->addYear();
+
+        $pdf = Pdf::loadView('emails.certificate', [
+            'profile' => $profile,
+            'validUntil' => $validUntil,
+            'issueDate' => now(),
+        ])->setPaper('a4', 'portrait');
+
+        return $pdf->download('membership-certificate-' . $profile->id . '.pdf');
     }
 
     public function downloadInvoice(BusinessProfile $profile)

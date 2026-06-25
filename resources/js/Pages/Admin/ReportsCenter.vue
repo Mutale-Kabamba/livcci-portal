@@ -1,6 +1,6 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { Head, useForm } from '@inertiajs/vue3';
+import { Head, Link, useForm } from '@inertiajs/vue3';
 
 const props = defineProps({
     reportType: {
@@ -39,7 +39,12 @@ const generateReport = () => {
 
     <AuthenticatedLayout>
         <template #header>
-            <h2 class="font-semibold text-xl text-[#1D2A68] leading-tight">Reports Center</h2>
+            <div class="flex items-center justify-between gap-4">
+                <h2 class="font-semibold text-xl text-[#1D2A68] leading-tight">Reports Center</h2>
+                <Link :href="route('admin.dashboard')" class="bg-[#1D2A68] text-white text-sm font-bold py-2 px-4 rounded hover:bg-[#1876C3] transition shadow-md">
+                    ← Back to Admin Dashboard
+                </Link>
+            </div>
         </template>
 
         <div class="py-10">

@@ -183,6 +183,7 @@ const eventForm = useForm({
     title: '',
     type: 'Meeting',
     event_date: '',
+    event_end_date: '',
     description: '',
     external_link: '',
     image: null
@@ -227,6 +228,7 @@ const editEvent = (event) => {
     eventForm.title = event.title;
     eventForm.type = event.type;
     eventForm.event_date = event.event_date;
+    eventForm.event_end_date = event.event_end_date || '';
     eventForm.description = event.description;
     eventForm.external_link = event.external_link || '';
     
@@ -1162,6 +1164,17 @@ const saveMemberSpotlight = () => {
                     </div>
                     <div>
                         <label class="text-xs font-bold text-gray-500 uppercase">Description</label>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-500 uppercase mb-1">End Date <span class="text-gray-400 font-normal normal-case">(optional – for multi-day events)</span></label>
+                            <input
+                                v-model="eventForm.event_end_date"
+                                type="date"
+                                :min="eventForm.event_date || undefined"
+                                class="block w-full border-gray-300 rounded-md shadow-sm text-sm"
+                            />
+                            <p v-if="eventForm.errors.event_end_date" class="text-red-500 text-xs mt-1">{{ eventForm.errors.event_end_date }}</p>
+                        </div>
+
                         <textarea v-model="eventForm.description" rows="3" class="w-full border-gray-200 rounded-lg p-3 mt-1" required></textarea>
                         <span v-if="eventForm.errors.description" class="text-red-500 text-xs mt-1">{{ eventForm.errors.description }}</span>
                     </div>

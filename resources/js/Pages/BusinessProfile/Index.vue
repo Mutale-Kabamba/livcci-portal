@@ -33,20 +33,20 @@ const sectors = [
 
 const filteredProfiles = computed(() => {
     return props.profiles.filter(profile => {
-        const matchesSearch = profile.company_name.toLowerCase().includes(searchQuery.value.toLowerCase()) || 
-                              profile.member_category.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-                              profile.short_description.toLowerCase().includes(searchQuery.value.toLowerCase());
-        
-        const matchesCategory = selectedCategories.value.length === 0 || selectedCategories.value.includes(profile.member_category);
+        const matchesSearch = profile.company_name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+                              (profile.membership_type || '').toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+                              (profile.short_description || '').toLowerCase().includes(searchQuery.value.toLowerCase());
+
+        const matchesCategory = selectedCategories.value.length === 0 || selectedCategories.value.includes(profile.membership_type);
         const matchesSector = selectedSectors.value.length === 0 || selectedSectors.value.includes(profile.industry_sector);
-        
+
         return matchesSearch && matchesCategory && matchesSector;
     });
 });
 
-// Get unique categories sorted alphabetically
+// Get unique membership types sorted alphabetically
 const categories = computed(() => {
-    return [...new Set(props.profiles.map(p => p.member_category))].sort();
+    return [...new Set(props.profiles.map(p => p.membership_type).filter(Boolean))].sort();
 });
 
 // Toggle category selection
@@ -83,7 +83,7 @@ const getCompanyLogo = (profile) => {
 
 // Get company description
 const getCompanyDescription = (profile) => {
-    return profile.short_description || 'Professional ' + profile.member_category + ' services';
+    return profile.short_description || 'Professional ' + (profile.membership_type || 'Business') + ' services';
 };
 
 const socialConfig = {
@@ -237,7 +237,7 @@ onUnmounted(() => {
                         <h3 class="text-lg font-bold text-[#1D2A68] mb-4">Filter Members</h3>
                         
                         <div>
-                            <h4 class="font-semibold text-[#1D2A68] mb-3 text-sm">Filter by Category</h4>
+                            <h4 class="font-semibold text-[#1D2A68] mb-3 text-sm">Filter by Membership Type</h4>
                             <div class="space-y-2 max-h-96 overflow-y-auto">
                                 <label v-for="category in categories" :key="category" class="flex items-center gap-2 cursor-pointer">
                                     <input 
@@ -308,9 +308,9 @@ onUnmounted(() => {
                                 <h3 class="text-lg font-bold text-[#1D2A68] mb-2">{{ profile.company_name }}</h3>
                                 <p class="text-sm text-gray-600 mb-4 line-clamp-3">{{ getCompanyDescription(profile) }}</p>
                                 
-                                <!-- Category Badge -->
+                                <!-- Membership Type Badge -->
                                 <div class="bg-[#F4B223] text-black font-bold py-2 px-3 rounded text-center text-xs">
-                                    CATEGORY: {{ profile.member_category }}
+                                    MEMBERSHIP TYPE: {{ profile.membership_type || 'N/A' }}
                                 </div>
 
                                 <div v-if="getSocialLinks(profile).length" class="mt-3 flex items-center gap-2">
