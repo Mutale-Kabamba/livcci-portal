@@ -1,5 +1,5 @@
 <script setup>
-import { Head, Link } from '@inertiajs/vue3';
+import { Head, Link, usePage } from '@inertiajs/vue3';
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 
 const props = defineProps({
@@ -16,6 +16,10 @@ const props = defineProps({
         default: () => ({})
     }
 });
+
+const page = usePage();
+const isLoggedIn = computed(() => Boolean(page.props?.auth?.user));
+const isAdminUser = computed(() => { const p = page.props?.auth?.permissions || {}; return Boolean(p.is_super_admin||p.can_manage_finance||p.can_manage_content||p.can_manage_members||p.can_view_reports||p.can_manage_accounts); });
 
 // Scroll animation state
 const scrollY = ref(0);
@@ -273,9 +277,7 @@ const onMemberLogoError = (event) => {
                     </div>
 
                     <div v-if="canLogin" class="flex items-center space-x-4">
-                        <Link v-if="$page.props.auth.user" :href="route('dashboard')" class="text-sm font-bold text-[#1876C3] hover:text-[#1D2A68]">
-                            Member Dashboard
-                        </Link>
+                        <Link v-if="isLoggedIn" :href="route(isAdminUser ? 'admin.dashboard' : 'dashboard')" class="text-sm font-bold text-[#1876C3] hover:text-[#1D2A68]">← Dashboard</Link>
                         <template v-else>
                             <Link :href="route('login')" class="text-sm font-semibold text-[#1D2A68] hover:text-[#1876C3]">Login</Link>
                             <Link v-if="canRegister" :href="route('application.create')" class="bg-[#1876C3] text-white text-sm font-bold py-2.5 px-5 rounded-md hover:bg-[#1460A0] shadow-md transition-colors">
@@ -684,7 +686,8 @@ const onMemberLogoError = (event) => {
                             <span class="text-xl font-black tracking-tight text-[#F6EED8]">LivCCI</span>
                         </div>
                         <p class="text-blue-200 max-w-sm mb-6">The Livingstone Chamber of Commerce and Industry is committed to promoting an enabling multi-sectoral business environment.</p>
-                        <Link :href="route('admin.dashboard')" class="text-[#F4B223] hover:text-[#E8A01A] font-semibold transition-colors">Admin Login</Link>
+                        <Link v-if="isLoggedIn" :href="route(isAdminUser ? 'admin.dashboard' : 'dashboard')" class="text-[#F4B223] hover:text-[#E8A01A] font-semibold transition-colors">← Dashboard</Link>
+                        <Link v-else :href="route('admin.dashboard')" class="text-[#F4B223] hover:text-[#E8A01A] font-semibold transition-colors">Admin Login</Link>
                     </div>
                     
                     <div>

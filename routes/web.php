@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 Route::get('/', [AdminController::class, 'showHome'])->name('home');
 
+
 Route::get('/dashboard', function () {
     $businessProfiles = auth()->check()
         ? \App\Models\BusinessProfile::with(['payments' => fn ($q) => $q->latest('payment_date')->latest('id')])
@@ -25,10 +26,16 @@ Route::get('/dashboard', function () {
         ->where('status', 'Unpaid')
         ->get(['id', 'profile_id', 'amount']);
 
+    $upcomingEvents = \App\Models\ChamberEvent::where('event_date', '>=', now()->toDateString())
+        ->orderBy('event_date')
+        ->limit(3)
+        ->get();
+
     return Inertia::render('Dashboard', [
         'businessProfiles' => $businessProfiles,
         'totalOutstandingDues' => (float) $unpaidInvoices->sum('amount'),
         'unpaidProfileIds' => $unpaidInvoices->pluck('profile_id')->unique()->values(),
+        'upcomingEvents' => $upcomingEvents,
     ]);
 })->middleware(['auth'])->name('dashboard');
 
@@ -113,6 +120,7 @@ Route::middleware('auth')->group(function () {
     Route::patch('/directory/edit', [BusinessProfileController::class, 'update'])->name('profile.business.update');
     Route::delete('/directory/{profile}', [BusinessProfileController::class, 'destroy'])->name('profile.business.destroy');
     Route::get('/dashboard/business/{profile}/invoice', [BusinessProfileController::class, 'downloadInvoice'])->name('profile.business.invoice.download');
+    Route::get('/dashboard/business/{profile}/certificate', [BusinessProfileController::class, 'downloadMemberCertificate'])->name('profile.business.certificate.download');
     Route::get('/dashboard/business/receipt/{payment}', [BusinessProfileController::class, 'downloadReceipt'])->name('profile.business.receipt.download');
 });
 

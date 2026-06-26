@@ -670,6 +670,8 @@ class AdminController extends Controller
             $data['image_url'] = $path;
         }
 
+        $data['event_end_date'] = $request->filled('event_end_date') ? $request->input('event_end_date') : null;
+
         ChamberEvent::create($data);
 
         return back()->with('message', 'Event posted successfully!');
@@ -700,6 +702,8 @@ class AdminController extends Controller
             $path = $file->store('events', 'public');
             $data['image_url'] = $path;
         }
+
+        $data['event_end_date'] = $request->filled('event_end_date') ? $request->input('event_end_date') : null;
 
         $event->update($data);
 

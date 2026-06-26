@@ -20,26 +20,54 @@ class StoreBusinessProfileRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'company_name' => 'required|string|max:255',
-            'industry_sector' => 'required|in:Tourism & Hospitality,Trade & Commerce,Financial Services,Construction & Engineering,Agriculture & Manufacturing,Cooperatives & Social Enterprise,IT & Creative Media',
-            'member_type' => 'required|in:Corporate,Ordinary,Associate,Cooperative',
-            'member_category' => 'required|string|max:255',
+            // Business Information
+            'company_name'        => 'required|string|max:255',
+            'industry_sector'     => 'required|in:Tourism & Hospitality,Trade & Commerce,Financial Services,Construction & Engineering,Agriculture & Manufacturing,Cooperatives & Social Enterprise,IT & Creative Media',
+            'member_type'         => 'required|in:Corporate,Ordinary,Associate,Cooperative',
+            'member_category'     => 'required|string|max:255',
             'business_activities' => 'required',
-            'tpin' => ['required', 'regex:/^\d{10}$/', 'unique:business_profiles,tpin'],
-            'pacra_reg_no' => 'required_unless:member_type,Associate|nullable|string|max:50|unique:business_profiles,pacra_reg_no',
-            'short_description' => 'required|string|max:500',
-            'contact_email' => 'required|email|max:255',
-            'phone' => ['required', 'regex:/^(\+260|260|0)(9\d{8}|7\d{8})$/'],
-            'address' => 'nullable|string|max:500',
-            'website_url' => 'nullable|url|max:255',
-            'social_links' => 'nullable|array',
-            'social_links.linkedin' => 'nullable|url|max:255',
-            'social_links.facebook' => 'nullable|url|max:255',
-            'social_links.x' => 'nullable|url|max:255',
-            'social_links.instagram' => 'nullable|url|max:255',
-            'social_links.whatsapp' => 'nullable|url|max:255',
-            'logo' => 'nullable|image|mimes:jpeg,jpg,png|max:2048',
-            'proof_of_payment' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            'short_description'   => 'required|string|max:500',
+            'contact_email'       => 'required|email|max:255',
+            'phone'               => ['required', 'regex:/^(\+260|260|0)(9\d{8}|7\d{8})$/'],
+            'address'             => 'nullable|string|max:500',
+            'website_url'         => 'nullable|url|max:255',
+            'number_of_employees' => 'required|integer|min:1',
+            'annual_turnover'     => 'nullable|numeric|min:0',
+            'logo'                => 'nullable|image|mimes:jpeg,jpg,png|max:2048',
+            'proof_of_payment'    => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
+
+            // Social links
+            'social_links'            => 'nullable|array',
+            'social_links.linkedin'   => 'nullable|url|max:255',
+            'social_links.facebook'   => 'nullable|url|max:255',
+            'social_links.x'          => 'nullable|url|max:255',
+            'social_links.instagram'  => 'nullable|url|max:255',
+            'social_links.whatsapp'   => 'nullable|url|max:255',
+
+            // Registration Numbers
+            'tpin'               => ['required', 'regex:/^\d{10}$/', 'unique:business_profiles,tpin'],
+            'pacra_reg_no'       => 'required_unless:member_type,Associate|nullable|string|max:50|unique:business_profiles,pacra_reg_no',
+            'business_reg_number'=> 'nullable|string|max:50',
+            'napsa_reg_number'   => 'nullable|string|max:50',
+            'wcfcb_number'       => 'nullable|string|max:50',
+
+            // Contact Persons
+            'owner_director_name'  => 'required|string|max:255',
+            'owner_director_phone' => ['required', 'regex:/^(\+260|260|0)(9\d{8}|7\d{8})$/'],
+            'contact_person_name'  => 'nullable|string|max:255',
+            'contact_person_phone' => ['nullable', 'regex:/^(\+260|260|0)(9\d{8}|7\d{8})$/'],
+
+            // Document Uploads
+            'certificate_of_incorporation' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            'tpin_certificate'             => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            'zra_tax_clearance'            => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            'napsa_certificate'            => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            'wcfcb_certificate'            => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            'company_profile'              => 'nullable|file|mimes:pdf,doc,docx|max:5120',
+
+            // Declaration
+            'declaration_agreed' => 'required|accepted',
+            'terms_agreed'       => 'required|accepted',
         ];
     }
 
